@@ -41,23 +41,36 @@ export default function QuotePage() {
   const router = useRouter();
   const params = useSearchParams();
 
-  const initial = useMemo(()=>({
-    name: params.get("name") || "",
-    email: params.get("email") || "",
-    phone: params.get("phone") || "",
-    address: params.get("address") || "",
-    neighborhood: params.get("neighborhood") || "",
-    zip: params.get("zip") || "",
-    notes: params.get("notes") || "",
-  }), [params]);
+  const initial = useMemo(() => {
+    // Try to get data from sessionStorage first
+    const storedData = typeof window !== 'undefined' ? sessionStorage.getItem('quoteFormData') : null;
+    if (storedData) {
+      const parsed = JSON.parse(storedData);
+      // Clear the stored data since we've used it
+      sessionStorage.removeItem('quoteFormData');
+      return parsed;
+    }
+    // Fallback to URL params
+    return {
+      name: params.get("name") || "",
+      email: params.get("email") || "",
+      phone: params.get("phone") || "",
+      address: params.get("address") || "",
+      neighborhood: params.get("neighborhood") || "",
+      zip: params.get("zip") || "",
+      notes: params.get("notes") || "",
+      cleaningType: params.get("cleaningType") || "Standard Clean"
+    };
+  }, [params]);
 
   const [style, setStyle] = useState<"flat"|"hourly">("flat");
-  const [beds, setBeds] = useState<number>(2);
-  const [baths, setBaths] = useState<number>(1);
+  const [beds, setBeds] = useState<number>(Math.min(7, Number(initial.cleaningType ? Number(params.get("beds") || 2) : 2)));
+  const [baths, setBaths] = useState<number>(Math.min(7, Number(params.get("baths") || 1)));
   const [hours, setHours] = useState<number>(3);
   const [cleaners, setCleaners] = useState<number>(2);
 
   const [date, setDate] = useState<string>("");
+  const [dateError, setDateError] = useState<string>("");
   const times = useMemo(buildTimes, []);
   const [start, setStart] = useState<string>(times[0].value);
   const [end, setEnd] = useState<string>(times[times.length-1].value);
@@ -69,6 +82,22 @@ export default function QuotePage() {
     else { setHours((v)=> v || 3); setCleaners((v)=> v || 2); }
   }, [style]);
 
+  // helpers: parse YYYY-MM-DD into local Date at midnight to avoid timezone shifts
+  const parseDateFromInput = (d: string) => {
+    if (!d) return null as Date | null;
+    const [y, m, day] = d.split("-").map(Number);
+    if (!y || !m || !day) return null;
+    return new Date(y, m - 1, day);
+  };
+
+  const isPastDate = (d: string) => {
+    const pd = parseDateFromInput(d);
+    if (!pd) return false;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    return pd < today;
+  };
+
   const toQS = (o: Record<string, any>) =>
     new URLSearchParams(
       Object.entries(o).reduce((acc, [k, v]) => {
@@ -76,6 +105,19 @@ export default function QuotePage() {
         return acc;
       }, {} as Record<string, string>)
     ).toString();
+
+  // Navigation helper: supports router.push returning void or Promise
+  const navigateTo = (url: string) => {
+    try {
+      const push = router.push as unknown as (u: string) => Promise<void> | void;
+      const result = push(url);
+      if (result && typeof (result as Promise<void>).then === 'function') {
+        (result as Promise<void>).catch(() => { window.location.href = url; });
+      }
+    } catch (err) {
+      window.location.href = url;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -142,12 +184,12 @@ export default function QuotePage() {
                   <div className="flex items-center justify-between rounded-xl border px-3 py-2">
                     <button type="button" onClick={()=>setBeds(Math.max(0,beds-1))} className="p-1 rounded hover:bg-slate-100">−</button>
                     <div className="text-sm">{beds} bedroom{beds!==1?"s":""}</div>
-                    <button type="button" onClick={()=>setBeds(beds+1)} className="p-1 rounded hover:bg-slate-100">＋</button>
+                    <button type="button" onClick={()=>setBeds(Math.min(7,beds+1))} className="p-1 rounded hover:bg-slate-100">＋</button>
                   </div>
                   <div className="flex items-center justify-between rounded-xl border px-3 py-2">
                     <button type="button" onClick={()=>setBaths(Math.max(0,baths-1))} className="p-1 rounded hover:bg-slate-100">−</button>
                     <div className="text-sm">{baths} bathroom{baths!==1?"s":""}</div>
-                    <button type="button" onClick={()=>setBaths(baths+1)} className="p-1 rounded hover:bg-slate-100">＋</button>
+                    <button type="button" onClick={()=>setBaths(Math.min(7,baths+1))} className="p-1 rounded hover:bg-slate-100">＋</button>
                   </div>
                 </div>
               </div>
@@ -155,15 +197,31 @@ export default function QuotePage() {
               <div>
                 <div className="text-sm text-slate-600 mb-1">Hourly details</div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-center justify-between rounded-xl border px-3 py-2">
-                    <button type="button" onClick={()=>setHours(Math.max(1,hours-1))} className="p-1 rounded hover:bg-slate-100">−</button>
-                    <div className="text-sm">{hours} hour{hours!==1?"s":""}</div>
-                    <button type="button" onClick={()=>setHours(hours+1)} className="p-1 rounded hover:bg-slate-100">＋</button>
+                  <div>
+                    <div className="flex items-center justify-between rounded-xl border px-3 py-2">
+                      <button type="button" onClick={()=>setHours(Math.max(1,hours-1))} className="p-1 rounded hover:bg-slate-100">−</button>
+                      <div className="text-sm">{hours} hour{hours!==1?"s":""}</div>
+                      <button 
+                        type="button" 
+                        onClick={()=>setHours(Math.min(6,hours+1))} 
+                        className={`p-1 rounded ${hours >= 6 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100'}`}
+                        disabled={hours >= 6}
+                      >＋</button>
+                    </div>
+                    {hours >= 6 && <div className="text-xs text-amber-600 mt-1">Maximum 6 hours per booking</div>}
                   </div>
-                  <div className="flex items-center justify-between rounded-xl border px-3 py-2">
-                    <button type="button" onClick={()=>setCleaners(Math.max(1,cleaners-1))} className="p-1 rounded hover:bg-slate-100">−</button>
-                    <div className="text-sm">{cleaners} cleaner{cleaners!==1?"s":""}</div>
-                    <button type="button" onClick={()=>setCleaners(cleaners+1)} className="p-1 rounded hover:bg-slate-100">＋</button>
+                  <div>
+                    <div className="flex items-center justify-between rounded-xl border px-3 py-2">
+                      <button type="button" onClick={()=>setCleaners(Math.max(1,cleaners-1))} className="p-1 rounded hover:bg-slate-100">−</button>
+                      <div className="text-sm">{cleaners} cleaner{cleaners!==1?"s":""}</div>
+                      <button 
+                        type="button" 
+                        onClick={()=>setCleaners(Math.min(3,cleaners+1))} 
+                        className={`p-1 rounded ${cleaners >= 3 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100'}`}
+                        disabled={cleaners >= 3}
+                      >＋</button>
+                    </div>
+                    {cleaners >= 3 && <div className="text-xs text-amber-600 mt-1">Maximum 3 cleaners per booking</div>}
                   </div>
                 </div>
               </div>
@@ -172,7 +230,18 @@ export default function QuotePage() {
             <div className="grid gap-3">
               <div>
                 <div className="text-sm text-slate-600 mb-1">When would you like us to come?</div>
-                <Input type="date" value={date} onChange={(e)=>setDate(e.target.value)} />
+                <Input
+                  type="date"
+                  value={date}
+                  onChange={(e)=>{
+                    const v = e.target.value;
+                    setDate(v);
+                    if (!v) setDateError("Please select a date.");
+                    else if (isPastDate(v)) setDateError("Please choose today or a future date.");
+                    else setDateError("");
+                  }}
+                />
+                {dateError && <div className="text-xs text-red-500 mt-1">{dateError}</div>}
               </div>
               <div>
                 <div className="text-sm text-slate-600 mb-1">Any time between</div>
@@ -194,13 +263,24 @@ export default function QuotePage() {
             <Button
               className="rounded-2xl bg-teal-700 hover:bg-teal-800"
               onClick={()=>{
-                const qs = toQS({
+                // Validate date required and not in the past
+                if (!date) {
+                  setDateError("Please select a date.");
+                  return;
+                }
+                if (isPastDate(date)) {
+                  setDateError("Please choose today or a future date.");
+                  return;
+                }
+
+                // Store data in sessionStorage for the next page
+                sessionStorage.setItem('pricingFormData', JSON.stringify({
                   ...initial,
                   zip, style,
                   ...(style === "flat" ? { beds, baths } : { hours, cleaners }),
                   date, start, end, flexible,
-                });
-                router.push(`/pricing-availability?${qs}`);
+                }));
+                navigateTo('/pricing-availability');
               }}
             >
               Get a Price

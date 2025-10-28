@@ -13,14 +13,19 @@ import { ChevronDown, ChevronUp, Snowflake, Flame, PanelsTopLeft, Boxes, Sparkle
 
 type Freq = "once" | "weekly" | "biweekly" | "monthly";
 
-function calcBasePriceFlat(beds: number, baths: number) {
+function calcBasePriceFlat(beds: number, baths: number, cleaningType: string = "Standard Clean") {
   let base = 165;
   if (beds <= 1) base = 165;
   else if (beds === 2) base = 205;
   else if (beds === 3) base = 255;
   else base = 255 + (beds - 3) * 40;
   base += Math.max(0, baths - 1) * 20;
-  return base;
+
+  // Apply multiplier based on cleaning type
+  if (cleaningType === "Deep Clean") base *= 1.3;
+  else if (cleaningType === "Move-In/Out") base *= 1.5;
+
+  return Math.round(base);
 }
 
 function calcBasePriceHourly(hours: number, cleaners: number) {
@@ -30,7 +35,7 @@ function calcBasePriceHourly(hours: number, cleaners: number) {
 
 function discountFor(freq: Freq) {
   if (freq === "weekly") return 0.30;
-  if (freq === "biweekly") return 0.20;
+  if (freq === "biweekly") return 0.25;
   if (freq === "monthly") return 0.15;
   return 0;
 }
@@ -52,24 +57,62 @@ export default function PricingAvailabilityClient() {
   const router = useRouter();
   const params = useSearchParams();
 
-  const initial = useMemo(()=>({
-    name: params.get("name") || "",
-    email: params.get("email") || "",
-    phone: params.get("phone") || "",
-    address: params.get("address") || "",
-    neighborhood: params.get("neighborhood") || "",
-    zip: params.get("zip") || "",
-    notes: params.get("notes") || "",
-    style: (params.get("style") as "flat"|"hourly") || "flat",
-    beds: Number(params.get("beds") || 2),
-    baths: Number(params.get("baths") || 1),
-    hours: Number(params.get("hours") || 3),
-    cleaners: Number(params.get("cleaners") || 2),
-    date: params.get("date") || "",
-    start: params.get("start") || "",
-    end: params.get("end") || "",
-    flexible: params.get("flexible") === "true",
-  }), [params]);
+  // Helper function to convert 24h to 12h format
+  const formatTime = (time: string) => {
+    if (!time) return "—";
+    const [hours, minutes] = time.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+
+  // Luhn checksum validation for card numbers
+  const luhnCheck = (num: string) => {
+    // num is digits only
+    let sum = 0;
+    let shouldDouble = false;
+    for (let i = num.length - 1; i >= 0; i--) {
+      let digit = parseInt(num.charAt(i), 10);
+      if (shouldDouble) {
+        digit *= 2;
+        if (digit > 9) digit -= 9;
+      }
+      sum += digit;
+      shouldDouble = !shouldDouble;
+    }
+    return sum % 10 === 0;
+  };
+
+  const initial = useMemo(() => {
+    // Try to get data from sessionStorage first
+    const storedData = typeof window !== 'undefined' ? sessionStorage.getItem('pricingFormData') : null;
+    if (storedData) {
+      const parsed = JSON.parse(storedData);
+      // Clear the stored data since we've used it
+      sessionStorage.removeItem('pricingFormData');
+      return parsed;
+    }
+    // Fallback to defaults
+    return {
+      name: "",
+      email: "",
+      phone: "",
+      address: "",
+      neighborhood: "",
+      zip: "",
+      notes: "",
+      style: "flat" as "flat"|"hourly",
+      beds: 2,
+      baths: 1,
+      hours: 3,
+      cleaners: 2,
+      cleaningType: "Standard Clean",
+      date: "",
+      start: "",
+      end: "",
+      flexible: false,
+    };
+  }, []);
 
   const [freq, setFreq] = useState<Freq>("once");
   const [contact, setContact] = useState({
@@ -87,11 +130,20 @@ export default function PricingAvailabilityClient() {
   });
 
   const [addons, setAddons] = useState<Record<string, boolean>>({});
+  // Payment fields and validation
+  const [payment, setPayment] = useState({
+    nameOnCard: "",
+    cardNumber: "",
+    expiry: "",
+    cvc: "",
+    agree: true,
+  });
+  const [paymentErrors, setPaymentErrors] = useState<{[k:string]:string}>({});
 
   const base =
     initial.style === "hourly"
       ? Math.round(calcBasePriceHourly(initial.hours, initial.cleaners))
-      : Math.round(calcBasePriceFlat(initial.beds, initial.baths));
+      : Math.round(calcBasePriceFlat(initial.beds, initial.baths, initial.cleaningType));
 
   const addonsTotal = ADDONS.reduce((sum, a) => sum + (addons[a.key] ? a.price : 0), 0);
   const preDiscount = base + addonsTotal;
@@ -107,6 +159,19 @@ export default function PricingAvailabilityClient() {
       if (v !== undefined && v !== null) acc[k] = String(v);
       return acc;
     }, {} as Record<string, string>)).toString();
+
+  // Navigation helper
+  const navigateTo = (url: string) => {
+    try {
+      const push = router.push as unknown as (u: string) => Promise<void> | void;
+      const result = push(url);
+      if (result && typeof (result as Promise<void>).then === 'function') {
+        (result as Promise<void>).catch(() => { window.location.href = url; });
+      }
+    } catch (err) {
+      window.location.href = url;
+    }
+  };
 
   const [openFaq, setOpenFaq] = useState<string | null>(null);
   const faqs = [
@@ -140,7 +205,7 @@ export default function PricingAvailabilityClient() {
         {/* LEFT */}
         <Card className="rounded-2xl p-6 border-teal-200 shadow-sm">
           <h1 className="text-2xl font-semibold mb-1">Complete your booking</h1>
-          <p className="text-slate-600">We have cleaners available at this time! Just a few more details and we can complete your booking.</p>
+          <p className="text-slate-600">We're checking cleaner availability and location for your requested time. Provide a few more details and we'll confirm availability.</p>
 
           {/* Frequency */}
           <div className="mt-6">
@@ -150,7 +215,7 @@ export default function PricingAvailabilityClient() {
             <div className="grid sm:grid-cols-4 gap-2">
               {([
                 {k:"weekly", label:"Weekly", save:"save 30%"},
-                {k:"biweekly", label:"Bi-weekly", save:"save 20%"},
+                {k:"biweekly", label:"Bi-weekly", save:"save 25%"},
                 {k:"monthly", label:"Monthly", save:"save 15%"},
                 {k:"once", label:"Once", save:""},
               ] as {k:Freq; label:string; save:string}[]).map(opt=>(
@@ -170,15 +235,46 @@ export default function PricingAvailabilityClient() {
 
           {/* Address / contact */}
           <div className="mt-6 grid md:grid-cols-2 gap-3">
-            <Input placeholder="Email" value={contact.email} onChange={(e)=>setContact(c=>({...c, email:e.target.value}))}/>
-            <Input placeholder="Phone" value={contact.phone} onChange={(e)=>setContact(c=>({...c, phone:e.target.value}))}/>
+            <div className="space-y-1">
+              <Input 
+                placeholder="Email *" 
+                value={contact.email} 
+                onChange={(e)=>setContact(c=>({...c, email:e.target.value}))}
+                className={!contact.email ? "border-red-200" : ""}
+                required
+              />
+              {!contact.email && <div className="text-xs text-red-500">Email is required</div>}
+            </div>
+            <div className="space-y-1">
+              <Input 
+                placeholder="Phone *" 
+                value={contact.phone} 
+                onChange={(e)=>{
+                  // strip letters; allow digits, +, (), -, spaces, dots
+                  const sanitized = e.target.value.replace(/[^0-9()+\-\.\s]/g, '');
+                  setContact(c=>({...c, phone: sanitized}));
+                }}
+                className={!contact.phone ? "border-red-200" : ""}
+                required
+              />
+              {!contact.phone && <div className="text-xs text-red-500">Phone number is required</div>}
+            </div>
             <Input placeholder="First name" value={contact.first} onChange={(e)=>setContact(c=>({...c, first:e.target.value}))}/>
             <Input placeholder="Last name" value={contact.last} onChange={(e)=>setContact(c=>({...c, last:e.target.value}))}/>
             <Input placeholder="Street address" value={contact.address} onChange={(e)=>setContact(c=>({...c, address:e.target.value}))}/>
             <Input placeholder="Apt #" value={contact.apt} onChange={(e)=>setContact(c=>({...c, apt:e.target.value}))}/>
             <Input placeholder="City" value={contact.city} onChange={(e)=>setContact(c=>({...c, city:e.target.value}))}/>
             <Input placeholder="State" value={contact.state} onChange={(e)=>setContact(c=>({...c, state:e.target.value}))}/>
-            <Input placeholder="ZIP" value={contact.zip} onChange={(e)=>setContact(c=>({...c, zip:e.target.value}))}/>
+            <div className="space-y-1">
+              <Input 
+                placeholder="ZIP *" 
+                value={contact.zip} 
+                onChange={(e)=>setContact(c=>({...c, zip:e.target.value}))}
+                className={!contact.zip ? "border-red-200" : ""}
+                required
+              />
+              {!contact.zip && <div className="text-xs text-red-500">ZIP code is required</div>}
+            </div>
           </div>
 
           {/* Entry method */}
@@ -239,32 +335,150 @@ export default function PricingAvailabilityClient() {
 
           {/* Secure payment */}
           <div className="mt-8">
-            <div className="text-sm font-medium mb-2">Secure payment</div>
+          <div className="text-sm font-medium mb-2">Secure payment</div>
             <Card className="rounded-2xl p-4 border-teal-200">
               <div className="grid md:grid-cols-2 gap-3">
-                <Input placeholder="Name on card" />
-                <Input placeholder="Card number" />
-                <Input placeholder="MM/YY" />
-                <Input placeholder="CVC" />
+                <div>
+                  <Input
+                    placeholder="Name on card *"
+                    value={payment.nameOnCard}
+                    onChange={(e)=>setPayment(p=>({...p, nameOnCard: e.target.value}))}
+                    className={paymentErrors.nameOnCard ? "border-red-200": ""}
+                    required
+                  />
+                  {paymentErrors.nameOnCard && <div className="text-xs text-red-500">{paymentErrors.nameOnCard}</div>}
+                </div>
+                <div>
+                  <Input
+                    placeholder="Card number *"
+                    value={payment.cardNumber}
+                    onChange={(e)=>setPayment(p=>({...p, cardNumber: e.target.value.replace(/\s+/g,'')}))}
+                    className={paymentErrors.cardNumber ? "border-red-200" : ""}
+                    required
+                  />
+                  {paymentErrors.cardNumber && <div className="text-xs text-red-500">{paymentErrors.cardNumber}</div>}
+                </div>
+                <div>
+                  <Input
+                    placeholder="MM/YY *"
+                    value={payment.expiry}
+                    onChange={(e)=>{
+                      // Auto-format MM/YY: keep digits only, insert slash after 2 digits, max length 5
+                      let v = e.target.value.replace(/\D/g, "");
+                      if (v.length > 4) v = v.slice(0,4);
+                      if (v.length >= 3) v = v.slice(0,2) + "/" + v.slice(2);
+                      // Optional: if first digit > 1, prefix 0 (e.g., 9 -> 09)
+                      // Keep it simple for now; validation will catch invalid months.
+                      setPayment(p=>({...p, expiry: v}));
+                    }}
+                    className={paymentErrors.expiry ? "border-red-200" : ""}
+                    required
+                  />
+                  {paymentErrors.expiry && <div className="text-xs text-red-500">{paymentErrors.expiry}</div>}
+                </div>
+                <div>
+                  <Input
+                    placeholder="CVC *"
+                    value={payment.cvc}
+                    onChange={(e)=>setPayment(p=>({...p, cvc: e.target.value.replace(/\D/g,'')}))}
+                    className={paymentErrors.cvc ? "border-red-200" : ""}
+                    required
+                  />
+                  {paymentErrors.cvc && <div className="text-xs text-red-500">{paymentErrors.cvc}</div>}
+                </div>
               </div>
               <label className="mt-3 inline-flex items-center gap-2 text-sm text-slate-600">
-                <input type="checkbox" defaultChecked />
+                <input type="checkbox" checked={payment.agree} onChange={(e)=>setPayment(p=>({...p, agree: e.target.checked}))} />
                 <span>I agree to the <Link href="/terms" className="text-teal-700 underline">Terms of Service</Link>.</span>
               </label>
+              {paymentErrors.agree && <div className="text-xs text-red-500 mt-1">{paymentErrors.agree}</div>}
             </Card>
           </div>
 
           <div className="mt-6">
             <Button
-              className="rounded-2xl bg-teal-700 hover:bg-teal-800"
+              className={`rounded-2xl ${!payment.agree ? 'bg-slate-300 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800'}`}
               onClick={()=>{
-                const qs = toQS({
+                // Contact Information Validation
+                const contactErrors: string[] = [];
+                if (!contact.email) contactErrors.push("Email address");
+                // require at least 10 digits for phone
+                const phoneDigits = (contact.phone || '').replace(/\D/g, '');
+                if (!phoneDigits) contactErrors.push("Phone number");
+                else if (phoneDigits.length < 10) contactErrors.push("Phone number (enter at least 10 digits)");
+                if (!contact.first) contactErrors.push("First name");
+                if (!contact.last) contactErrors.push("Last name");
+                if (!contact.address) contactErrors.push("Street address");
+                if (!contact.zip) contactErrors.push("ZIP code");
+
+                if (contactErrors.length > 0) {
+                  alert("Please fill in the following required fields:\n• " + contactErrors.join("\n• "));
+                  return;
+                }
+
+                // Date and Time Validation
+                if (!initial.date) {
+                  alert("Please select a date for your cleaning");
+                  return;
+                }
+                if (!initial.start || !initial.end) {
+                  alert("Please select your preferred time window");
+                  return;
+                }
+
+                // Payment validation
+                const errs: {[k:string]:string} = {};
+                
+                // Name on card validation
+                if (!payment.nameOnCard) errs.nameOnCard = "Name on card is required";
+                else if (payment.nameOnCard.trim().length < 2) errs.nameOnCard = "Please enter a valid name";
+                else if (!/^[A-Za-z\s'-]+$/.test(payment.nameOnCard.trim())) errs.nameOnCard = "Name can only contain letters, spaces, hyphens and apostrophes";
+
+                // Card number validation
+                const pn = payment.cardNumber.replace(/\s+/g, '');
+                if (!pn) errs.cardNumber = "Card number is required";
+                else if (!/^\d{13,19}$/.test(pn)) errs.cardNumber = "Card number must be 13-19 digits";
+                else if (!luhnCheck(pn)) errs.cardNumber = "Invalid card number";
+
+                // Expiry date validation
+                if (!payment.expiry) errs.expiry = "Expiry date is required";
+                else if (!/^(0[1-9]|1[0-2])\/(\d{2})$/.test(payment.expiry)) errs.expiry = "Enter expiry as MM/YY";
+                else {
+                  const [mm, yy] = payment.expiry.split('/').map(Number);
+                  const now = new Date();
+                  const exp = new Date(2000 + yy, mm - 1, 1);
+                  exp.setMonth(exp.getMonth()+1);
+                  if (exp <= now) errs.expiry = "Card has expired";
+                }
+
+                // CVC validation
+                if (!payment.cvc) errs.cvc = "CVC is required";
+                else if (!/^\d{3,4}$/.test(payment.cvc)) errs.cvc = "CVC must be 3-4 digits";
+
+                // Terms agreement validation
+                if (!payment.agree) errs.agree = "You must agree to the Terms of Service";
+                
+                // If terms not agreed, prevent submission entirely
+                if (!payment.agree) {
+                  alert("Please agree to the Terms of Service to continue");
+                  return;
+                }
+
+                setPaymentErrors(errs);
+                if (Object.keys(errs).length > 0) {
+                  // focus first error or show alert
+                  alert("Please fix payment errors before completing booking.");
+                  return;
+                }
+
+                // Store completion data in sessionStorage
+                sessionStorage.setItem('thankYouData', JSON.stringify({
                   total, freq,
                   date: initial.date, start: initial.start, end: initial.end,
                   name: `${contact.first} ${contact.last}`.trim(),
                   email: contact.email, phone: contact.phone,
-                });
-                router.push(`/thank-you?${qs}`);
+                }));
+                navigateTo('/thank-you');
               }}
             >
               Complete Booking
@@ -277,11 +491,14 @@ export default function PricingAvailabilityClient() {
           <Card className="rounded-2xl p-6 shadow-sm border-teal-200">
             <div className="text-sm text-slate-500">Your booking</div>
             <div className="mt-2 text-slate-800">
-              <div>{initial.date ? new Date(initial.date).toLocaleDateString() : "Select date"} • {initial.start || "—"} – {initial.end || "—"}</div>
+              <div className="text-sm text-slate-600 font-medium">Requested time</div>
+              <div>
+                {formatTime(initial.start)} – {formatTime(initial.end)} • {initial.date ? new Date(initial.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : "Select date"}
+              </div>
               <div className="text-sm text-slate-600">
                 {initial.style === "hourly"
                   ? `${initial.hours} hr • ${initial.cleaners} cleaner${initial.cleaners!==1?"s":""} • Hourly`
-                  : `${initial.beds} BR • ${initial.baths} BA • Flat rate`}
+                  : `${initial.cleaningType} • ${initial.beds} BR • ${initial.baths} BA • Flat rate`}
               </div>
             </div>
             <div className="mt-4 border-t pt-4 space-y-2">

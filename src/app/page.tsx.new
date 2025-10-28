@@ -1,0 +1,94 @@
+"use client";
+
+import React, { useState } from "react";
+import Head from "next/head";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+import { Shield, Phone, Share2, Star, Sparkles, Calendar, Home } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { LocalBusinessSchema, FAQPageSchema } from "@/components/StructuredData";
+
+const faqs = [
+  { q: "What does COI-ready mean?", a: "We can provide a Certificate of Insurance tailored to your building's requirements—just share the details and we'll handle it." },
+  { q: "Do you bring supplies?", a: "Yes—professional, high-quality supplies. Eco-friendly options available upon request." },
+  { q: "Can you handle keys/doorman?", a: "Yes. We can leave keys with your doorman or follow specific access instructions." },
+  { q: "What if I'm not 100% happy?", a: "Tell us within 24 hours and we'll make it right with a free touch-up." },
+  { q: "How do subscriptions work?", a: "Choose weekly, bi-weekly, or monthly. You can skip or pause anytime." },
+  { q: "How do I reschedule?", a: "Just text or email us—no fees with 24+ hours' notice." },
+];
+
+function ManhattanMint() {
+  const router = useRouter();
+  const [zip, setZip] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    neighborhood: "",
+    zip: "",
+    notes: "",
+  });
+
+  const checklistCols: string[][] = [
+    ["Bedrooms","Living Rooms","Kitchens","Bathrooms","TV/Accessories","Shelves","Picture Frames","Tables","Chairs","Return Supplies","Above Refrigerator","Blinds","Lamps Lighting"],
+    ["Turn off Lights","Vents","Fans","Window Sills","Kitchen Counters","Kitchen Cabinets","Refrigerator Sides","Table Tops","Bathroom Counters","Bathroom Shelves","Shower Caddys","Trash Cans","Shower Doors"],
+    ["Stove Tops","Toilets Behind","Bathtubs/Showers","Bathroom Tiles","Microwave","Toaster","AC Units","Behind the Stove","Kitchen Sinks","Bathroom Sinks","Return Mats","Items on Shelves","Behind Wall Units"],
+    ["Dishwasher","Make Beds","Vacuum Carpets","Straighten Up","Door Frames","Trashcan Liners","Edging on Couch","Swiffer","Laundry (extra)","Inside cabinets (extra)","Inside refrig. (extra)","Inside oven (extra)","Plus more!"],
+  ];
+
+  const toQS = (o: Record<string, any>) =>
+    new URLSearchParams(Object.entries(o).reduce((acc, [k, v]) => {
+      if (v !== undefined && v !== null) acc[k] = String(v);
+      return acc;
+    }, {} as Record<string, string>)).toString();
+
+  return (
+    <>
+      <Head>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: `{
+  "@context":"https://schema.org",
+  "@type":"LocalBusiness",
+  "name":"Manhattan Mint",
+  "image":"https://www.manhattanmintnyc.com/og-image.jpg",
+  "url":"https://www.manhattanmintnyc.com/",
+  "telephone":"+1-914-873-4430",
+  "priceRange":"$$",
+  "address":{
+    "@type":"PostalAddress",
+    "addressLocality":"New York",
+    "addressRegion":"NY",
+    "addressCountry":"US"
+  },
+  "areaServed":[{"@type":"City","name":"New York"}],
+  "openingHoursSpecification":[
+    {"@type":"OpeningHoursSpecification",
+     "dayOfWeek":["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
+     "opens":"08:00","closes":"20:00"}
+  ]
+}` }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": faqs.map(f => ({
+            "@type": "Question",
+            "name": f.q,
+            "acceptedAnswer": { "@type": "Answer", "text": f.a }
+          }))
+        }) }} />
+      </Head>
+      <div className="min-h-screen bg-slate-50 text-slate-900">
+        {/* ... rest of component JSX ... */}
+      </div>
+    </>
+  );
+}
+
+export default function Page() {
+  return <ManhattanMint />;
+}
