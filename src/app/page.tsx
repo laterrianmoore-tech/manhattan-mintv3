@@ -176,7 +176,7 @@ function ManhattanMint() {
             <div>
               <Badge className="bg-teal-100 text-teal-800 rounded-full mb-4">The Gold Standard in Clean</Badge>
               <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight text-slate-900">
-                Premium home cleaning for busy New Yorkers
+                Premium apartment cleaning for busy New Yorkers
               </h1>
               <p className="mt-2 text-xl font-medium text-teal-700">Flawless Clean. Every Time.</p>
               <p className="mt-4 text-lg text-slate-700 md:max-w-xl">

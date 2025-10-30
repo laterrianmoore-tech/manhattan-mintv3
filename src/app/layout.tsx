@@ -7,12 +7,12 @@ export const metadata: Metadata = {
     template: "%s | Manhattan Mint",
   },
   description:
-    "Flawless Clean. Every Time. Premium home cleaning for busy New Yorkers — flat-rate pricing, COI-ready, doorman/key handling, and digital receipts.",
+    "Flawless Clean. Every Time. Premium apartment cleaning for busy New Yorkers — flat-rate pricing, COI-ready, doorman/key handling, and digital receipts.",
   metadataBase: new URL("https://www.manhattanmintnyc.com"),
   openGraph: {
     title: "Manhattan Mint | Cleaning",
     description:
-      "Flawless Clean. Every Time. Premium home cleaning for busy New Yorkers.",
+      "Flawless Clean. Every Time. Premium apartment cleaning for busy New Yorkers.",
     url: "https://www.manhattanmintnyc.com",
     siteName: "Manhattan Mint",
     type: "website",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Manhattan Mint | Cleaning",
     description:
-      "Flawless Clean. Every Time. Premium home cleaning for busy New Yorkers.",
+      "Flawless Clean. Every Time. Premium apartment cleaning for busy New Yorkers.",
     images: ["/og-image.jpg"], // ✅ same image for Twitter cards
   },
   icons: {
@@ -43,12 +43,12 @@ export default function RootLayout({
         <link rel="canonical" href="https://www.manhattanmintnyc.com/" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Manhattan Mint | Cleaning" />
-        <meta property="og:description" content="Premium home cleaning for busy New Yorkers — flat-rate pricing, COI-ready, and 60-second booking." />
+  <meta property="og:description" content="Premium apartment cleaning for busy New Yorkers — flat-rate pricing, COI-ready, and 60-second booking." />
         <meta property="og:url" content="https://www.manhattanmintnyc.com/" />
         <meta property="og:image" content="https://www.manhattanmintnyc.com/og-image.jpg" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Manhattan Mint | Cleaning" />
-        <meta name="twitter:description" content="Premium home cleaning for busy New Yorkers — flat-rate pricing, COI-ready, and 60-second booking." />
+  <meta name="twitter:description" content="Premium apartment cleaning for busy New Yorkers — flat-rate pricing, COI-ready, and 60-second booking." />
         <meta name="twitter:image" content="https://www.manhattanmintnyc.com/og-image.jpg" />
       </head>
       <body>{children}</body>
