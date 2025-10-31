@@ -426,48 +426,10 @@ export default function PricingAvailabilityClient() {
                   return;
                 }
 
-                // Payment validation
-                const errs: {[k:string]:string} = {};
-                
-                // Name on card validation
-                if (!payment.nameOnCard) errs.nameOnCard = "Name on card is required";
-                else if (payment.nameOnCard.trim().length < 2) errs.nameOnCard = "Please enter a valid name";
-                else if (!/^[A-Za-z\s'-]+$/.test(payment.nameOnCard.trim())) errs.nameOnCard = "Name can only contain letters, spaces, hyphens and apostrophes";
-
-                // Card number validation
-                const pn = payment.cardNumber.replace(/\s+/g, '');
-                if (!pn) errs.cardNumber = "Card number is required";
-                else if (!/^\d{13,19}$/.test(pn)) errs.cardNumber = "Card number must be 13-19 digits";
-                else if (!luhnCheck(pn)) errs.cardNumber = "Invalid card number";
-
-                // Expiry date validation
-                if (!payment.expiry) errs.expiry = "Expiry date is required";
-                else if (!/^(0[1-9]|1[0-2])\/(\d{2})$/.test(payment.expiry)) errs.expiry = "Enter expiry as MM/YY";
-                else {
-                  const [mm, yy] = payment.expiry.split('/').map(Number);
-                  const now = new Date();
-                  const exp = new Date(2000 + yy, mm - 1, 1);
-                  exp.setMonth(exp.getMonth()+1);
-                  if (exp <= now) errs.expiry = "Card has expired";
-                }
-
-                // CVC validation
-                if (!payment.cvc) errs.cvc = "CVC is required";
-                else if (!/^\d{3,4}$/.test(payment.cvc)) errs.cvc = "CVC must be 3-4 digits";
-
-                // Terms agreement validation
-                if (!payment.agree) errs.agree = "You must agree to the Terms of Service";
-                
-                // If terms not agreed, prevent submission entirely
+                // Hybrid flow: payment will be handled by Launch27 embed on the next page.
+                // Keep terms checkbox, but skip card field validation here.
                 if (!payment.agree) {
                   alert("Please agree to the Terms of Service to continue");
-                  return;
-                }
-
-                setPaymentErrors(errs);
-                if (Object.keys(errs).length > 0) {
-                  // focus first error or show alert
-                  alert("Please fix payment errors before completing booking.");
                   return;
                 }
 
@@ -508,34 +470,9 @@ export default function PricingAvailabilityClient() {
                   }
                 };
 
-                try {
-                  // Show loading state (you could add a loading spinner here)
-                  const response = await fetch('/api/launch27/create-booking', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(bookingData),
-                  });
-
-                  const result = await response.json();
-
-                  if (response.ok && result.success) {
-                    // Store confirmation data for thank-you page
-                    sessionStorage.setItem('thankYouData', JSON.stringify({
-                      total, freq,
-                      date: initial.date, start: initial.start, end: initial.end,
-                      name: `${contact.first} ${contact.last}`.trim(),
-                      email: contact.email, phone: contact.phone,
-                      bookingId: result.bookingId,
-                      confirmationNumber: result.confirmationNumber,
-                    }));
-                    navigateTo('/thank-you');
-                  } else {
-                    alert(`Booking failed: ${result.error || 'Unknown error'}. Please try again or contact support.`);
-                  }
-                } catch (error) {
-                  console.error('Booking error:', error);
-                  alert('Network error. Please check your connection and try again.');
-                }
+                // Save for /booking prefill and redirect to embedded Launch27 form
+                sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
+                navigateTo('/booking');
               }}
             >
               Complete Booking
