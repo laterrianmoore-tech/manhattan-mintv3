@@ -353,52 +353,6 @@ export default function PricingAvailabilityClient() {
 
         {/* RIGHT: summary */}
         <div className="space-y-4">
-          <Card className="rounded-2xl p-6 shadow-sm border-teal-200">
-            <div className="text-sm text-slate-500">Your booking</div>
-            <div className="mt-2 text-slate-800">
-              <div className="text-sm text-slate-600 font-medium">Requested time</div>
-              <div>
-                {formatTime(initial.start)} – {formatTime(initial.end)} • {initial.date ? new Date(initial.date).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : "Select date"}
-              </div>
-              <div className="text-sm text-slate-600">
-                {initial.style === "hourly"
-                  ? `${initial.hours} hr • ${initial.cleaners} cleaner${initial.cleaners!==1?"s":""} • Hourly`
-                  : `${initial.cleaningType} • ${initial.beds} BR • ${initial.baths} BA • Flat rate`}
-              </div>
-            </div>
-            <div className="mt-4 border-t pt-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Cleaning Fee</span>
-                <span>${base}</span>
-              </div>
-              {initial.style === "flat" && ADDONS.map(a => addons[a.key] && (
-                <div key={a.key} className="flex justify-between text-sm">
-                  <span>{a.label}</span>
-                  <span>${a.price}</span>
-                </div>
-              ))}
-              {discPct > 0 && (
-                <div className="flex justify-between text-sm text-teal-700">
-                  <span>Recurring discount</span>
-                  <span>−{Math.round(discPct*100)}%</span>
-                </div>
-              )}
-              <div className="flex justify-between text-sm">
-                <span>Subtotal</span>
-                <span>${discounted}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span>NYC Sales Tax (8.875%)</span>
-                <span>${tax}</span>
-              </div>
-              <div className="flex justify-between font-semibold text-lg pt-2 border-t">
-                <span>TOTAL</span>
-                <span className="text-teal-700">${total}</span>
-              </div>
-            </div>
-            <div className="mt-3 text-xs text-slate-500">* Tax rate reflects Manhattan (NYC) combined rate.</div>
-          </Card>
-
           {/* FAQ */}
           <Card className="rounded-2xl p-6">
             <h3 className="font-semibold mb-2">Questions?</h3>
