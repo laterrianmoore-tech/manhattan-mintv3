@@ -371,20 +371,32 @@ function ManhattanMint() {
       <section id="reviews" className="scroll-mt-24 bg-slate-50 border-t">
         <div className="max-w-6xl mx-auto px-4 py-14">
           <h2 className="text-3xl md:text-4xl font-bold text-center">Reviews</h2>
-          <div className="grid md:grid-cols-3 gap-6 mt-8">
-            {[{ q:"Incredible attention to detail. My apartment has never looked better.", a:"— Alex, Tribeca" },
-              { q:"Reliable, friendly, and so easy to book. Worth every penny.", a:"— Maya, UWS" },
-              { q:"They handled my COI and keys with my doorman—super smooth.", a:"— Daniel, FiDi" }].map((r, i) => (
-              <Card key={i} className="rounded-2xl">
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-1 mb-2">
-                    {Array.from({ length: 5 }).map((_, j) => <Star key={j} className="h-4 w-4 fill-yellow-400 text-yellow-400" />)}
-                  </div>
-                  <p className="text-slate-800">{r.q}</p>
-                  <p className="text-slate-500 text-sm mt-2">{r.a}</p>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="mt-8 mm-marquee">
+            {(() => {
+              const reviews = [
+                { q:"Incredible attention to detail. My apartment has never looked better.", a:"— Alex, Tribeca" },
+                { q:"Reliable, friendly, and so easy to book. Worth every penny.", a:"— Maya, UWS" },
+                { q:"They showed up on time and left everything spotless—super professional.", a:"— Daniel, FiDi" },
+                { q:"The deep clean made my place feel brand new.", a:"— Priya, Chelsea" },
+                { q:"Fast booking, clear pricing, and great results.", a:"— Jason, Midtown" },
+              ];
+              const loop = [...reviews, ...reviews];
+              return (
+                <div className="mm-marquee__track gap-4 sm:gap-6">
+                  {loop.map((r, i) => (
+                    <Card key={`${r.a}-${i}`} className="rounded-2xl min-w-[280px] w-[280px] sm:min-w-[360px] sm:w-[360px]">
+                      <CardContent className="pt-6">
+                        <div className="flex items-center gap-1 mb-2">
+                          {Array.from({ length: 5 }).map((_, j) => <Star key={j} className="h-4 w-4 fill-yellow-400 text-yellow-400" />)}
+                        </div>
+                        <p className="text-slate-800">{r.q}</p>
+                        <p className="text-slate-500 text-sm mt-2">{r.a}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </section>

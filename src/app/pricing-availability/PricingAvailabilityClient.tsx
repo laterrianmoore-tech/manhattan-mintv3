@@ -53,6 +53,19 @@ const ADDONS = [
 
 const NYC_TAX_RATE = 0.08875;
 
+// Minimal ZIP → City helper for NYC boroughs
+function zipToCity(zip?: string | null): string | null {
+  if (!zip) return null;
+  const z = String(zip).trim();
+  if (!/^\d{5}/.test(z)) return null;
+  if (z.startsWith("100") || z.startsWith("101") || z.startsWith("102")) return "New York"; // Manhattan uses "New York"
+  if (z.startsWith("112")) return "Brooklyn";
+  if (z.startsWith("104")) return "Bronx";
+  if (z.startsWith("103")) return "Staten Island";
+  if (z.startsWith("111") || z.startsWith("113") || z.startsWith("114")) return "Queens";
+  return "New York City";
+}
+
 export default function PricingAvailabilityClient() {
   const router = useRouter();
   const params = useSearchParams();
@@ -202,10 +215,19 @@ export default function PricingAvailabilityClient() {
     if (contact.phone) qs.set('phone', contact.phone);
     if (contact.first) qs.set('first_name', contact.first);
     if (contact.last) qs.set('last_name', contact.last);
-    if (contact.address) qs.set('address', contact.address);
+    if (contact.address) {
+      const fullAddress = contact.apt ? `${contact.address}, Apt ${contact.apt}` : contact.address;
+      qs.set('address', fullAddress);
+    }
     if (contact.city) qs.set('city', contact.city);
+    else if (contact.zip) {
+      const inferred = zipToCity(contact.zip);
+      if (inferred) qs.set('city', inferred);
+    }
     if (contact.state) qs.set('state', contact.state);
     if (contact.zip) qs.set('zip', contact.zip);
+    if (initial.beds) qs.set('bedrooms', String(initial.beds));
+    if (initial.baths) qs.set('bathrooms', String(initial.baths));
     if (initial.date) qs.set('date', initial.date);
     if (initial.start) qs.set('time', initial.start);
     const serviceName = initial.style === "hourly"
@@ -225,7 +247,9 @@ export default function PricingAvailabilityClient() {
             <div className="font-semibold">Manhattan <span className="text-teal-700">Mint</span></div>
           </Link>
           <div className="flex items-center gap-2 text-sm">
-            <Badge className="bg-teal-100 text-teal-800 rounded-full">Cleaning</Badge>
+            <Link href="/quote" className="inline-block">
+              <Badge className="bg-teal-100 text-teal-800 rounded-full hover:bg-teal-200 cursor-pointer" role="link" aria-label="Back to Cleaning step">Cleaning</Badge>
+            </Link>
             <span>➜</span>
             <Badge className="bg-teal-700 text-white rounded-full shadow">Pricing/Availability</Badge>
             <span>➜</span>
@@ -258,6 +282,9 @@ export default function PricingAvailabilityClient() {
               />
               <div className="mt-3 text-xs text-slate-500 text-center">
                 If the embedded form doesn’t load, <a className="text-teal-700 underline" href={iframeSrc} target="_blank" rel="noopener noreferrer">open it in a new tab</a>.
+              </div>
+              <div className="mt-2 text-[11px] text-slate-500 text-center">
+                By continuing, you agree to our <Link href="/terms" className="text-teal-700 underline">Terms of Service</Link>.
               </div>
             </div>
           </div>

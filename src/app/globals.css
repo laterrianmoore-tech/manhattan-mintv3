@@ -120,3 +120,20 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Reviews marquee animation */
+@keyframes mm-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.mm-marquee {
+  overflow: hidden;
+  position: relative;
+}
+
+.mm-marquee__track {
+  display: flex;
+  width: max-content;
+  animation: mm-marquee 40s linear infinite;
+}
