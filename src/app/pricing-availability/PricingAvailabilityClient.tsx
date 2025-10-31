@@ -238,31 +238,27 @@ export default function PricingAvailabilityClient() {
         {/* LEFT */}
         <Card className="rounded-2xl p-6 border-teal-200 shadow-sm">
           <h1 className="text-2xl font-semibold mb-1">Complete your booking</h1>
-          <p className="text-slate-600">We're checking cleaner availability and location for your requested time. Provide a few more details and we'll confirm availability.</p>
+          <p className="text-slate-600">We're checking cleaner availability and location for your requested time. Review your details and complete payment below.</p>
 
-          {/* Frequency */}
+          {/* Launch27 embedded booking form (primary) */}
           <div className="mt-6">
-            <div className="text-sm font-medium mb-2">
-              How often? <span className="text-slate-500 font-normal">(Recurring discounts apply from the second cleaning onward.)</span>
-            </div>
-            <div className="grid sm:grid-cols-4 gap-2">
-              {([
-                {k:"weekly", label:"Weekly", save:"save 30%"},
-                {k:"biweekly", label:"Bi-weekly", save:"save 25%"},
-                {k:"monthly", label:"Monthly", save:"save 15%"},
-                {k:"once", label:"Once", save:""},
-              ] as {k:Freq; label:string; save:string}[]).map(opt=>(
-                <button
-                  key={opt.k}
-                  onClick={()=>setFreq(opt.k)}
-                  className={`rounded-2xl border px-4 py-3 text-left transition ${
-                    freq===opt.k ? "border-teal-600 bg-teal-50 shadow-inner" : "hover:bg-slate-50"
-                  }`}
-                >
-                  <div className="font-medium">{opt.label}</div>
-                  {opt.save && <div className="text-xs text-teal-700">{opt.save}</div>}
-                </button>
-              ))}
+            {embedStatus === "loading" && (
+              <div className="p-6 text-center text-slate-600">Loading booking form…</div>
+            )}
+            {embedStatus === "error" && (
+              <div className="p-6 text-center text-red-700">Couldn't load the booking form. Please refresh or use the link below.</div>
+            )}
+            <div className={embedStatus === "loaded" ? "" : "hidden"}>
+              <iframe
+                id="booking-widget-iframe"
+                src={iframeSrc}
+                style={{ border: 'none', width: '100%', minHeight: '2739px', overflow: 'hidden' }}
+                scrolling="no"
+                title="Manhattan Mint Booking Form"
+              />
+              <div className="mt-3 text-xs text-slate-500 text-center">
+                If the embedded form doesn’t load, <a className="text-teal-700 underline" href={iframeSrc} target="_blank" rel="noopener noreferrer">open it in a new tab</a>.
+              </div>
             </div>
           </div>
 
@@ -310,86 +306,15 @@ export default function PricingAvailabilityClient() {
             </div>
           </div>
 
-          {/* Entry method */}
-          <div className="mt-6">
-            <div className="text-sm font-medium mb-2">How will we get in?</div>
-            <select
-              className="rounded-md border px-3 py-2"
-              value={contact.entry}
-              onChange={(e)=>setContact(c=>({...c, entry:e.target.value}))}
-            >
-              <option value="home">I’ll be at home</option>
-              <option value="doorman">The key is with the doorman</option>
-              <option value="other">Other</option>
-            </select>
-            {contact.entry === "other" && (
-              <Textarea
-                className="mt-2"
-                placeholder="Access instructions (lockbox code, super, neighbor, etc.)"
-                value={contact.entryNotes}
-                onChange={(e)=>setContact(c=>({...c, entryNotes:e.target.value}))}
-              />
-            )}
-          </div>
+          {/* Entry method removed — handled by embedded form */}
 
-          {/* Add-ons */}
-          {initial.style === "hourly" ? (
-            <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
-              Extras are only available on flat-rate bookings. Switch to <span className="font-semibold">Flat Rate</span> on the previous step to add them.
-            </div>
-          ) : (
-            <div className="mt-6">
-              <div className="text-sm font-medium mb-2">Extras</div>
-              <div className="grid sm:grid-cols-3 gap-3">
-                {ADDONS.map(({key,label,Icon})=>(
-                  <button
-                    key={key}
-                    onClick={()=>toggleAddon(key)}
-                    className={`rounded-2xl border px-3 py-4 text-center transition ${
-                      addons[key] ? "border-teal-600 bg-teal-50 shadow-inner" : "hover:bg-slate-50"
-                    }`}
-                  >
-                    <div className="mx-auto mb-2 h-12 w-12 rounded-full bg-teal-50 grid place-items-center">
-                      <Icon className="h-5 w-5 text-teal-700" />
-                    </div>
-                    <div className="font-medium text-sm">{label}</div>
-                  </button>
-                ))}
-              </div>
-              <p className="text-xs text-slate-500 mt-2">Prices reflected in your estimate on the right.</p>
-            </div>
-          )}
+          {/* Extras removed — handled by embedded form */}
 
-          {/* Special requests */}
-          <div className="mt-6">
-            <div className="text-sm font-medium mb-2">Special requests</div>
-            <Textarea placeholder="Anything we should know? Pets, access, sensitive surfaces, etc." />
-          </div>
+          {/* Special requests removed — handled by embedded form */}
 
-          {/* Embedded payment via Launch27 */}
-          <div className="mt-8">
-            <div className="text-sm font-medium mb-2">Secure payment</div>
-            <Card className="rounded-2xl p-0 border-teal-200 overflow-hidden">
-              {embedStatus === "loading" && (
-                <div className="p-6 text-center text-slate-600">Loading payment form…</div>
-              )}
-              {embedStatus === "error" && (
-                <div className="p-6 text-center text-red-700">Couldn't load the payment form. Please refresh or use the link below.</div>
-              )}
-              <iframe
-                id="booking-widget-iframe"
-                src={iframeSrc}
-                style={{ border: 'none', width: '100%', minHeight: '2739px', overflow: 'hidden' }}
-                scrolling="no"
-                title="Manhattan Mint Booking Form"
-              />
-            </Card>
-            <div className="mt-3 text-xs text-slate-500 text-center">
-              If the embedded form doesn’t load, <a className="text-teal-700 underline" href={iframeSrc} target="_blank" rel="noopener noreferrer">open it in a new tab</a>.
-            </div>
-          </div>
+          {/* Payment section moved above as the main embedded form */}
 
-          {/* Removed Complete Booking button since payment occurs in the embedded form */}
+          {/* Removed Complete Booking button — payment occurs in the embedded form */}
           <div className="mt-6 hidden">
             <Button
               className={`rounded-2xl ${!payment.agree ? 'bg-slate-300 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800'}`}
