@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -56,6 +56,7 @@ const NYC_TAX_RATE = 0.08875;
 export default function PricingAvailabilityClient() {
   const router = useRouter();
   const params = useSearchParams();
+  const [embedStatus, setEmbedStatus] = useState<"loading"|"loaded"|"error">("loading");
 
   // Helper function to convert 24h to 12h format
   const formatTime = (time: string) => {
@@ -182,6 +183,38 @@ export default function PricingAvailabilityClient() {
     { q: "Are you bonded and insured?", a: "Yes—fully bonded and insured. COIs tailored to your building are available upon request." },
     { q: "Do you clean inside appliances or windows?", a: "Yes—add these as extras on flat-rate bookings. Hourly bookings do not include extras." },
   ];
+
+  // Launch27 embed loader
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://manhattanmintnyc.launch27.com/jsbundle';
+    script.onload = () => setEmbedStatus("loaded");
+    script.onerror = () => setEmbedStatus("error");
+    document.body.appendChild(script);
+    return () => { script.remove(); };
+  }, []);
+
+  // Build Launch27 iframe URL with best-effort prefill
+  const iframeSrc = useMemo(() => {
+    const base = 'https://manhattanmintnyc.launch27.com/?w_cleaning';
+    const qs = new URLSearchParams();
+    if (contact.email) qs.set('email', contact.email);
+    if (contact.phone) qs.set('phone', contact.phone);
+    if (contact.first) qs.set('first_name', contact.first);
+    if (contact.last) qs.set('last_name', contact.last);
+    if (contact.address) qs.set('address', contact.address);
+    if (contact.city) qs.set('city', contact.city);
+    if (contact.state) qs.set('state', contact.state);
+    if (contact.zip) qs.set('zip', contact.zip);
+    if (initial.date) qs.set('date', initial.date);
+    if (initial.start) qs.set('time', initial.start);
+    const serviceName = initial.style === "hourly"
+      ? `Hourly Cleaning (${initial.hours}hr, ${initial.cleaners} cleaner${initial.cleaners!==1?"s":""})`
+      : `${initial.cleaningType} (${initial.beds}BR, ${initial.baths}BA)`;
+    qs.set('service', serviceName);
+    const q = qs.toString();
+    return q ? `${base}&${q}` : base;
+  }, [contact, initial.date, initial.start, initial.end, initial.style, initial.hours, initial.cleaners, initial.cleaningType, initial.beds, initial.baths]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-teal-50 via-white to-slate-50">
@@ -333,69 +366,31 @@ export default function PricingAvailabilityClient() {
             <Textarea placeholder="Anything we should know? Pets, access, sensitive surfaces, etc." />
           </div>
 
-          {/* Secure payment */}
+          {/* Embedded payment via Launch27 */}
           <div className="mt-8">
-          <div className="text-sm font-medium mb-2">Secure payment</div>
-            <Card className="rounded-2xl p-4 border-teal-200">
-              <div className="grid md:grid-cols-2 gap-3">
-                <div>
-                  <Input
-                    placeholder="Name on card *"
-                    value={payment.nameOnCard}
-                    onChange={(e)=>setPayment(p=>({...p, nameOnCard: e.target.value}))}
-                    className={paymentErrors.nameOnCard ? "border-red-200": ""}
-                    required
-                  />
-                  {paymentErrors.nameOnCard && <div className="text-xs text-red-500">{paymentErrors.nameOnCard}</div>}
-                </div>
-                <div>
-                  <Input
-                    placeholder="Card number *"
-                    value={payment.cardNumber}
-                    onChange={(e)=>setPayment(p=>({...p, cardNumber: e.target.value.replace(/\s+/g,'')}))}
-                    className={paymentErrors.cardNumber ? "border-red-200" : ""}
-                    required
-                  />
-                  {paymentErrors.cardNumber && <div className="text-xs text-red-500">{paymentErrors.cardNumber}</div>}
-                </div>
-                <div>
-                  <Input
-                    placeholder="MM/YY *"
-                    value={payment.expiry}
-                    onChange={(e)=>{
-                      // Auto-format MM/YY: keep digits only, insert slash after 2 digits, max length 5
-                      let v = e.target.value.replace(/\D/g, "");
-                      if (v.length > 4) v = v.slice(0,4);
-                      if (v.length >= 3) v = v.slice(0,2) + "/" + v.slice(2);
-                      // Optional: if first digit > 1, prefix 0 (e.g., 9 -> 09)
-                      // Keep it simple for now; validation will catch invalid months.
-                      setPayment(p=>({...p, expiry: v}));
-                    }}
-                    className={paymentErrors.expiry ? "border-red-200" : ""}
-                    required
-                  />
-                  {paymentErrors.expiry && <div className="text-xs text-red-500">{paymentErrors.expiry}</div>}
-                </div>
-                <div>
-                  <Input
-                    placeholder="CVC *"
-                    value={payment.cvc}
-                    onChange={(e)=>setPayment(p=>({...p, cvc: e.target.value.replace(/\D/g,'')}))}
-                    className={paymentErrors.cvc ? "border-red-200" : ""}
-                    required
-                  />
-                  {paymentErrors.cvc && <div className="text-xs text-red-500">{paymentErrors.cvc}</div>}
-                </div>
-              </div>
-              <label className="mt-3 inline-flex items-center gap-2 text-sm text-slate-600">
-                <input type="checkbox" checked={payment.agree} onChange={(e)=>setPayment(p=>({...p, agree: e.target.checked}))} />
-                <span>I agree to the <Link href="/terms" className="text-teal-700 underline">Terms of Service</Link>.</span>
-              </label>
-              {paymentErrors.agree && <div className="text-xs text-red-500 mt-1">{paymentErrors.agree}</div>}
+            <div className="text-sm font-medium mb-2">Secure payment</div>
+            <Card className="rounded-2xl p-0 border-teal-200 overflow-hidden">
+              {embedStatus === "loading" && (
+                <div className="p-6 text-center text-slate-600">Loading payment form…</div>
+              )}
+              {embedStatus === "error" && (
+                <div className="p-6 text-center text-red-700">Couldn't load the payment form. Please refresh or use the link below.</div>
+              )}
+              <iframe
+                id="booking-widget-iframe"
+                src={iframeSrc}
+                style={{ border: 'none', width: '100%', minHeight: '2739px', overflow: 'hidden' }}
+                scrolling="no"
+                title="Manhattan Mint Booking Form"
+              />
             </Card>
+            <div className="mt-3 text-xs text-slate-500 text-center">
+              If the embedded form doesn’t load, <a className="text-teal-700 underline" href={iframeSrc} target="_blank" rel="noopener noreferrer">open it in a new tab</a>.
+            </div>
           </div>
 
-          <div className="mt-6">
+          {/* Removed Complete Booking button since payment occurs in the embedded form */}
+          <div className="mt-6 hidden">
             <Button
               className={`rounded-2xl ${!payment.agree ? 'bg-slate-300 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800'}`}
               onClick={async ()=>{
@@ -426,12 +421,7 @@ export default function PricingAvailabilityClient() {
                   return;
                 }
 
-                // Hybrid flow: payment will be handled by Launch27 embed on the next page.
-                // Keep terms checkbox, but skip card field validation here.
-                if (!payment.agree) {
-                  alert("Please agree to the Terms of Service to continue");
-                  return;
-                }
+                // (Hidden)
 
                 // Prepare booking data for Launch27 API
                 const bookingData = {
@@ -470,9 +460,7 @@ export default function PricingAvailabilityClient() {
                   }
                 };
 
-                // Save for /booking prefill and redirect to embedded Launch27 form
-                sessionStorage.setItem('bookingData', JSON.stringify(bookingData));
-                navigateTo('/booking');
+                // (Hidden)
               }}
             >
               Complete Booking
