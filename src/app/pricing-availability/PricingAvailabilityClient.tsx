@@ -237,8 +237,8 @@ export default function PricingAvailabilityClient() {
       <main className="max-w-7xl mx-auto px-4 py-8 grid lg:grid-cols-[1.2fr,0.8fr] gap-8">
         {/* LEFT */}
         <Card className="rounded-2xl p-6 border-teal-200 shadow-sm">
-          <h1 className="text-2xl font-semibold mb-1">Complete your booking</h1>
-          <p className="text-slate-600">We're checking cleaner availability and location for your requested time. Review your details and complete payment below.</p>
+          <h1 className="text-2xl font-semibold mb-1">Almost Done!</h1>
+          <p className="text-slate-600">Just add a few final details to secure your spot.</p>
 
           {/* Launch27 embedded booking form (primary) */}
           <div className="mt-6">
@@ -262,49 +262,7 @@ export default function PricingAvailabilityClient() {
             </div>
           </div>
 
-          {/* Address / contact */}
-          <div className="mt-6 grid md:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Input 
-                placeholder="Email *" 
-                value={contact.email} 
-                onChange={(e)=>setContact(c=>({...c, email:e.target.value}))}
-                className={!contact.email ? "border-red-200" : ""}
-                required
-              />
-              {!contact.email && <div className="text-xs text-red-500">Email is required</div>}
-            </div>
-            <div className="space-y-1">
-              <Input 
-                placeholder="Phone *" 
-                value={contact.phone} 
-                onChange={(e)=>{
-                  // strip letters; allow digits, +, (), -, spaces, dots
-                  const sanitized = e.target.value.replace(/[^0-9()+\-\.\s]/g, '');
-                  setContact(c=>({...c, phone: sanitized}));
-                }}
-                className={!contact.phone ? "border-red-200" : ""}
-                required
-              />
-              {!contact.phone && <div className="text-xs text-red-500">Phone number is required</div>}
-            </div>
-            <Input placeholder="First name" value={contact.first} onChange={(e)=>setContact(c=>({...c, first:e.target.value}))}/>
-            <Input placeholder="Last name" value={contact.last} onChange={(e)=>setContact(c=>({...c, last:e.target.value}))}/>
-            <Input placeholder="Street address" value={contact.address} onChange={(e)=>setContact(c=>({...c, address:e.target.value}))}/>
-            <Input placeholder="Apt #" value={contact.apt} onChange={(e)=>setContact(c=>({...c, apt:e.target.value}))}/>
-            <Input placeholder="City" value={contact.city} onChange={(e)=>setContact(c=>({...c, city:e.target.value}))}/>
-            <Input placeholder="State" value={contact.state} onChange={(e)=>setContact(c=>({...c, state:e.target.value}))}/>
-            <div className="space-y-1">
-              <Input 
-                placeholder="ZIP *" 
-                value={contact.zip} 
-                onChange={(e)=>setContact(c=>({...c, zip:e.target.value}))}
-                className={!contact.zip ? "border-red-200" : ""}
-                required
-              />
-              {!contact.zip && <div className="text-xs text-red-500">ZIP code is required</div>}
-            </div>
-          </div>
+          {/* Contact fields removed — Launch27 embedded form handles email, phone, name, address, etc. */}
 
           {/* Entry method removed — handled by embedded form */}
 
