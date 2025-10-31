@@ -398,7 +398,7 @@ export default function PricingAvailabilityClient() {
           <div className="mt-6">
             <Button
               className={`rounded-2xl ${!payment.agree ? 'bg-slate-300 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800'}`}
-              onClick={()=>{
+              onClick={async ()=>{
                 // Contact Information Validation
                 const contactErrors: string[] = [];
                 if (!contact.email) contactErrors.push("Email address");
@@ -471,14 +471,71 @@ export default function PricingAvailabilityClient() {
                   return;
                 }
 
-                // Store completion data in sessionStorage
-                sessionStorage.setItem('thankYouData', JSON.stringify({
-                  total, freq,
-                  date: initial.date, start: initial.start, end: initial.end,
-                  name: `${contact.first} ${contact.last}`.trim(),
-                  email: contact.email, phone: contact.phone,
-                }));
-                navigateTo('/thank-you');
+                // Prepare booking data for Launch27 API
+                const bookingData = {
+                  contact: {
+                    first: contact.first,
+                    last: contact.last,
+                    email: contact.email,
+                    phone: contact.phone,
+                    address: contact.address,
+                    apt: contact.apt,
+                    city: contact.city,
+                    state: contact.state,
+                    zip: contact.zip,
+                    entry: contact.entry,
+                    entryNotes: contact.entryNotes,
+                  },
+                  date: initial.date,
+                  start: initial.start,
+                  end: initial.end,
+                  frequency: freq,
+                  serviceName: initial.style === "hourly" 
+                    ? `Hourly Cleaning (${initial.hours}hr, ${initial.cleaners} cleaner${initial.cleaners!==1?"s":""})`
+                    : `${initial.cleaningType} (${initial.beds}BR, ${initial.baths}BA)`,
+                  hours: initial.style === "hourly" ? initial.hours : undefined,
+                  cleaners: initial.style === "hourly" ? initial.cleaners : undefined,
+                  addons: initial.style === "flat" 
+                    ? ADDONS.filter(a => addons[a.key]).map(a => ({ label: a.label, price: a.price }))
+                    : [],
+                  notes: initial.neighborhood || "",
+                  total,
+                  // For demo/testing: we're NOT sending actual card details to our API
+                  // In production, you'd tokenize with Stripe/Launch27's payment gateway first
+                  payment: {
+                    nameOnCard: payment.nameOnCard,
+                    // DO NOT send raw card data in production
+                  }
+                };
+
+                try {
+                  // Show loading state (you could add a loading spinner here)
+                  const response = await fetch('/api/launch27/create-booking', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bookingData),
+                  });
+
+                  const result = await response.json();
+
+                  if (response.ok && result.success) {
+                    // Store confirmation data for thank-you page
+                    sessionStorage.setItem('thankYouData', JSON.stringify({
+                      total, freq,
+                      date: initial.date, start: initial.start, end: initial.end,
+                      name: `${contact.first} ${contact.last}`.trim(),
+                      email: contact.email, phone: contact.phone,
+                      bookingId: result.bookingId,
+                      confirmationNumber: result.confirmationNumber,
+                    }));
+                    navigateTo('/thank-you');
+                  } else {
+                    alert(`Booking failed: ${result.error || 'Unknown error'}. Please try again or contact support.`);
+                  }
+                } catch (error) {
+                  console.error('Booking error:', error);
+                  alert('Network error. Please check your connection and try again.');
+                }
               }}
             >
               Complete Booking
