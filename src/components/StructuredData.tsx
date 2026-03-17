@@ -7,7 +7,7 @@ export function LocalBusinessSchema() {
           "@context": "https://schema.org",
           "@type": "LocalBusiness",
           "name": "Manhattan Mint",
-          "image": "https://www.manhattanmintnyc.com/og-image.jpg",
+          "image": "https://www.manhattanmintnyc.com/opengraph-image.png",
           "url": "https://www.manhattanmintnyc.com/",
           "telephone": "+1-914-873-4430",
           "priceRange": "$$",

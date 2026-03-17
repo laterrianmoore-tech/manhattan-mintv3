@@ -1,10 +1,5 @@
-import { Suspense } from "react";
-import PricingAvailabilityClient from "./PricingAvailabilityClient";
+import { permanentRedirect } from "next/navigation";
 
-export default async function PricingAvailabilityPage() {
-  return (
-    <Suspense fallback={<div />}>
-      <PricingAvailabilityClient />
-    </Suspense>
-  );
+export default function PricingAvailabilityPage() {
+  permanentRedirect("/quote");
 }

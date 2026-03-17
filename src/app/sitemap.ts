@@ -15,12 +15,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
-      url: 'https://www.manhattanmintnyc.com/pricing-availability',
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
       url: 'https://www.manhattanmintnyc.com/terms',
       lastModified: new Date(),
       changeFrequency: 'monthly',
