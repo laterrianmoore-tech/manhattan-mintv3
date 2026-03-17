@@ -40,9 +40,9 @@ export default function TermsPage() {
 
       h1 {
         margin: 1.5rem 0 2rem;
-        font-family: 'DM Serif Display', serif;
-        font-style: italic;
-        font-weight: 400;
+        font-family: 'DM Sans', sans-serif;
+        font-style: normal;
+        font-weight: 500;
         font-size: clamp(2.2rem, 4.8vw, 3.1rem);
         line-height: 1.05;
         letter-spacing: -0.01em;

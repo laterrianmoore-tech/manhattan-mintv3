@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -239,19 +238,18 @@ export default function PricingAvailabilityClient() {
   }, [contact, initial.date, initial.start, initial.end, initial.style, initial.hours, initial.cleaners, initial.cleaningType, initial.beds, initial.baths]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-teal-50 via-white to-slate-50">
-      <header className="bg-white/90 backdrop-blur border-b">
+    <div className="min-h-screen bg-[#F8F8F6]" style={{ fontFamily: "DM Sans, sans-serif" }}>
+      <header className="bg-white/90 backdrop-blur border-b border-black/10">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/manhattan-mint-logo.png" alt="Manhattan Mint" width={28} height={28} className="rounded"/>
-            <div className="font-semibold">Manhattan <span className="text-teal-700">Mint</span></div>
+          <Link href="/" className="text-[0.95rem] font-medium tracking-[0.06em] text-[#0F0F0F]">
+            manhattan<span className="text-[#1D9E75]">mint</span>
           </Link>
           <div className="flex items-center gap-2 text-sm">
             <Link href="/quote" className="inline-block">
-              <Badge className="bg-teal-100 text-teal-800 rounded-full hover:bg-teal-200 cursor-pointer" role="link" aria-label="Back to Cleaning step">Cleaning</Badge>
+              <Badge className="rounded-full bg-[#E1F5EE] text-[#085041] border border-[#1D9E75]/20 hover:bg-[#d3eee4] cursor-pointer" role="link" aria-label="Back to Cleaning step">Cleaning</Badge>
             </Link>
             <span>➜</span>
-            <Badge className="bg-teal-700 text-white rounded-full shadow">Pricing/Availability</Badge>
+            <Badge className="bg-[#1D9E75] text-white rounded-full shadow">Pricing/Availability</Badge>
             <span>➜</span>
             <Badge className="bg-slate-100 text-slate-700 rounded-full">Done</Badge>
           </div>
@@ -260,7 +258,7 @@ export default function PricingAvailabilityClient() {
 
       <main className="max-w-7xl mx-auto px-4 py-8 grid lg:grid-cols-[1.2fr,0.8fr] gap-8">
         {/* LEFT */}
-        <Card className="rounded-2xl p-6 border-teal-200 shadow-sm">
+        <Card className="rounded-2xl p-6 border-[#1D9E75]/25 shadow-sm">
           <h1 className="text-2xl font-semibold mb-1">Almost Done!</h1>
           <p className="text-slate-600">Just add a few final details to secure your spot.</p>
 
@@ -281,10 +279,10 @@ export default function PricingAvailabilityClient() {
                 title="Manhattan Mint Booking Form"
               />
               <div className="mt-3 text-xs text-slate-500 text-center">
-                If the embedded form doesn’t load, <a className="text-teal-700 underline" href={iframeSrc} target="_blank" rel="noopener noreferrer">open it in a new tab</a>.
+                If the embedded form doesn’t load, <a className="text-[#1D9E75] underline" href={iframeSrc} target="_blank" rel="noopener noreferrer">open it in a new tab</a>.
               </div>
               <div className="mt-2 text-[11px] text-slate-500 text-center">
-                By continuing, you agree to our <Link href="/terms" className="text-teal-700 underline">Terms of Service</Link>.
+                By continuing, you agree to our <Link href="/terms" className="text-[#1D9E75] underline">Terms of Service</Link>.
               </div>
             </div>
           </div>
@@ -302,7 +300,7 @@ export default function PricingAvailabilityClient() {
           {/* Removed Complete Booking button — payment occurs in the embedded form */}
           <div className="mt-6 hidden">
             <Button
-              className={`rounded-2xl ${!payment.agree ? 'bg-slate-300 cursor-not-allowed' : 'bg-teal-700 hover:bg-teal-800'}`}
+              className={`rounded-md ${!payment.agree ? 'bg-slate-300 cursor-not-allowed' : 'bg-[#1D9E75] hover:bg-[#085041]'} text-white`}
               onClick={async ()=>{
                 // Contact Information Validation
                 const contactErrors: string[] = [];

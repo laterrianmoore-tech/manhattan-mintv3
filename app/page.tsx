@@ -1,11 +1,102 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
 export default function Page() {
+	const router = useRouter();
+	const tiers = [
+		{ name: "Studio / 1BR", price: "$175", amount: 175 },
+		{ name: "2 Bedroom", price: "$225", amount: 225 },
+		{ name: "3 Bedroom", price: "$275", amount: 275 },
+		{ name: "4+ Bedroom", price: "Custom", amount: null as number | null },
+	];
+	const hourlyRates = {
+		ratePerCleaner: 65,
+	};
+	const serviceAdjustments: Record<string, number> = {
+		"Standard clean": 0,
+		"Deep clean (+$75)": 75,
+		"Move-in / Move-out (+$100)": 100,
+		"Recurring - save 15%": -0.15,
+	};
+	const [selectedTier, setSelectedTier] = useState(tiers[0]);
+	const [pricingMode, setPricingMode] = useState<"flat" | "hourly">("flat");
+	const [pricingServiceType, setPricingServiceType] = useState("Standard clean");
+	const [hourlyHours, setHourlyHours] = useState(3);
+	const [hourlyCleaners, setHourlyCleaners] = useState(2);
+	const [weeklyBookings, setWeeklyBookings] = useState(27);
+	const [form, setForm] = useState({
+		fullName: "",
+		phone: "",
+		email: "",
+		address: "",
+		apartmentSize: "Studio / 1BR — $175",
+		serviceType: "Standard clean",
+		notes: "",
+	});
+
+	const effectiveFlatPrice = (() => {
+		if (selectedTier.amount === null) return "Custom";
+		if (pricingServiceType === "Recurring - save 15%") {
+			return `$${Math.round(selectedTier.amount * 0.85)}`;
+		}
+		const adjustment = serviceAdjustments[pricingServiceType];
+		const total = selectedTier.amount + (typeof adjustment === "number" ? adjustment : 0);
+		return `$${total}`;
+	})();
+
+	const effectiveHourlyPrice = `$${hourlyHours * hourlyCleaners * hourlyRates.ratePerCleaner}`;
+
+	useEffect(() => {
+		const intervalId = window.setInterval(() => {
+			setWeeklyBookings((prev) => {
+				const delta = Math.random() > 0.5 ? 1 : -1;
+				const next = prev + delta;
+				if (next < 23) return 24;
+				if (next > 34) return 33;
+				return next;
+			});
+		}, 4000);
+
+		return () => window.clearInterval(intervalId);
+	}, []);
+
 	const scrollToSection = (id: string) => {
 		const element = document.getElementById(id);
 		if (element) {
 			element.scrollIntoView({ behavior: "smooth" });
 		}
+	};
+
+	const handleRequestBooking = () => {
+		const isHourlyBooking = form.serviceType.startsWith("Hourly clean");
+		localStorage.setItem("mm_name", form.fullName);
+		localStorage.setItem("mm_email", form.email);
+		localStorage.setItem("mm_phone", form.phone);
+		localStorage.setItem("mm_address", form.address);
+		localStorage.setItem("mm_size", isHourlyBooking ? "Hourly booking" : form.apartmentSize);
+		localStorage.setItem("mm_service", form.serviceType);
+		localStorage.setItem("mm_date", form.notes);
+
+		router.push("/quote");
+	};
+
+	const applyPricingSelectionToBookingForm = () => {
+		if (pricingMode === "flat") {
+			setForm((prev) => ({
+				...prev,
+				apartmentSize: `${selectedTier.name} — ${selectedTier.price}`,
+				serviceType: pricingServiceType,
+			}));
+			return;
+		}
+
+		setForm((prev) => ({
+			...prev,
+			apartmentSize: "Hourly booking",
+			serviceType: `Hourly clean (${hourlyHours}h, ${hourlyCleaners} cleaner${hourlyCleaners === 1 ? "" : "s"})`,
+		}));
 	};
 
 	return (
@@ -77,6 +168,7 @@ h1 em{font-style:italic;color:var(--mint);}
 .form-trust{display:flex;gap:1.25rem;margin-top:1rem;flex-wrap:wrap;}
 .ftrust{font-size:.67rem;color:#aaa;display:flex;align-items:center;gap:.3rem;}
 .ftrust::before{content:'✓';color:var(--mint);font-size:.65rem;}
+.booking-count{color:var(--mint);font-weight:500;display:inline-block;min-width:1.6em;}
 
 /* SECTION */
 .section{padding:7rem 4rem;}
@@ -113,12 +205,19 @@ h2 em{font-style:italic;color:var(--mint);}
 .included-aside{position:sticky;top:6rem;}
 .price-card-big{background:var(--dark);padding:3rem;border-radius:3px;}
 .pcb-eye{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mint-mid);margin-bottom:1.25rem;}
-.pcb-from{font-size:.75rem;color:rgba(255,255,255,.3);margin-bottom:.25rem;}
-.pcb-price{font-family:'DM Serif Display',serif;font-size:4rem;color:#fff;line-height:1;margin-bottom:.25rem;}
-.pcb-price sup{font-size:1.4rem;font-family:'DM Sans',sans-serif;vertical-align:top;margin-top:.6rem;display:inline-block;}
+.pcb-mode-toggle{display:flex;gap:.5rem;margin-bottom:1rem;}
+.pcb-mode-btn{flex:1;padding:.45rem .65rem;background:rgba(255,255,255,.05);color:rgba(255,255,255,.65);border:.5px solid rgba(255,255,255,.2);border-radius:2px;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.pcb-mode-btn.active{background:rgba(29,158,117,.2);border-color:rgba(29,158,117,.4);color:#fff;}
+.pcb-select-wrap{display:flex;flex-direction:column;gap:.55rem;margin-bottom:1rem;}
+.pcb-select{width:100%;padding:.6rem .7rem;background:rgba(255,255,255,.08);color:#fff;border:.5px solid rgba(255,255,255,.2);border-radius:2px;font-size:.78rem;font-family:'DM Sans',sans-serif;outline:none;}
+.pcb-select option{color:#111;background:#fff;}
+.pcb-from{font-size:.75rem;color:rgba(255,255,255,.3);margin-bottom:.05rem;position:relative;top:-.22rem;}
+.pcb-price{font-family:'DM Serif Display',serif;font-size:4rem;color:#fff;line-height:1;margin-bottom:.25rem;margin-top:-.1rem;}
+.pcb-price sup{font-size:.92rem;font-family:'DM Sans',sans-serif;vertical-align:top;margin-top:.28rem;display:inline-block;margin-right:-.3rem;}
 .pcb-note{font-size:.72rem;color:rgba(255,255,255,.3);margin-bottom:2rem;}
 .pcb-tiers{display:flex;flex-direction:column;gap:.5rem;margin-bottom:2rem;}
 .pcb-tier{display:flex;justify-content:space-between;align-items:center;padding:.65rem .85rem;background:rgba(255,255,255,.04);border-radius:2px;}
+.pcb-tier{cursor:pointer;transition:all .2s;}
 .pcb-tier-name{font-size:.78rem;color:rgba(255,255,255,.5);font-weight:300;}
 .pcb-tier-price{font-size:.88rem;color:#fff;font-weight:500;}
 .pcb-tier.active{background:rgba(29,158,117,.15);border:.5px solid rgba(29,158,117,.25);}
@@ -268,7 +367,7 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 						<button className="btn-primary" onClick={() => scrollToSection("booking")}>Book your first clean</button>
 						<button className="btn-secondary" onClick={() => scrollToSection("pricing")}>View pricing</button>
 					</div>
-					<div className="hero-micro">All sizes from <span>$175</span> &nbsp;·&nbsp; Easy online booking &nbsp;·&nbsp; No contracts, ever</div>
+					<div className="hero-micro">Studio and 1-bedroom homes from <span>$175</span> &nbsp;·&nbsp; Flat-rate pricing &nbsp;·&nbsp; Same-week availability</div>
 				</div>
 				<div className="hero-r" id="booking">
 					<div className="form-head">Get a fast quote</div>
@@ -277,27 +376,55 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 						<div className="form-row">
 							<div className="form-field">
 								<label className="form-label">Full name</label>
-								<input className="form-input" type="text" placeholder="Jane Smith" />
+								<input
+									className="form-input"
+									type="text"
+									placeholder="Jane Smith"
+									value={form.fullName}
+									onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
+								/>
 							</div>
 							<div className="form-field">
 								<label className="form-label">Phone</label>
-								<input className="form-input" type="tel" placeholder="(212) 555-0100" />
+								<input
+									className="form-input"
+									type="tel"
+									placeholder="(212) 555-0100"
+									value={form.phone}
+									onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
+								/>
 							</div>
 						</div>
 						<div className="form-field">
 							<label className="form-label">Email</label>
-							<input className="form-input" type="email" placeholder="jane@email.com" />
+							<input
+								className="form-input"
+								type="email"
+								placeholder="jane@email.com"
+								value={form.email}
+								onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+							/>
 						</div>
 						<div className="form-field">
 							<label className="form-label">Address (building + unit)</label>
-							<input className="form-input" type="text" placeholder="123 W 57th St, Apt 4B" />
+							<input
+								className="form-input"
+								type="text"
+								placeholder="123 W 57th St, Apt 4B"
+								value={form.address}
+								onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
+							/>
 						</div>
 						<div className="form-row">
 							<div className="form-field">
 								<label className="form-label">Apartment size</label>
-								<select className="form-select">
-									<option>Studio / Jr. 1BR — $175</option>
-									<option>1 Bedroom — $175</option>
+								<select
+									className="form-select"
+									value={form.apartmentSize}
+									onChange={(e) => setForm((prev) => ({ ...prev, apartmentSize: e.target.value }))}
+								>
+									<option>Hourly booking</option>
+									<option>Studio / 1BR — $175</option>
 									<option>2 Bedroom — $225</option>
 									<option>3 Bedroom — $275</option>
 									<option>4+ Bedroom — Custom</option>
@@ -305,7 +432,11 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 							</div>
 							<div className="form-field">
 								<label className="form-label">Service type</label>
-								<select className="form-select">
+								<select
+									className="form-select"
+									value={form.serviceType}
+									onChange={(e) => setForm((prev) => ({ ...prev, serviceType: e.target.value }))}
+								>
 									<option>Standard clean</option>
 									<option>Deep clean (+$75)</option>
 									<option>Move-in / Move-out (+$100)</option>
@@ -315,14 +446,19 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 						</div>
 						<div className="form-field">
 							<label className="form-label">Preferred date &amp; notes</label>
-							<input className="form-input" type="text" placeholder="ASAP / weekdays preferred / dog at home…" />
+							<input
+								className="form-input"
+								type="text"
+								placeholder="ASAP / weekdays preferred / dog at home…"
+								value={form.notes}
+								onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
+							/>
 						</div>
-						<button className="btn-form">Request booking confirmation →</button>
+						<button className="btn-form" onClick={handleRequestBooking}>Request booking confirmation →</button>
 						<div className="form-trust">
-							<span className="ftrust">No credit card upfront</span>
 							<span className="ftrust">Same-day response</span>
 							<span className="ftrust">COI available</span>
-							<span className="ftrust">27 bookings this week</span>
+							<span className="ftrust"><span className="booking-count">{weeklyBookings}</span> bookings this week</span>
 						</div>
 					</div>
 				</div>
@@ -389,18 +525,82 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 					</div>
 					<div className="included-aside">
 						<div className="price-card-big">
-							<div className="pcb-eye">Flat-rate pricing</div>
-							<div className="pcb-from">Starting from</div>
-							<div className="pcb-price"><sup>$</sup>175</div>
-							<div className="pcb-note">All supplies included · No hidden fees</div>
-							<div className="pcb-tiers">
-								<div className="pcb-tier active"><span className="pcb-tier-name">Studio / 1BR</span><span className="pcb-tier-price">$175</span></div>
-								<div className="pcb-tier"><span className="pcb-tier-name">2 Bedroom</span><span className="pcb-tier-price">$225</span></div>
-								<div className="pcb-tier"><span className="pcb-tier-name">3 Bedroom</span><span className="pcb-tier-price">$275</span></div>
-								<div className="pcb-tier"><span className="pcb-tier-name">4+ Bedroom</span><span className="pcb-tier-price">Custom</span></div>
+							<div className="pcb-eye">Pricing</div>
+							<div className="pcb-mode-toggle">
+								<button
+									type="button"
+									className={`pcb-mode-btn${pricingMode === "flat" ? " active" : ""}`}
+									onClick={() => setPricingMode("flat")}
+								>
+									Flat rate
+								</button>
+								<button
+									type="button"
+									className={`pcb-mode-btn${pricingMode === "hourly" ? " active" : ""}`}
+									onClick={() => setPricingMode("hourly")}
+								>
+									Hourly
+								</button>
 							</div>
-							<div style={{ fontSize: ".7rem", color: "rgba(255,255,255,.25)", marginBottom: "1.5rem" }}>Deep clean +$75 · Move-in/out +$100 · Recurring saves 15%</div>
-							<button className="btn-pcb" onClick={() => scrollToSection("booking")}>Book at this rate →</button>
+							{pricingMode === "flat" ? (
+								<div className="pcb-select-wrap">
+									<select
+										className="pcb-select"
+										value={selectedTier.name}
+										onChange={(e) => {
+											const tier = tiers.find((t) => t.name === e.target.value);
+											if (tier) setSelectedTier(tier);
+										}}
+									>
+										{tiers.map((tier) => (
+											<option key={tier.name} value={tier.name}>{tier.name} — {tier.price}</option>
+										))}
+									</select>
+									<select
+										className="pcb-select"
+										value={pricingServiceType}
+										onChange={(e) => setPricingServiceType(e.target.value)}
+									>
+										<option>Standard clean</option>
+										<option>Deep clean (+$75)</option>
+										<option>Move-in / Move-out (+$100)</option>
+										<option>Recurring - save 15%</option>
+									</select>
+								</div>
+							) : (
+								<div className="pcb-select-wrap">
+									<select className="pcb-select" value={hourlyHours} onChange={(e) => setHourlyHours(Number(e.target.value))}>
+										<option value={2}>2 hours</option>
+										<option value={3}>3 hours</option>
+										<option value={4}>4 hours</option>
+										<option value={5}>5 hours</option>
+										<option value={6}>6 hours</option>
+									</select>
+									<select className="pcb-select" value={hourlyCleaners} onChange={(e) => setHourlyCleaners(Number(e.target.value))}>
+										<option value={1}>1 cleaner</option>
+										<option value={2}>2 cleaners</option>
+									</select>
+								</div>
+							)}
+							<div className="pcb-from">Starting from</div>
+							<div className="pcb-price">
+								{(pricingMode === "flat" ? effectiveFlatPrice : effectiveHourlyPrice).replace("$", "")}
+							</div>
+							<div className="pcb-note">All supplies included · No hidden fees</div>
+							<div style={{ fontSize: ".7rem", color: "rgba(255,255,255,.25)", marginBottom: "1.5rem" }}>
+								{pricingMode === "flat"
+									? "Deep clean +$75 · Move-in/out +$100 · Recurring saves 15%"
+									: `$${hourlyRates.ratePerCleaner}/hr per cleaner · same supplies included`}
+							</div>
+							<button
+								className="btn-pcb"
+								onClick={() => {
+									applyPricingSelectionToBookingForm();
+									scrollToSection("booking");
+								}}
+							>
+								Book at this rate →
+							</button>
 						</div>
 					</div>
 				</div>

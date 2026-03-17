@@ -32,7 +32,12 @@ export const metadata: Metadata = {
     images: ["/twitter-image.png"],
   },
   icons: {
-    icon: [{ url: "/manhattan-mint-logo.png" }],
+    icon: [
+      { url: "/icon.png", type: "image/png" },
+      { url: "/manhattan-mint-logo.png", type: "image/png" },
+    ],
+    shortcut: [{ url: "/icon.png" }],
+    apple: [{ url: "/apple-icon.png", type: "image/png" }],
   },
 };
 
@@ -181,6 +186,8 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@1&display=swap"
           rel="stylesheet"
         />
+        <link rel="icon" type="image/png" href="/icon.png" />
+        <link rel="apple-touch-icon" href="/apple-icon.png" />
         <link rel="canonical" href="https://www.manhattanmintnyc.com/" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Manhattan Mint | Home Cleaning NYC" />
@@ -354,6 +361,7 @@ export default function RootLayout({
             font-weight: 500;
             line-height: 1.1;
             letter-spacing: -0.02em;
+            color: #fff;
           }
 
           .footer-brand span {
