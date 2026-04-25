@@ -591,7 +591,7 @@ function ManhattanMint() {
           </div>
         </div>
         <div className="border-t border-slate-800">
-          <div className="max-w-7xl mx-auto px-4 py-4 text-xs text-slate-400">© {new Date().getFullYear()} Manhattan Mint. All rights reserved.</div>
+          <div className="max-w-7xl mx-auto px-4 py-4 text-xs text-slate-400">© {new Date().getFullYear()} Manhattan Mint LLC. All rights reserved.</div>
         </div>
       </footer>
 

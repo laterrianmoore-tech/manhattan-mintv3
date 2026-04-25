@@ -352,7 +352,7 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 					<a href="#reviews">Reviews</a>
 				</div>
 				<div className="nav-r">
-					<button className="btn-tel">(914) 873-4430</button>
+					<a className="btn-tel" href="tel:9148637902">(914) 863-7902</a>
 					<button className="btn-book" onClick={() => scrollToSection("booking")}>Book a clean</button>
 				</div>
 			</nav>
@@ -678,7 +678,7 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 					<div>
 						<div className="footer-brand-name">manhattan<em>mint</em></div>
 						<div className="footer-tagline">Flawless clean. Honest service. True to New York.</div>
-						<a className="footer-phone" href="tel:9148734430">(914) 873-4430</a>
+						<a className="footer-phone" href="tel:9148637902">(914) 863-7902</a>
 					</div>
 					<div className="fcol">
 						<div className="fcol-head">Services</div>
@@ -693,13 +693,13 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 					<div className="fcol">
 						<div className="fcol-head">Contact</div>
 						<a href="mailto:hello@manhattanmintnyc.com">hello@manhattanmintnyc.com</a>
-						<a href="tel:9148734430">(914) 873-4430</a>
-						<a href="#">Instagram</a><a href="#">Google Reviews</a>
+						<a href="tel:9148637902">(914) 863-7902</a>
+						<a href="#">Google Reviews</a>
 					</div>
 				</div>
 				<div className="footer-bottom">
-					<div>&copy; 2026 Manhattan Mint NYC. All rights reserved.</div>
-					<div>Bonded · Insured · COI-ready · <a href="tel:9148734430">(914) 873-4430</a></div>
+					<div>&copy; 2026 Manhattan Mint NYC LLC. All rights reserved.</div>
+					<div>Bonded · Insured · COI-ready · <a href="tel:9148637902">(914) 863-7902</a></div>
 				</div>
 			</footer>
 		</>

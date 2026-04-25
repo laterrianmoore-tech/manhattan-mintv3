@@ -163,7 +163,7 @@ function Footer() {
       </div>
 
       <div className="footer-bottom">
-        <p>© {new Date().getFullYear()} Manhattan Mint. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} Manhattan Mint LLC. All rights reserved.</p>
         <a href="tel:+19148637902">(914) 863-7902</a>
       </div>
     </footer>
