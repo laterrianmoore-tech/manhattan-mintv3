@@ -90,8 +90,8 @@ function Nav() {
           </ul>
 
           <div className="nav-cta">
-            <a className="phone-btn" href="tel:+19148734430">
-              (914) 873-4430
+            <a className="phone-btn" href="tel:+19148637902">
+              (914) 863-7902
             </a>
             <Link className="book-btn" href="/#booking">
               Book a clean
@@ -149,7 +149,7 @@ function Footer() {
             <p className="footer-heading">Contact</p>
             <ul>
               <li>
-                <a href="tel:+19148734430">(914) 873-4430</a>
+                <a href="tel:+19148637902">(914) 863-7902</a>
               </li>
               <li>
                 <a href="mailto:hello@manhattanmintnyc.com">hello@manhattanmintnyc.com</a>
@@ -164,7 +164,7 @@ function Footer() {
 
       <div className="footer-bottom">
         <p>© {new Date().getFullYear()} Manhattan Mint. All rights reserved.</p>
-        <a href="tel:+19148734430">(914) 873-4430</a>
+        <a href="tel:+19148637902">(914) 863-7902</a>
       </div>
     </footer>
   );

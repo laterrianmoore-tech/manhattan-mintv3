@@ -77,7 +77,7 @@ function ManhattanMint() {
   "name":"Manhattan Mint",
         "image":"https://www.manhattanmintnyc.com/opengraph-image.png",
   "url":"https://www.manhattanmintnyc.com/",
-  "telephone":"+1-914-873-4430",
+  "telephone":"+1-914-863-7902",
   "priceRange":"$$",
   "address":{
     "@type":"PostalAddress",
@@ -111,7 +111,7 @@ function ManhattanMint() {
               <span>Bonded • Insured • 100% Happiness Guarantee</span>
             </div>
             <a href="tel:+1-000-000-0000" className="inline-flex items-center gap-2 hover:opacity-90">
-              <Phone size={16} /> <span>(914) 873-4430</span>
+              <Phone size={16} /> <span>(914) 863-7902</span>
             </a>
           </div>
         </div>
@@ -576,7 +576,7 @@ function ManhattanMint() {
           <div>
             <h5 className="font-semibold mb-2">Contact</h5>
             <ul className="space-y-1 text-sm">
-              <li>Phone: <a className="hover:text-white" href="tel:+10000000000">(914) 873-4430</a></li>
+              <li>Phone: <a className="hover:text-white" href="tel:+19148637902">(914) 863-7902</a></li>
               <li>Email: <a className="hover:text-white" href="mailto:hello@manhattanmintnyc.com">hello@manhattanmintnyc.com</a></li>
               <li>Hours: 8am–8pm, 7 days</li>
             </ul>

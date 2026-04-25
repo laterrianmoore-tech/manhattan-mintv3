@@ -9,7 +9,7 @@ export function LocalBusinessSchema() {
           "name": "Manhattan Mint",
           "image": "https://www.manhattanmintnyc.com/opengraph-image.png",
           "url": "https://www.manhattanmintnyc.com/",
-          "telephone": "+1-914-873-4430",
+          "telephone": "+1-914-863-7902",
           "priceRange": "$$",
           "address": {
             "@type": "PostalAddress",
