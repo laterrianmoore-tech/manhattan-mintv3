@@ -25,12 +25,22 @@ const extrasCatalog = [
 type Frequency = typeof frequencies[number];
 type ExtraKey = (typeof extrasCatalog)[number]["key"];
 
+const timeRanges = [
+  { label: "Morning", sub: "8am – 12pm", start: "08:00", end: "12:00" },
+  { label: "Midday", sub: "10am – 2pm", start: "10:00", end: "14:00" },
+  { label: "Afternoon", sub: "12pm – 4pm", start: "12:00", end: "16:00" },
+  { label: "Evening", sub: "4pm – 7pm", start: "16:00", end: "19:00" },
+] as const;
+
+type TimeRangeLabel = typeof timeRanges[number]["label"];
+
 type BookingFormState = {
   frequency: Frequency;
   bedrooms: number;
   bathrooms: number;
   extras: Record<ExtraKey, boolean>;
   serviceDate: string;
+  preferredTimeRanges: TimeRangeLabel[];
   firstName: string;
   lastName: string;
   email: string;
@@ -133,6 +143,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
     bathrooms: 1,
     extras: defaultExtras,
     serviceDate: "",
+    preferredTimeRanges: [],
     firstName: "",
     lastName: "",
     email: "",
@@ -307,7 +318,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
       localStorage.setItem("mm_size", hourlySelection ? "Hourly booking" : `${form.bedrooms} BR / ${form.bathrooms} BA`);
       localStorage.setItem("mm_service", hourlySelection ? `Hourly clean (${hourlySelection.hours}h, ${hourlySelection.cleaners} cleaner${hourlySelection.cleaners === 1 ? "" : "s"})` : `${form.frequency} cleaning`);
 
-      window.location.href = "/thank-you.html";
+      window.location.href = "/thank-you";
     } catch (err: any) {
       setError(err?.message || "Something went wrong while saving your booking.");
     } finally {
@@ -430,6 +441,39 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
               <p style={{ marginTop: "-.35rem", marginBottom: ".75rem", fontSize: ".76rem", color: "#666" }}>
                 Earliest booking date is 2 days from today.
               </p>
+
+              <div style={{ marginBottom: ".75rem" }}>
+                <p style={{ fontSize: ".75rem", color: "#666", marginBottom: ".4rem" }}>Preferred Time Window <span style={{ color: "#aaa" }}>(select all that work)</span></p>
+                <div style={{ display: "grid", gap: ".5rem", gridTemplateColumns: "repeat(2,minmax(0,1fr))" }} className="md:grid-cols-4">
+                  {timeRanges.map((tr) => {
+                    const selected = form.preferredTimeRanges.includes(tr.label);
+                    return (
+                      <button
+                        key={tr.label}
+                        type="button"
+                        onClick={() => setField("preferredTimeRanges", selected
+                          ? form.preferredTimeRanges.filter((t) => t !== tr.label)
+                          : [...form.preferredTimeRanges, tr.label]
+                        )}
+                        style={{
+                          borderRadius: 8,
+                          padding: ".5rem .6rem",
+                          border: `1px solid ${selected ? "var(--mint)" : "rgba(0,0,0,.15)"}`,
+                          background: selected ? "var(--mint)" : "#fff",
+                          color: selected ? "#fff" : "#0F0F0F",
+                          fontSize: ".8rem",
+                          textAlign: "center",
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        <div style={{ fontWeight: 600 }}>{tr.label}</div>
+                        <div style={{ fontSize: ".72rem", opacity: 0.85 }}>{tr.sub}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p style={{ fontSize: ".72rem", color: "#888", marginTop: ".35rem" }}>We'll confirm your time window via email.</p>
+              </div>
 
               <div style={{ display: "grid", gap: ".75rem", gridTemplateColumns: "repeat(2,minmax(0,1fr))" }}>
                 <label style={{ display: "grid", gap: ".3rem" }}>
@@ -562,6 +606,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
               {!hourlySelection ? <div style={{ display: "flex", justifyContent: "space-between" }}><span>Bathrooms</span><strong>{form.bathrooms}</strong></div> : null}
               {hourlySelection ? <div style={{ display: "flex", justifyContent: "space-between" }}><span>Hourly</span><strong>{hourlySelection.hours}h / {hourlySelection.cleaners} cleaner{hourlySelection.cleaners === 1 ? "" : "s"}</strong></div> : null}
               <div style={{ display: "flex", justifyContent: "space-between" }}><span>Service Date</span><strong>{form.serviceDate || "-"}</strong></div>
+              {form.preferredTimeRanges.length > 0 && <div style={{ display: "flex", justifyContent: "space-between", gap: ".5rem" }}><span>Preferred Time</span><strong style={{ textAlign: "right" }}>{form.preferredTimeRanges.join(", ")}</strong></div>}
               <div style={{ display: "flex", justifyContent: "space-between" }}><span>Payment</span><strong>Card</strong></div>
             </div>
 
