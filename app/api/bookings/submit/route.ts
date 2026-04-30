@@ -3,6 +3,8 @@ import sgMail from "@sendgrid/mail";
 import { google } from "googleapis";
 import Stripe from "stripe";
 
+export const maxDuration = 30;
+
 type SubmittedBooking = {
   frequency: string;
   bedrooms: number;
@@ -35,9 +37,19 @@ type SubmittedBooking = {
   preferredTimeRanges?: string[];
 };
 
-function parseGooglePrivateKey() {
+function getGoogleCredentials() {
+  const jsonStr = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
+  if (jsonStr) {
+    try {
+      const parsed = JSON.parse(jsonStr);
+      return { email: parsed.client_email as string, privateKey: parsed.private_key as string };
+    } catch {
+      console.error("Failed to parse GOOGLE_SERVICE_ACCOUNT_JSON");
+    }
+  }
+  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || "";
   const raw = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || "";
-  return raw.replace(/\\n/g, "\n");
+  return { email, privateKey: raw.replace(/\\n/g, "\n") };
 }
 
 const TIME_RANGE_MAP: Record<string, { start: string; end: string }> = {
@@ -95,8 +107,7 @@ export async function POST(req: Request) {
     const sendgridApiKey = process.env.SENDGRID_API_KEY;
     const sendgridFrom = process.env.SENDGRID_FROM_EMAIL;
     const calendarId = process.env.GOOGLE_CALENDAR_ID;
-    const googleServiceEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-    const googlePrivateKey = parseGooglePrivateKey();
+    const { email: googleServiceEmail, privateKey: googlePrivateKey } = getGoogleCredentials();
 
     const integrations = {
       stripeConfigured: Boolean(stripeKey),
@@ -111,26 +122,63 @@ export async function POST(req: Request) {
       ? body.selectedExtras.map((x) => `${x.label} ($${x.price})`).join(", ")
       : "None";
 
-    // Create Stripe Customer and attach payment method for post-appointment charging
-    let stripeCustomerId: string | undefined;
-    if (integrations.stripeConfigured && body.stripePaymentMethodId && body.stripePaymentMethodId !== "pending-stripe-setup") {
-      const stripe = new Stripe(stripeKey as string, { apiVersion: "2026-02-25.clover" });
+    // Run Stripe customer creation and Google Calendar in parallel — non-fatal if either fails
+    const hasStripePaymentMethod =
+      integrations.stripeConfigured &&
+      body.stripePaymentMethodId &&
+      body.stripePaymentMethodId !== "pending-stripe-setup";
 
-      const customer = await stripe.customers.create({
-        name: fullName,
-        email: body.email,
-        phone: body.phone,
-        payment_method: body.stripePaymentMethodId,
-        invoice_settings: { default_payment_method: body.stripePaymentMethodId },
-        metadata: {
-          address: fullAddress,
-          serviceDate: body.serviceDate,
-          frequency: body.frequency,
-          bookingTotal: String(body.pricing.total),
-        },
-      });
+    const [stripeResult, calendarResult] = await Promise.allSettled([
+      hasStripePaymentMethod
+        ? (async () => {
+            const stripe = new Stripe(stripeKey as string, { apiVersion: "2026-02-25.clover" });
+            const customer = await stripe.customers.create({
+              name: fullName,
+              email: body.email,
+              phone: body.phone,
+              payment_method: body.stripePaymentMethodId,
+              invoice_settings: { default_payment_method: body.stripePaymentMethodId },
+              metadata: {
+                address: fullAddress,
+                serviceDate: body.serviceDate,
+                frequency: body.frequency,
+                bookingTotal: String(body.pricing.total),
+              },
+            });
+            return customer.id;
+          })()
+        : Promise.resolve(undefined),
 
-      stripeCustomerId = customer.id;
+      integrations.calendarConfigured
+        ? (async () => {
+            const auth = new google.auth.JWT({
+              email: googleServiceEmail,
+              key: googlePrivateKey,
+              scopes: ["https://www.googleapis.com/auth/calendar"],
+              subject: process.env.GOOGLE_CALENDAR_OWNER_EMAIL || "hello@manhattanmintnyc.com",
+            });
+            const calendar = google.calendar({ version: "v3", auth });
+            await calendar.events.insert({
+              calendarId,
+              requestBody: {
+                summary: `New Cleaning Booking - ${fullName}`,
+                location: fullAddress,
+                description: "", // filled below after we have stripeCustomerId
+                ...getCalendarTimes(body.serviceDate, body.preferredTimeRanges),
+              },
+            });
+          })()
+        : Promise.resolve(undefined),
+    ]);
+
+    const stripeCustomerId =
+      stripeResult.status === "fulfilled" ? (stripeResult.value as string | undefined) : undefined;
+
+    if (stripeResult.status === "rejected") {
+      console.error("Stripe customer creation failed (booking still saved):", stripeResult.reason);
+    }
+    if (calendarResult.status === "rejected") {
+      console.error("Google Calendar error (booking still saved):", calendarResult.reason);
     }
 
     const eventDescription = [
@@ -156,37 +204,9 @@ export async function POST(req: Request) {
       `Next Clean Total: $${body.pricing.nextCleanTotal ?? body.pricing.total}`,
     ].join("\n");
 
-    if (integrations.calendarConfigured) {
-      try {
-        const auth = new google.auth.JWT({
-          email: googleServiceEmail,
-          key: googlePrivateKey,
-          scopes: ["https://www.googleapis.com/auth/calendar"],
-          subject: process.env.GOOGLE_CALENDAR_OWNER_EMAIL || "hello@manhattanmintnyc.com",
-        });
-
-        const calendar = google.calendar({ version: "v3", auth });
-
-        await calendar.events.insert({
-          calendarId,
-          requestBody: {
-            summary: `New Cleaning Booking - ${fullName}`,
-            description: eventDescription,
-            location: fullAddress,
-            ...getCalendarTimes(body.serviceDate, body.preferredTimeRanges),
-          },
-        });
-      } catch (calErr) {
-        console.error("Google Calendar error (booking still saved):", calErr);
-        integrations.calendarConfigured = false;
-      }
-    }
-
     if (integrations.emailConfigured) {
       sgMail.setApiKey(sendgridApiKey as string);
-
       const internalTo = process.env.SENDGRID_TO_EMAIL || sendgridFrom;
-
       const serviceLabel = body.serviceSummary || `${body.bedrooms} BR / ${body.bathrooms} BA`;
 
       await sgMail.send({
@@ -215,7 +235,7 @@ export async function POST(req: Request) {
             <tr><td style="padding:5px 0;color:#555;font-size:14px;">Preferred Time</td><td style="padding:5px 0;color:#0f0f0f;font-size:14px;font-weight:500;">${body.preferredTimeRanges?.length ? body.preferredTimeRanges.join(", ") : "Flexible"}</td></tr>
             <tr><td style="padding:5px 0;color:#555;font-size:14px;">Address</td><td style="padding:5px 0;color:#0f0f0f;font-size:14px;font-weight:500;">${fullAddress}</td></tr>
             ${body.selectedExtras.length ? `<tr><td style="padding:5px 0;color:#555;font-size:14px;vertical-align:top;">Extras</td><td style="padding:5px 0;color:#0f0f0f;font-size:14px;font-weight:500;">${extrasLabel}</td></tr>` : ""}
-            <tr><td style="padding:8px 0 0;color:#555;font-size:14px;border-top:1px solid #e0e0e0;margin-top:8px;">Total</td><td style="padding:8px 0 0;color:#2d6a4f;font-size:16px;font-weight:700;border-top:1px solid #e0e0e0;">$${body.pricing.total}</td></tr>
+            <tr><td style="padding:8px 0 0;color:#555;font-size:14px;border-top:1px solid #e0e0e0;">Total</td><td style="padding:8px 0 0;color:#2d6a4f;font-size:16px;font-weight:700;border-top:1px solid #e0e0e0;">$${body.pricing.total}</td></tr>
           </table>
 
           <p style="margin:0 0 6px;color:#555;font-size:14px;">💳 <strong>Payment:</strong> Your card is on file and will be charged after your appointment is complete.</p>
@@ -247,6 +267,7 @@ export async function POST(req: Request) {
       address: fullAddress,
       total: body.pricing.total,
       stripeCustomerId,
+      calendarCreated: calendarResult.status === "fulfilled",
       integrations,
     });
 
