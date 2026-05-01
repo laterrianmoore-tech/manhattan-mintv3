@@ -166,12 +166,27 @@ export async function POST(req: Request) {
             });
             const calendar = google.calendar({ version: "v3", auth });
             const recurrence = getRecurrenceRule(body.frequency);
+            const calendarDescription = [
+              `Customer: ${fullName}`,
+              `Phone: ${body.phone}`,
+              `Email: ${body.email}`,
+              `Service: ${body.serviceSummary || `${body.bedrooms} BR / ${body.bathrooms} BA`}`,
+              `Frequency: ${body.frequency}`,
+              `Preferred Time: ${body.preferredTimeRanges?.length ? body.preferredTimeRanges.join(", ") : "Flexible"}`,
+              `Extras: ${extrasLabel}`,
+              ``,
+              `Key Access: ${body.keyAccess ? "Yes" : "No"}`,
+              `Access Notes: ${body.accessNotes || "-"}`,
+              `Cleaning Notes: ${body.cleaningNotes || "-"}`,
+              ``,
+              `Total: $${body.pricing.total}`,
+            ].join("\n");
             await calendar.events.insert({
               calendarId,
               requestBody: {
                 summary: `${body.frequency !== "One-Time" ? "🔁 " : ""}New Cleaning Booking - ${fullName}`,
                 location: fullAddress,
-                description: "",
+                description: calendarDescription,
                 ...getCalendarTimes(body.serviceDate, body.preferredTimeRanges),
                 ...(recurrence ? { recurrence } : {}),
               },
@@ -244,9 +259,6 @@ export async function POST(req: Request) {
             <tr><td style="padding:5px 0;color:#555;font-size:14px;">Preferred Time</td><td style="padding:5px 0;color:#0f0f0f;font-size:14px;font-weight:500;">${body.preferredTimeRanges?.length ? body.preferredTimeRanges.join(", ") : "Flexible"}</td></tr>
             <tr><td style="padding:5px 0;color:#555;font-size:14px;">Address</td><td style="padding:5px 0;color:#0f0f0f;font-size:14px;font-weight:500;">${fullAddress}</td></tr>
             ${body.selectedExtras.length ? `<tr><td style="padding:5px 0;color:#555;font-size:14px;vertical-align:top;">Extras</td><td style="padding:5px 0;color:#0f0f0f;font-size:14px;font-weight:500;">${extrasLabel}</td></tr>` : ""}
-            ${body.accessNotes ? `<tr><td style="padding:5px 0;color:#555;font-size:14px;vertical-align:top;">Access Notes</td><td style="padding:5px 0;color:#0f0f0f;font-size:14px;font-weight:500;">${body.accessNotes}</td></tr>` : ""}
-            ${body.cleaningNotes ? `<tr><td style="padding:5px 0;color:#555;font-size:14px;vertical-align:top;">Cleaning Notes</td><td style="padding:5px 0;color:#0f0f0f;font-size:14px;font-weight:500;">${body.cleaningNotes}</td></tr>` : ""}
-            ${body.couponCode ? `<tr><td style="padding:5px 0;color:#555;font-size:14px;">Coupon</td><td style="padding:5px 0;color:#2d6a4f;font-size:14px;font-weight:500;">${body.couponCode.toUpperCase()}</td></tr>` : ""}
             <tr><td style="padding:8px 0 0;color:#555;font-size:14px;border-top:1px solid #e0e0e0;">Total</td><td style="padding:8px 0 0;color:#2d6a4f;font-size:16px;font-weight:700;border-top:1px solid #e0e0e0;">$${body.pricing.total}</td></tr>
           </table>
 
