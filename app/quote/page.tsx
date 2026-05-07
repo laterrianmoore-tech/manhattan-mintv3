@@ -68,9 +68,9 @@ function basePriceForBedrooms(bedrooms: number) {
 }
 
 function discountRateForFrequency(frequency: Frequency) {
-  if (frequency === "Weekly") return 0.2;
-  if (frequency === "Bi-Weekly") return 0.15;
-  if (frequency === "Monthly") return 0.1;
+  if (frequency === "Weekly") return 0.3;
+  if (frequency === "Bi-Weekly") return 0.25;
+  if (frequency === "Monthly") return 0.15;
   return 0;
 }
 

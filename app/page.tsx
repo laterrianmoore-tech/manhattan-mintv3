@@ -18,7 +18,7 @@ export default function Page() {
 		"Standard clean": 0,
 		"Deep clean (+$75)": 75,
 		"Move-in / Move-out (+$100)": 100,
-		"Recurring - save 20%": -0.2,
+		"Recurring - save 30%": -0.3,
 	};
 	const [selectedTier, setSelectedTier] = useState(tiers[0]);
 	const [pricingMode, setPricingMode] = useState<"flat" | "hourly">("flat");
@@ -38,7 +38,7 @@ export default function Page() {
 
 	const effectiveFlatPrice = (() => {
 		if (selectedTier.amount === null) return "Custom";
-		if (pricingServiceType === "Recurring - save 20%") {
+		if (pricingServiceType === "Recurring - save 30%") {
 			return `$${Math.round(selectedTier.amount * 0.85)}`;
 		}
 		const adjustment = serviceAdjustments[pricingServiceType];
@@ -440,7 +440,7 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 									<option>Standard clean</option>
 									<option>Deep clean (+$75)</option>
 									<option>Move-in / Move-out (+$100)</option>
-									<option>Recurring — save 20%</option>
+									<option>Recurring — save 30%</option>
 								</select>
 							</div>
 						</div>
@@ -564,7 +564,7 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 										<option>Standard clean</option>
 										<option>Deep clean (+$75)</option>
 										<option>Move-in / Move-out (+$100)</option>
-										<option>Recurring - save 20%</option>
+										<option>Recurring - save 30%</option>
 									</select>
 								</div>
 							) : (
@@ -589,7 +589,7 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 							<div className="pcb-note">All supplies included · No hidden fees</div>
 							<div style={{ fontSize: ".7rem", color: "rgba(255,255,255,.25)", marginBottom: "1.5rem" }}>
 								{pricingMode === "flat"
-									? "Deep clean +$75 · Move-in/out +$100 · Recurring saves 20%"
+									? "Deep clean +$75 · Move-in/out +$100 · Recurring saves 30%"
 									: `$${hourlyRates.ratePerCleaner}/hr per cleaner · same supplies included`}
 							</div>
 							<button
