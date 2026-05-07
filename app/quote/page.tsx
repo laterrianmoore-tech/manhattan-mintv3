@@ -10,7 +10,7 @@ const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
   : null;
 
-const frequencies = ["One-Time", "Weekly", "Every Other Week", "Every 4 Weeks"] as const;
+const frequencies = ["One-Time", "Weekly", "Bi-Weekly", "Monthly"] as const;
 
 const extrasCatalog = [
   { key: "deepCleaning", label: "Deep Cleaning", price: 75, Icon: Sparkles },
@@ -68,9 +68,9 @@ function basePriceForBedrooms(bedrooms: number) {
 }
 
 function discountRateForFrequency(frequency: Frequency) {
-  if (frequency === "Weekly") return 0.15;
-  if (frequency === "Every Other Week") return 0.1;
-  if (frequency === "Every 4 Weeks") return 0.05;
+  if (frequency === "Weekly") return 0.2;
+  if (frequency === "Bi-Weekly") return 0.15;
+  if (frequency === "Monthly") return 0.1;
   return 0;
 }
 

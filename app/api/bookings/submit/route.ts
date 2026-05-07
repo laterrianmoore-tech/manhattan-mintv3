@@ -61,8 +61,8 @@ const TIME_RANGE_MAP: Record<string, { start: string; end: string }> = {
 
 function getRecurrenceRule(frequency: string): string[] | undefined {
   if (frequency === "Weekly") return ["RRULE:FREQ=WEEKLY"];
-  if (frequency === "Every Other Week") return ["RRULE:FREQ=WEEKLY;INTERVAL=2"];
-  if (frequency === "Every 4 Weeks") return ["RRULE:FREQ=WEEKLY;INTERVAL=4"];
+  if (frequency === "Bi-Weekly") return ["RRULE:FREQ=WEEKLY;INTERVAL=2"];
+  if (frequency === "Monthly") return ["RRULE:FREQ=WEEKLY;INTERVAL=4"];
   return undefined;
 }
 
