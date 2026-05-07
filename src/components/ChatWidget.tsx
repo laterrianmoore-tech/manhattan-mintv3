@@ -237,14 +237,14 @@ export default function ChatWidget() {
 
   return (
     <>
-      {/* Floating button */}
+      {/* Floating button — positioned above the "Book a clean" float-cta */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
           aria-label="Open chat with Manhattan Mint"
           style={{
             position: 'fixed',
-            bottom: 24,
+            bottom: isMobile ? 80 : 96,
             right: 24,
             width: 56,
             height: 56,
