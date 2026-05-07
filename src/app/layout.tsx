@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import SEOJsonLd from "./seo-jsonld";
+import ChatWidget from "@/components/ChatWidget";
 
 export const metadata: Metadata = {
   title: {
@@ -202,6 +203,7 @@ export default function RootLayout({
         <Nav />
         <main>{children}</main>
         <Footer />
+        <ChatWidget />
 
         <style>{`
           :root {
