@@ -15,15 +15,13 @@ export default function SEOJsonLd() {
       name: "New York City",
     },
     image: [
-      "https://www.manhattanmintnyc.com/manhattan-mint-logo.png",
-      "https://www.manhattanmintnyc.com/opengraph-image.png",
-      "https://www.manhattanmintnyc.com/twitter-image.png",
+      "https://www.manhattanmintnyc.com/opengraph-image",
     ],
-    logo: "https://www.manhattanmintnyc.com/manhattan-mint-logo.png",
+    logo: "https://www.manhattanmintnyc.com/opengraph-image",
     brand: {
       "@type": "Brand",
       name: "Manhattan Mint",
-      logo: "https://www.manhattanmintnyc.com/manhattan-mint-logo.png",
+      logo: "https://www.manhattanmintnyc.com/opengraph-image",
     },
   } as const;
 

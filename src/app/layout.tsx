@@ -21,7 +21,9 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/opengraph-image.png",
+        url: "/opengraph-image",
+        width: 1200,
+        height: 630,
       },
     ],
   },
@@ -30,14 +32,7 @@ export const metadata: Metadata = {
     title: "Manhattan Mint | Home Cleaning NYC",
     description:
       "Luxury home cleaning for busy New Yorkers — insured, building-friendly, and fully digital from booking to receipt.",
-    images: ["/twitter-image.png"],
-  },
-  icons: {
-    icon: [
-      { url: "/manhattan-mint-logo.png", type: "image/png" },
-    ],
-    shortcut: [{ url: "/manhattan-mint-logo.png" }],
-    apple: [{ url: "/manhattan-mint-logo.png", type: "image/png" }],
+    images: ["/opengraph-image"],
   },
 };
 
@@ -186,18 +181,16 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@1&display=swap"
           rel="stylesheet"
         />
-        <link rel="icon" type="image/png" href="/manhattan-mint-logo.png" />
-        <link rel="apple-touch-icon" href="/manhattan-mint-logo.png" />
         <link rel="canonical" href="https://www.manhattanmintnyc.com/" />
         <meta property="og:type" content="website" />
         <meta property="og:title" content="Manhattan Mint | Home Cleaning NYC" />
         <meta property="og:description" content="Luxury home cleaning for busy New Yorkers — insured, building-friendly, and fully digital from booking to receipt." />
         <meta property="og:url" content="https://www.manhattanmintnyc.com/" />
-        <meta property="og:image" content="https://www.manhattanmintnyc.com/opengraph-image.png" />
+        <meta property="og:image" content="https://www.manhattanmintnyc.com/opengraph-image" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Manhattan Mint | Home Cleaning NYC" />
         <meta name="twitter:description" content="Luxury home cleaning for busy New Yorkers — insured, building-friendly, and fully digital from booking to receipt." />
-        <meta name="twitter:image" content="https://www.manhattanmintnyc.com/twitter-image.png" />
+        <meta name="twitter:image" content="https://www.manhattanmintnyc.com/opengraph-image" />
       </head>
       <body>
         <Nav />
