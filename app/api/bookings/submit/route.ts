@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import sgMail from "@sendgrid/mail";
 import { google } from "googleapis";
 import Stripe from "stripe";
+import { supabaseAdmin } from "@/lib/supabase/server";
 
 export const maxDuration = 30;
 
@@ -205,6 +206,70 @@ export async function POST(req: Request) {
       console.error("Google Calendar error (booking still saved):", calendarResult.reason);
     }
 
+    // ── Supabase: upsert customer + insert booking ──────────────────────────
+    let supabaseBookingId: string | undefined;
+    try {
+      // Upsert customer by email — if they've booked before, update their latest info
+      const { data: customer, error: customerError } = await supabaseAdmin
+        .from("customers")
+        .upsert(
+          {
+            first_name: body.firstName,
+            last_name: body.lastName,
+            email: body.email,
+            phone: body.phone,
+            address: body.address,
+            apt_no: body.aptNo || null,
+            key_access: body.keyAccess,
+            access_notes: body.accessNotes || null,
+            sms_reminder: body.smsReminder,
+            stripe_customer_id: stripeCustomerId || null,
+          },
+          { onConflict: "email", ignoreDuplicates: false }
+        )
+        .select("id")
+        .single();
+
+      if (customerError || !customer) {
+        console.error("Supabase customer upsert failed:", customerError);
+      } else {
+        // Insert booking linked to this customer
+        const { data: booking, error: bookingError } = await supabaseAdmin
+          .from("bookings")
+          .insert({
+            customer_id: customer.id,
+            status: "pending",
+            frequency: body.frequency,
+            bedrooms: body.bedrooms || null,
+            bathrooms: body.bathrooms || null,
+            service_summary: body.serviceSummary || null,
+            service_date: body.serviceDate,
+            preferred_time_ranges: body.preferredTimeRanges || [],
+            selected_extras: body.selectedExtras || [],
+            cleaning_notes: body.cleaningNotes || null,
+            coupon_code: body.couponCode || null,
+            pricing_total: body.pricing.total,
+            pricing_subtotal: body.pricing.subtotal,
+            pricing_next_clean_total: body.pricing.nextCleanTotal ?? null,
+            stripe_payment_method_id: body.stripePaymentMethodId || null,
+            stripe_customer_id: stripeCustomerId || null,
+          })
+          .select("id")
+          .single();
+
+        if (bookingError || !booking) {
+          console.error("Supabase booking insert failed:", bookingError);
+        } else {
+          supabaseBookingId = booking.id;
+          console.log("Supabase booking saved:", supabaseBookingId);
+        }
+      }
+    } catch (supabaseError) {
+      // Non-fatal: booking email still sends even if Supabase write fails
+      console.error("Supabase error (booking still processed):", supabaseError);
+    }
+    // ── End Supabase ────────────────────────────────────────────────────────
+
     const eventDescription = [
       `Customer: ${fullName}`,
       `Email: ${body.email}`,
@@ -291,11 +356,12 @@ export async function POST(req: Request) {
       address: fullAddress,
       total: body.pricing.total,
       stripeCustomerId,
+      supabaseBookingId,
       calendarCreated: calendarResult.status === "fulfilled",
       integrations,
     });
 
-    return NextResponse.json({ ok: true, integrations });
+    return NextResponse.json({ ok: true, integrations, bookingId: supabaseBookingId });
   } catch (error) {
     console.error("booking submit error", error);
     return NextResponse.json({ error: "Failed to submit booking" }, { status: 500 });
