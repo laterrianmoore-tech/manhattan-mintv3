@@ -27,6 +27,7 @@ export interface Database {
           id?: string;
         };
         Update: Partial<Database["public"]["Tables"]["customers"]["Insert"]>;
+        Relationships: [];
       };
       bookings: {
         Row: {
@@ -52,10 +53,13 @@ export interface Database {
           created_at: string;
           updated_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["bookings"]["Row"], "id" | "created_at" | "updated_at"> & {
+        Insert: Omit<Database["public"]["Tables"]["bookings"]["Row"], "id" | "created_at" | "updated_at" | "assigned_cleaner_id" | "calendar_event_id"> & {
           id?: string;
+          assigned_cleaner_id?: string | null;
+          calendar_event_id?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["bookings"]["Insert"]>;
+        Relationships: [];
       };
       cleaners: {
         Row: {
@@ -77,7 +81,10 @@ export interface Database {
           id?: string;
         };
         Update: Partial<Database["public"]["Tables"]["cleaners"]["Insert"]>;
+        Relationships: [];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
   };
 }
