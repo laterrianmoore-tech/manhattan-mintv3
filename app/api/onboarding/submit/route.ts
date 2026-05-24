@@ -1,9 +1,9 @@
 // app/api/onboarding/submit/route.ts
-// Receives /onboarding form submissions. Sends two emails (candidate + owner) and stores the application.
-// v1 — minimal. v2 will: write to Postgres, fire Certn API, generate Stripe Connect link.
+// Receives /onboarding form submissions. Sends two emails (candidate + owner) and saves to Supabase.
 
 import { NextRequest, NextResponse } from 'next/server';
 import sgMail from '@sendgrid/mail';
+import { supabaseAdmin } from '@/lib/supabase/server';
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
@@ -106,7 +106,34 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Email send failed' }, { status: 500 });
   }
 
-  // TODO v2: persist to Postgres, fire Certn API, log to Google Sheet via service account.
+  // Save cleaner applicant to Supabase
+  try {
+    const nameParts = body.legalName.trim().split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    const { error } = await supabaseAdmin
+      .from('cleaners')
+      .upsert(
+        {
+          first_name: firstName,
+          last_name: lastName,
+          email: body.email,
+          phone: body.phone,
+          status: 'pending_onboarding',
+          zones: body.serviceAreas || [],
+        },
+        { onConflict: 'email', ignoreDuplicates: false }
+      );
+
+    if (error) {
+      console.error('Supabase cleaner insert failed:', error);
+    } else {
+      console.log('Cleaner saved to Supabase:', body.email);
+    }
+  } catch (e) {
+    console.error('Supabase error (emails still sent):', e);
+  }
 
   return NextResponse.json({ ok: true });
 }
