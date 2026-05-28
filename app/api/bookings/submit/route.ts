@@ -3,6 +3,7 @@ import sgMail from "@sendgrid/mail";
 import { google } from "googleapis";
 import Stripe from "stripe";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { sendSms } from "@/lib/openphone";
 
 export const maxDuration = 30;
 
@@ -348,6 +349,22 @@ export async function POST(req: Request) {
         subject: `New Booking — ${fullName} · ${body.serviceDate}`,
         text: eventDescription,
       });
+    }
+
+    // Booking confirmation SMS (non-fatal)
+    if (body.phone) {
+      try {
+        await sendSms({
+          to: body.phone,
+          body: `Thanks for booking Manhattan Mint, ${body.firstName}. If you need to cancel or reschedule, please give us at least 24 hours notice. — Manhattan Mint NYC`,
+          bookingId: supabaseBookingId ?? null,
+          cleanerId: null,
+          recipientType: "customer",
+          eventType: "other",
+        });
+      } catch (smsErr) {
+        console.error("Booking confirmation SMS failed (non-fatal):", smsErr);
+      }
     }
 
     console.log("booking submitted", {

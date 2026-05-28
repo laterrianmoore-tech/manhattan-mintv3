@@ -112,7 +112,8 @@ export async function POST(req: NextRequest) {
     const firstName = nameParts[0];
     const lastName = nameParts.slice(1).join(' ') || '';
 
-    const { error } = await supabaseAdmin
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin as any)
       .from('cleaners')
       .upsert(
         {
