@@ -63,9 +63,10 @@ export async function POST(req: Request) {
       .from("bookings")
       .update({ completed_at: now, status: "completed" })
       .eq("id", bookingId);
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://manhattanmintnyc.com";
     await sendSms({
       to: customer.phone,
-      body: `Your clean is done. Thank you for choosing Manhattan Mint — we'll follow up shortly for feedback.`,
+      body: `Your clean is done. Thank you for choosing Manhattan Mint — we'd love your feedback: ${siteUrl}/feedback/${bookingId}`,
       cleanerId: cleaner.id,
       bookingId,
       recipientType: "customer",
