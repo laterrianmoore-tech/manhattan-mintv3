@@ -247,6 +247,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
     setSubmitting(true);
     try {
       let stripePaymentMethodId: string | undefined;
+      let stripeCustomerId: string | undefined;
 
       if (stripeReady) {
         if (!stripe || !elements) {
@@ -287,8 +288,9 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
         }
 
         stripePaymentMethodId = result.setupIntent?.payment_method as string | undefined;
+        stripeCustomerId = intentData.stripeCustomerId as string | undefined;
       } else {
-        stripePaymentMethodId = "pending-stripe-setup";
+        throw new Error("Payment processing is unavailable. Please refresh and try again.");
       }
 
       const submitRes = await fetch("/api/bookings/submit", {
@@ -302,6 +304,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
             ? `Hourly clean (${hourlySelection.hours}h, ${hourlySelection.cleaners} cleaner${hourlySelection.cleaners === 1 ? "" : "s"})`
             : `${form.bedrooms} BR / ${form.bathrooms} BA`,
           stripePaymentMethodId,
+          stripeCustomerId,
           cardChargeTiming: "AFTER appointment",
         }),
       });

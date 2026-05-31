@@ -35,6 +35,7 @@ type SubmittedBooking = {
   };
   serviceSummary?: string;
   stripePaymentMethodId?: string;
+  stripeCustomerId?: string;
   cardChargeTiming?: string;
   preferredTimeRanges?: string[];
 };
@@ -131,21 +132,22 @@ export async function POST(req: Request) {
       ? body.selectedExtras.map((x) => `${x.label} ($${x.price})`).join(", ")
       : "None";
 
-    // Run Stripe customer creation and Google Calendar in parallel — non-fatal if either fails
+    // Run Stripe customer update and Google Calendar in parallel — non-fatal if either fails.
+    // The customer was already created in create-setup-intent (so the SetupIntent could be
+    // attached to them, triggering a real $0 network auth). Here we just fill in the full
+    // booking metadata and set the confirmed payment method as their default.
     const hasStripePaymentMethod =
       integrations.stripeConfigured &&
       body.stripePaymentMethodId &&
-      body.stripePaymentMethodId !== "pending-stripe-setup";
+      body.stripeCustomerId;
 
     const [stripeResult, calendarResult] = await Promise.allSettled([
       hasStripePaymentMethod
         ? (async () => {
             const stripe = new Stripe(stripeKey as string, { apiVersion: "2026-02-25.clover" });
-            const customer = await stripe.customers.create({
+            await stripe.customers.update(body.stripeCustomerId as string, {
               name: fullName,
-              email: body.email,
               phone: body.phone,
-              payment_method: body.stripePaymentMethodId,
               invoice_settings: { default_payment_method: body.stripePaymentMethodId },
               metadata: {
                 address: fullAddress,
@@ -154,7 +156,7 @@ export async function POST(req: Request) {
                 bookingTotal: String(body.pricing.total),
               },
             });
-            return customer.id;
+            return body.stripeCustomerId;
           })()
         : Promise.resolve(undefined),
 
