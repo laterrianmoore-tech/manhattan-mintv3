@@ -240,7 +240,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
     }
 
     if (!isDateAtLeastMin(form.serviceDate, minServiceDate)) {
-      setError("Please choose a booking date at least 2 days from today.");
+      setError("Please choose a booking date at least 1 day from today.");
       return;
     }
 
@@ -439,7 +439,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
                 <input type="date" min={minServiceDate} required value={form.serviceDate} onChange={(e) => setField("serviceDate", e.target.value)} style={{ border: "1px solid rgba(0,0,0,.15)", borderRadius: 8, padding: ".6rem" }} />
               </label>
               <p style={{ marginTop: "-.35rem", marginBottom: ".75rem", fontSize: ".76rem", color: "#666" }}>
-                Earliest booking date is 2 days from today.
+                Earliest booking date is 1 day from today.
               </p>
 
               <div style={{ marginBottom: ".75rem" }}>

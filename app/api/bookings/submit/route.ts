@@ -92,7 +92,7 @@ function addOneDay(dateStr: string) {
 
 function minAllowedServiceDate() {
   const date = new Date();
-  date.setDate(date.getDate() + 2);
+  date.setDate(date.getDate() + 1);
   return date.toISOString().slice(0, 10);
 }
 
@@ -109,7 +109,7 @@ export async function POST(req: Request) {
     }
 
     if (body.serviceDate < minAllowedServiceDate()) {
-      return NextResponse.json({ error: "Service date must be at least 2 days from today" }, { status: 400 });
+      return NextResponse.json({ error: "Service date must be at least 1 day from today" }, { status: 400 });
     }
 
     const stripeKey = process.env.STRIPE_SECRET_KEY;
