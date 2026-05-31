@@ -468,7 +468,7 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 			<div className="stats-band">
 				<div className="stat-item"><div className="stat-n">500+</div><div className="stat-d">Manhattan apartments cleaned</div></div>
 				<div className="stat-item"><div className="stat-n">4.9★</div><div className="stat-d">Average verified rating</div></div>
-				<div className="stat-item"><div className="stat-n">48hr</div><div className="stat-d">Earliest available booking</div></div>
+				<div className="stat-item"><div className="stat-n">24hr</div><div className="stat-d">Earliest available booking</div></div>
 				<div className="stat-item"><div className="stat-n">100%</div><div className="stat-d">Satisfaction guarantee</div></div>
 			</div>
 

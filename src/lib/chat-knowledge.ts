@@ -29,7 +29,7 @@ export const SERVICE_AREA = {
 };
 
 export const BOOKING_RULES = {
-  minLeadTimeHours: 48,
+  minLeadTimeHours: 24,
   confirmationDelayHours: 'a few',
 };
 

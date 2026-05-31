@@ -102,7 +102,7 @@ function parseHourlySelection(storedService: string) {
 
 function getMinServiceDate() {
   const date = new Date();
-  date.setDate(date.getDate() + 2);
+  date.setDate(date.getDate() + 1);
   return date.toISOString().slice(0, 10);
 }
 
