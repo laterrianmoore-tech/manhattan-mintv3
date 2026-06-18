@@ -8,7 +8,19 @@ export default function ThankYouPage() {
 
   useEffect(() => {
     const storedName = localStorage.getItem("mm_name") || "";
+    const storedSize = localStorage.getItem("mm_size") || undefined;
+    const storedService = localStorage.getItem("mm_service") || undefined;
     setName(storedName);
+
+    // GTM — fires Meta Pixel Purchase + Google Ads conversion
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dl = (window as any);
+    dl.dataLayer = dl.dataLayer || [];
+    dl.dataLayer.push({
+      event: "BookingCompleted",
+      apartment_size: storedSize,
+      service_type: storedService,
+    });
 
     const keysToClear = [
       "mm_name",

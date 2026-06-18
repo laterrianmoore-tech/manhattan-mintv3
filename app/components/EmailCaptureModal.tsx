@@ -25,7 +25,7 @@ export default function EmailCaptureModal() {
       requestAnimationFrame(() =>
         requestAnimationFrame(() => setVisible(true))
       );
-    }, 8000);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);

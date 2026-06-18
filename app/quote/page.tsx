@@ -193,6 +193,16 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
       },
       cleaningNotes: prev.cleaningNotes || (storedService || storedSize ? `Home page selection: ${storedService || storedSize}` : ""),
     }));
+
+    // GTM — fires Meta Pixel InitiateCheckout + Google Ads begin_checkout
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dl = (window as any);
+    dl.dataLayer = dl.dataLayer || [];
+    dl.dataLayer.push({
+      event: "BookingStarted",
+      apartment_size: storedSize || undefined,
+      service_type: storedService || undefined,
+    });
   }, []);
 
   const pricing = useMemo(() => {
