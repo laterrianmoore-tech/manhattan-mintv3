@@ -87,9 +87,25 @@ create index if not exists bookings_status_idx on bookings(status);
 create index if not exists bookings_assigned_cleaner_idx on bookings(assigned_cleaner_id);
 
 -- ============================================================
+-- EMAIL SUBSCRIBERS
+-- Marketing list — collected from popup + inline capture forms.
+-- ============================================================
+create table if not exists email_subscribers (
+  id          uuid primary key default uuid_generate_v4(),
+  email       text not null unique,
+  name        text,
+  source      text not null default 'website',
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists email_subscribers_email_idx on email_subscribers(email);
+create index if not exists email_subscribers_created_at_idx on email_subscribers(created_at);
+
+-- ============================================================
 -- ROW LEVEL SECURITY
 -- Locked down by default. Server-side admin client bypasses RLS.
 -- ============================================================
 alter table customers enable row level security;
 alter table bookings enable row level security;
 alter table cleaners enable row level security;
+alter table email_subscribers enable row level security;

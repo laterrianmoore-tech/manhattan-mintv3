@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import EmailCaptureModal from "./components/EmailCaptureModal";
+import EmailCaptureSection from "./components/EmailCaptureSection";
 
 export default function Page() {
 	const router = useRouter();
@@ -101,6 +103,7 @@ export default function Page() {
 
 	return (
 		<>
+			<EmailCaptureModal />
 			<style>{`*{margin:0;padding:0;box-sizing:border-box;}
 :root{
 	--mint:#1D9E75;--mint-light:#E1F5EE;--mint-mid:#5DCAA5;--mint-dark:#085041;
@@ -650,6 +653,9 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 					<div className="review"><div className="stars"><div className="star" /><div className="star" /><div className="star" /><div className="star" /><div className="star" /></div><div className="rev-text">&quot;As someone with a 3-bedroom in the West Village, finding a reliable team was hard. Manhattan Mint nailed it on the first visit.&quot;</div><div className="rev-author">— Marcus W., West Village</div></div>
 				</div>
 			</section>
+
+			{/* EMAIL CAPTURE */}
+			<EmailCaptureSection />
 
 			{/* FAQ */}
 			<section className="section faq-bg">

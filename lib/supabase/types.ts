@@ -78,6 +78,22 @@ export interface Database {
         };
         Update: Partial<Database["public"]["Tables"]["cleaners"]["Insert"]>;
       };
+      email_subscribers: {
+        Row: {
+          id: string;
+          email: string;
+          name: string | null;
+          source: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          name?: string | null;
+          source?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["email_subscribers"]["Insert"]>;
+      };
     };
   };
 }
