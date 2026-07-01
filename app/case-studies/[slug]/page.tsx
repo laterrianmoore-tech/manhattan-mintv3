@@ -48,14 +48,14 @@ export default async function CaseStudyPage({ params }: Props) {
 		author: {
 			"@type": "Organization",
 			name: "Manhattan Mint",
-			url: "https://www.manhattanmintnyc.com",
+			url: "https://manhattanmintnyc.com",
 		},
 		publisher: {
 			"@type": "Organization",
 			name: "Manhattan Mint",
-			url: "https://www.manhattanmintnyc.com",
+			url: "https://manhattanmintnyc.com",
 		},
-		mainEntityOfPage: `https://www.manhattanmintnyc.com/case-studies/${study.slug}/`,
+		mainEntityOfPage: `https://manhattanmintnyc.com/case-studies/${study.slug}/`,
 	};
 
 	return (

@@ -47,14 +47,14 @@ export default async function BlogPostPage({ params }: Props) {
 		author: {
 			"@type": "Organization",
 			name: "Manhattan Mint",
-			url: "https://www.manhattanmintnyc.com",
+			url: "https://manhattanmintnyc.com",
 		},
 		publisher: {
 			"@type": "Organization",
 			name: "Manhattan Mint",
-			url: "https://www.manhattanmintnyc.com",
+			url: "https://manhattanmintnyc.com",
 		},
-		mainEntityOfPage: `https://www.manhattanmintnyc.com/blog/${post.slug}/`,
+		mainEntityOfPage: `https://manhattanmintnyc.com/blog/${post.slug}/`,
 	};
 
 	return (

@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { caseStudies } from "./case-studies/data";
 import { blogPosts } from "./blog/data";
 
-const BASE_URL = "https://www.manhattanmintnyc.com";
+const BASE_URL = "https://manhattanmintnyc.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
 	const staticPages: MetadataRoute.Sitemap = [

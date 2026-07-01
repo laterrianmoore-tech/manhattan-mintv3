@@ -7,7 +7,7 @@ export default function SEOJsonLd() {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: "Manhattan Mint",
-    url: "https://www.manhattanmintnyc.com",
+    url: "https://manhattanmintnyc.com",
     description:
       "Luxury home cleaning for busy New Yorkers — insured, building-friendly, and fully digital from booking to receipt.",
     telephone: "+1-914-863-7902",
@@ -25,13 +25,13 @@ export default function SEOJsonLd() {
       addressCountry: "US",
     },
     image: [
-      "https://www.manhattanmintnyc.com/opengraph-image",
+      "https://manhattanmintnyc.com/opengraph-image",
     ],
-    logo: "https://www.manhattanmintnyc.com/opengraph-image",
+    logo: "https://manhattanmintnyc.com/opengraph-image",
     brand: {
       "@type": "Brand",
       name: "Manhattan Mint",
-      logo: "https://www.manhattanmintnyc.com/opengraph-image",
+      logo: "https://manhattanmintnyc.com/opengraph-image",
     },
   } as const;
 

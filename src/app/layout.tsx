@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   },
   description:
     "Luxury, eco-friendly apartment cleaning across Manhattan. Flat rates from $175, background-checked cleaners, next-day availability — same-day cleans by phone when the schedule allows.",
-  metadataBase: new URL("https://www.manhattanmintnyc.com"),
+  metadataBase: new URL("https://manhattanmintnyc.com"),
   alternates: {
     canonical: "./",
   },
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     title: "Luxury Home Cleaning NYC | Manhattan Mint",
     description:
       "Luxury, eco-friendly apartment cleaning across Manhattan. Flat rates from $175, background-checked cleaners, next-day availability — same-day cleans by phone when the schedule allows.",
-    url: "https://www.manhattanmintnyc.com",
+    url: "https://manhattanmintnyc.com",
     siteName: "Manhattan Mint",
     type: "website",
     images: [
