@@ -7,16 +7,19 @@ import ChatWidget from "@/components/ChatWidget";
 
 export const metadata: Metadata = {
   title: {
-    default: "Manhattan Mint | Home Cleaning NYC",
+    default: "Luxury Home Cleaning NYC | Manhattan Mint",
     template: "%s | Manhattan Mint",
   },
   description:
-    "Luxury home cleaning for busy New Yorkers — insured, building-friendly, and fully digital from booking to receipt.",
+    "Luxury, eco-friendly apartment cleaning across Manhattan. Flat rates from $175, background-checked cleaners, next-day availability — same-day cleans by phone when the schedule allows.",
   metadataBase: new URL("https://www.manhattanmintnyc.com"),
+  alternates: {
+    canonical: "./",
+  },
   openGraph: {
-    title: "Manhattan Mint | Home Cleaning NYC",
+    title: "Luxury Home Cleaning NYC | Manhattan Mint",
     description:
-      "Luxury home cleaning for busy New Yorkers — insured, building-friendly, and fully digital from booking to receipt.",
+      "Luxury, eco-friendly apartment cleaning across Manhattan. Flat rates from $175, background-checked cleaners, next-day availability — same-day cleans by phone when the schedule allows.",
     url: "https://www.manhattanmintnyc.com",
     siteName: "Manhattan Mint",
     type: "website",
@@ -30,9 +33,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Manhattan Mint | Home Cleaning NYC",
+    title: "Luxury Home Cleaning NYC | Manhattan Mint",
     description:
-      "Luxury home cleaning for busy New Yorkers — insured, building-friendly, and fully digital from booking to receipt.",
+      "Luxury, eco-friendly apartment cleaning across Manhattan. Flat rates from $175, background-checked cleaners, next-day availability — same-day cleans by phone when the schedule allows.",
     images: ["/opengraph-image"],
   },
 };
@@ -65,6 +68,7 @@ function Nav() {
     { href: "/#pricing", label: "Pricing" },
     { href: "/#how-it-works", label: "How it works" },
     { href: "/#areas", label: "Areas" },
+    { href: "/case-studies", label: "Case studies" },
     { href: "/#reviews", label: "Reviews" },
   ];
 
@@ -124,6 +128,12 @@ function Footer() {
               <li>
                 <Link href="/#services">Move In/Out</Link>
               </li>
+              <li>
+                <Link href="/pricing-availability">Pricing &amp; Availability</Link>
+              </li>
+              <li>
+                <Link href="/quote">Get a Quote</Link>
+              </li>
             </ul>
           </div>
 
@@ -132,6 +142,12 @@ function Footer() {
             <ul>
               <li>
                 <Link href="/#how-it-works">How it works</Link>
+              </li>
+              <li>
+                <Link href="/case-studies">Case Studies</Link>
+              </li>
+              <li>
+                <Link href="/blog">Blog</Link>
               </li>
               <li>
                 <Link href="/#reviews">Reviews</Link>
@@ -193,16 +209,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@1&display=swap"
           rel="stylesheet"
         />
-        <link rel="canonical" href="https://www.manhattanmintnyc.com/" />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="Manhattan Mint | Home Cleaning NYC" />
-        <meta property="og:description" content="Luxury home cleaning for busy New Yorkers — insured, building-friendly, and fully digital from booking to receipt." />
-        <meta property="og:url" content="https://www.manhattanmintnyc.com/" />
-        <meta property="og:image" content="https://www.manhattanmintnyc.com/opengraph-image" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Manhattan Mint | Home Cleaning NYC" />
-        <meta name="twitter:description" content="Luxury home cleaning for busy New Yorkers — insured, building-friendly, and fully digital from booking to receipt." />
-        <meta name="twitter:image" content="https://www.manhattanmintnyc.com/opengraph-image" />
       </head>
       <body>
         <noscript>

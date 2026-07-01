@@ -2,8 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import EmailCaptureModal from "./components/EmailCaptureModal";
 import EmailCaptureSection from "./components/EmailCaptureSection";
+import { caseStudies } from "./case-studies/data";
+import { reviews, GOOGLE_REVIEWS_URL } from "./reviews";
+import "./home.css";
 
 export default function Page() {
 	const router = useRouter();
@@ -104,208 +108,7 @@ export default function Page() {
 	return (
 		<>
 			<EmailCaptureModal />
-			<style>{`*{margin:0;padding:0;box-sizing:border-box;}
-:root{
-	--mint:#1D9E75;--mint-light:#E1F5EE;--mint-mid:#5DCAA5;--mint-dark:#085041;
-	--dark:#0F0F0F;--charcoal:#1A1A1A;--gray:#888;--soft:#F8F8F6;--border:rgba(0,0,0,0.08);
-}
-html{scroll-behavior:smooth;}
-body{font-family:'DM Sans',sans-serif;background:#fff;color:var(--dark);overflow-x:hidden;}
 
-/* TICKER */
-.ticker{background:var(--dark);padding:.5rem 0;overflow:hidden;position:relative;}
-.ticker::after{content:'';position:absolute;right:0;top:0;width:80px;height:100%;background:linear-gradient(to left,var(--dark),transparent);z-index:2;}
-.ticker::before{content:'';position:absolute;left:0;top:0;width:80px;height:100%;background:linear-gradient(to right,var(--dark),transparent);z-index:2;}
-.ticker-inner{display:flex;width:max-content;animation:ticker 35s linear infinite;}
-.ticker-inner:hover{animation-play-state:paused;}
-@keyframes ticker{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
-.tick{display:inline-flex;align-items:center;gap:.5rem;padding:0 2.5rem;font-size:.67rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.5);white-space:nowrap;}
-.tick-dot{width:3px;height:3px;background:var(--mint-mid);border-radius:50%;flex-shrink:0;}
-
-/* NAV */
-nav{display:flex;align-items:center;justify-content:space-between;padding:1.1rem 4rem;background:rgba(255,255,255,.96);backdrop-filter:blur(16px);position:sticky;top:0;z-index:200;border-bottom:.5px solid var(--border);}
-.logo{font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:500;letter-spacing:.06em;color:var(--dark);text-decoration:none;}
-.logo em{font-style:normal;color:var(--mint);}
-.nav-links{display:flex;gap:2.5rem;}
-.nav-links a{font-size:.82rem;color:var(--gray);text-decoration:none;letter-spacing:.01em;transition:color .2s;}
-.nav-links a:hover{color:var(--dark);}
-.nav-r{display:flex;gap:.75rem;align-items:center;}
-.btn-tel{font-size:.78rem;color:var(--gray);background:none;border:.5px solid rgba(0,0,0,.15);padding:.48rem 1rem;border-radius:2px;cursor:pointer;font-family:'DM Sans',sans-serif;}
-.btn-book{font-size:.78rem;font-weight:500;color:#fff;background:var(--mint);border:none;padding:.52rem 1.25rem;border-radius:2px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s;}
-.btn-book:hover{background:var(--mint-dark);}
-
-/* FLOATING CTA */
-.float-cta{position:fixed;bottom:2rem;right:2rem;z-index:300;background:var(--mint);color:#fff;border:none;padding:.85rem 1.75rem;border-radius:50px;font-size:.85rem;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;box-shadow:0 8px 32px rgba(29,158,117,.35);transition:transform .2s,box-shadow .2s;display:flex;align-items:center;gap:.5rem;}
-.float-cta:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(29,158,117,.45);}
-.float-cta svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-
-/* HERO */
-.hero{display:grid;grid-template-columns:1fr 1fr;min-height:94vh;}
-.hero-l{padding:8rem 4rem;display:flex;flex-direction:column;justify-content:center;border-right:.5px solid var(--border);}
-.eyebrow{display:flex;align-items:center;gap:.65rem;margin-bottom:2.5rem;font-size:.67rem;letter-spacing:.16em;text-transform:uppercase;color:var(--mint);}
-.eyebrow::before{content:'';width:20px;height:1px;background:var(--mint);}
-h1{font-family:'DM Serif Display',serif;font-size:clamp(3.2rem,4.5vw,4.8rem);line-height:1.04;letter-spacing:-.025em;font-weight:400;margin-bottom:2rem;}
-h1 em{font-style:italic;color:var(--mint);}
-.hero-body{font-size:1rem;color:var(--gray);line-height:1.78;max-width:390px;margin-bottom:3rem;font-weight:300;}
-.hero-btns{display:flex;gap:.85rem;margin-bottom:2.25rem;}
-.btn-primary{background:var(--mint);color:#fff;border:none;padding:.9rem 2.25rem;border-radius:2px;font-size:.88rem;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background .2s;}
-.btn-primary:hover{background:var(--mint-dark);}
-.btn-secondary{background:transparent;color:var(--dark);border:.5px solid rgba(0,0,0,.2);padding:.9rem 1.85rem;border-radius:2px;font-size:.88rem;cursor:pointer;font-family:'DM Sans',sans-serif;}
-.hero-micro{font-size:.7rem;color:#bbb;letter-spacing:.02em;}
-.hero-micro span{color:var(--mint);}
-
-/* HERO RIGHT - BOOKING FORM */
-.hero-r{background:var(--soft);display:flex;flex-direction:column;justify-content:center;padding:5rem 3.5rem;}
-.form-head{font-family:'DM Serif Display',serif;font-size:1.6rem;font-weight:400;margin-bottom:.4rem;letter-spacing:-.01em;}
-.form-sub{font-size:.78rem;color:var(--gray);margin-bottom:2rem;line-height:1.55;font-weight:300;}
-.form-grid{display:flex;flex-direction:column;gap:.75rem;}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
-.form-field{display:flex;flex-direction:column;gap:.3rem;}
-.form-label{font-size:.67rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gray);}
-.form-input{padding:.65rem .9rem;border:.5px solid rgba(0,0,0,.15);border-radius:2px;font-size:.82rem;font-family:'DM Sans',sans-serif;background:#fff;color:var(--dark);outline:none;transition:border .2s;}
-.form-input:focus{border-color:var(--mint);}
-.form-select{padding:.65rem .9rem;border:.5px solid rgba(0,0,0,.15);border-radius:2px;font-size:.82rem;font-family:'DM Sans',sans-serif;background:#fff;color:var(--dark);outline:none;appearance:none;cursor:pointer;}
-.form-select:focus{border-color:var(--mint);}
-.btn-form{width:100%;padding:.85rem;background:var(--mint);color:#fff;border:none;border-radius:2px;font-size:.85rem;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .2s;margin-top:.25rem;}
-.btn-form:hover{background:var(--mint-dark);}
-.form-trust{display:flex;gap:1.25rem;margin-top:1rem;flex-wrap:wrap;}
-.ftrust{font-size:.67rem;color:#aaa;display:flex;align-items:center;gap:.3rem;}
-.ftrust::before{content:'✓';color:var(--mint);font-size:.65rem;}
-.booking-count{color:var(--mint);font-weight:500;display:inline-block;min-width:1.6em;}
-
-/* SECTION */
-.section{padding:7rem 4rem;}
-.sect-eye{font-size:.67rem;letter-spacing:.16em;text-transform:uppercase;color:var(--mint);margin-bottom:1rem;}
-h2{font-family:'DM Serif Display',serif;font-size:clamp(2.2rem,3.2vw,3.2rem);font-weight:400;line-height:1.1;letter-spacing:-.02em;margin-bottom:1rem;}
-h2 em{font-style:italic;color:var(--mint);}
-.sect-sub{font-size:.95rem;color:var(--gray);line-height:1.78;max-width:440px;margin-bottom:4rem;font-weight:300;}
-
-/* STATS BAND */
-.stats-band{background:var(--dark);padding:3.5rem 4rem;display:grid;grid-template-columns:repeat(4,1fr);gap:0;}
-.stat-item{padding:1rem 2rem;border-right:.5px solid rgba(255,255,255,.07);text-align:center;}
-.stat-item:last-child{border-right:none;}
-.stat-n{font-family:'DM Serif Display',serif;font-size:2.8rem;color:#fff;line-height:1;margin-bottom:.4rem;}
-.stat-d{font-size:.72rem;color:rgba(255,255,255,.35);letter-spacing:.06em;line-height:1.5;}
-
-/* FEATURES */
-.features-grid{display:grid;grid-template-columns:repeat(4,1fr);border:.5px solid var(--border);}
-.feat{padding:2.75rem 2rem;border-right:.5px solid var(--border);}
-.feat:last-child{border-right:none;}
-.feat-icon{width:40px;height:40px;background:var(--mint-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:1.6rem;}
-.feat-icon svg{width:15px;height:15px;stroke:var(--mint);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
-.feat-title{font-size:.88rem;font-weight:500;margin-bottom:.55rem;}
-.feat-body{font-size:.79rem;color:var(--gray);line-height:1.68;font-weight:300;}
-
-/* WHAT'S INCLUDED */
-.included-bg{background:var(--soft);}
-.included-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start;}
-.included-list{display:flex;flex-direction:column;gap:0;}
-.inc-item{display:flex;align-items:center;gap:.85rem;padding:1rem 0;border-bottom:.5px solid var(--border);}
-.inc-item:first-child{border-top:.5px solid var(--border);}
-.inc-check{width:20px;height:20px;background:var(--mint-light);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.inc-check svg{width:10px;height:10px;stroke:var(--mint);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;}
-.inc-text{font-size:.84rem;color:var(--dark);font-weight:300;}
-.included-aside{position:sticky;top:6rem;}
-.price-card-big{background:var(--dark);padding:3rem;border-radius:3px;}
-.pcb-eye{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mint-mid);margin-bottom:1.25rem;}
-.pcb-mode-toggle{display:flex;gap:.5rem;margin-bottom:1rem;}
-.pcb-mode-btn{flex:1;padding:.45rem .65rem;background:rgba(255,255,255,.05);color:rgba(255,255,255,.65);border:.5px solid rgba(255,255,255,.2);border-radius:2px;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;}
-.pcb-mode-btn.active{background:rgba(29,158,117,.2);border-color:rgba(29,158,117,.4);color:#fff;}
-.pcb-select-wrap{display:flex;flex-direction:column;gap:.55rem;margin-bottom:1rem;}
-.pcb-select{width:100%;padding:.6rem .7rem;background:rgba(255,255,255,.08);color:#fff;border:.5px solid rgba(255,255,255,.2);border-radius:2px;font-size:.78rem;font-family:'DM Sans',sans-serif;outline:none;}
-.pcb-select option{color:#111;background:#fff;}
-.pcb-from{font-size:.75rem;color:rgba(255,255,255,.3);margin-bottom:.05rem;position:relative;top:-.22rem;}
-.pcb-price{font-family:'DM Serif Display',serif;font-size:4rem;color:#fff;line-height:1;margin-bottom:.25rem;margin-top:-.1rem;}
-.pcb-price sup{font-size:.92rem;font-family:'DM Sans',sans-serif;vertical-align:top;margin-top:.28rem;display:inline-block;margin-right:-.3rem;}
-.pcb-note{font-size:.72rem;color:rgba(255,255,255,.3);margin-bottom:2rem;}
-.pcb-tiers{display:flex;flex-direction:column;gap:.5rem;margin-bottom:2rem;}
-.pcb-tier{display:flex;justify-content:space-between;align-items:center;padding:.65rem .85rem;background:rgba(255,255,255,.04);border-radius:2px;}
-.pcb-tier{cursor:pointer;transition:all .2s;}
-.pcb-tier-name{font-size:.78rem;color:rgba(255,255,255,.5);font-weight:300;}
-.pcb-tier-price{font-size:.88rem;color:#fff;font-weight:500;}
-.pcb-tier.active{background:rgba(29,158,117,.15);border:.5px solid rgba(29,158,117,.25);}
-.pcb-tier.active .pcb-tier-name{color:var(--mint-mid);}
-.btn-pcb{width:100%;padding:.85rem;background:var(--mint);color:#fff;border:none;border-radius:2px;font-size:.82rem;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;}
-
-/* STEPS */
-.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;}
-.step-card{background:var(--soft);padding:3.5rem 2.75rem;}
-.step-n{font-family:'DM Serif Display',serif;font-size:4.5rem;color:rgba(29,158,117,.2);line-height:1;margin-bottom:2rem;}
-.step-title{font-size:.95rem;font-weight:500;margin-bottom:.6rem;}
-.step-body{font-size:.79rem;color:var(--gray);line-height:1.68;font-weight:300;}
-
-/* NEIGHBORHOODS */
-.hoods-bg{background:var(--dark);}
-.hoods-bg .sect-eye{color:var(--mint-mid);}
-.hoods-bg h2{color:#fff;}
-.hoods-bg .sect-sub{color:rgba(255,255,255,.35);}
-.hoods-grid{display:flex;flex-wrap:wrap;gap:.5rem;}
-.hood{background:rgba(255,255,255,.05);border:.5px solid rgba(255,255,255,.08);padding:.5rem 1.1rem;border-radius:2px;font-size:.78rem;color:rgba(255,255,255,.5);cursor:pointer;transition:all .2s;}
-.hood:hover{background:rgba(29,158,117,.15);border-color:rgba(29,158,117,.3);color:var(--mint-mid);}
-
-/* REVIEWS */
-.reviews-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;}
-.review{border:.5px solid var(--border);padding:2.25rem;border-radius:3px;transition:border-color .2s;}
-.review:hover{border-color:var(--mint-mid);}
-.stars{display:flex;gap:3px;margin-bottom:1.25rem;}
-.star{width:10px;height:10px;background:var(--mint);border-radius:50%;}
-.rev-text{font-family:'DM Serif Display',serif;font-size:.9rem;line-height:1.68;margin-bottom:1.5rem;font-style:italic;}
-.rev-author{font-size:.7rem;color:var(--gray);letter-spacing:.07em;text-transform:uppercase;}
-
-/* FAQ */
-.faq-bg{background:var(--soft);}
-.faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);}
-.faq-item{background:#fff;padding:2rem 2.25rem;}
-.faq-q{font-size:.9rem;font-weight:500;margin-bottom:.65rem;}
-.faq-a{font-size:.8rem;color:var(--gray);line-height:1.68;font-weight:300;}
-
-/* CTA BAND */
-.cta-band{background:var(--mint);padding:7rem 4rem;display:flex;align-items:center;justify-content:space-between;gap:3rem;}
-.cta-band h2{color:#fff;max-width:540px;}
-.cta-band h2 em{opacity:.7;}
-.btn-cta-w{background:#fff;color:var(--mint-dark);border:none;padding:1rem 2.5rem;border-radius:2px;font-size:.9rem;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap;}
-
-/* FOOTER */
-footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
-.footer-top{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:4rem;padding-bottom:3rem;border-bottom:.5px solid rgba(255,255,255,.07);margin-bottom:2rem;}
-.footer-brand-name{font-size:.95rem;font-weight:500;letter-spacing:.06em;color:#fff;margin-bottom:.5rem;}
-.footer-brand-name em{font-style:normal;color:var(--mint);}
-.footer-tagline{font-size:.75rem;color:rgba(255,255,255,.25);line-height:1.65;max-width:180px;margin-bottom:1.5rem;}
-.footer-phone{font-size:.82rem;color:var(--mint-mid);text-decoration:none;}
-.fcol-head{font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.2);margin-bottom:1.1rem;}
-.fcol a{display:block;font-size:.78rem;color:rgba(255,255,255,.45);text-decoration:none;margin-bottom:.55rem;transition:color .2s;}
-.fcol a:hover{color:#fff;}
-.footer-bottom{display:flex;justify-content:space-between;font-size:.68rem;color:rgba(255,255,255,.18);}
-.footer-bottom a{color:rgba(29,158,117,.7);text-decoration:none;}
-
-/* MOBILE */
-@media(max-width:960px){
-	nav{padding:1rem 1.5rem;}
-	.nav-links{display:none;}
-	.btn-tel{display:none;}
-	.hero{grid-template-columns:1fr;min-height:auto;}
-	.hero-l{padding:4rem 1.5rem;}
-	.hero-r{padding:3rem 1.5rem;}
-	.form-row{grid-template-columns:1fr;}
-	.stats-band{grid-template-columns:1fr 1fr;padding:2.5rem 1.5rem;}
-	.stat-item{border-right:none;border-bottom:.5px solid rgba(255,255,255,.07);padding:1.25rem;}
-	.stat-item:nth-child(odd){border-right:.5px solid rgba(255,255,255,.07);}
-	.features-grid{grid-template-columns:1fr 1fr;}
-	.feat:nth-child(2){border-right:none;}
-	.feat:nth-child(3),.feat:nth-child(4){border-top:.5px solid var(--border);}
-	.included-grid{grid-template-columns:1fr;}
-	.included-aside{position:static;}
-	.steps-grid{grid-template-columns:1fr;gap:2px;}
-	.reviews-grid{grid-template-columns:1fr;}
-	.faq-grid{grid-template-columns:1fr;}
-	.cta-band{flex-direction:column;padding:4rem 1.5rem;}
-	.section{padding:4rem 1.5rem;}
-	.footer-top{grid-template-columns:1fr 1fr;gap:2rem;padding:2rem 0;}
-	footer{padding:3rem 1.5rem 2rem;}
-	.footer-bottom{flex-direction:column;gap:.5rem;}
-	.hoods-grid{gap:.4rem;}
-	.float-cta{bottom:1.25rem;right:1.25rem;font-size:.8rem;padding:.75rem 1.4rem;}
-}`}</style>
 
 			{/* FLOATING BOOK BUTTON */}
 			<button className="float-cta" onClick={() => scrollToSection("booking")}>
@@ -318,59 +121,17 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 				Book a clean
 			</button>
 
-			{/* TICKER */}
-			<div className="ticker">
-				<div className="ticker-inner">
-					<span className="tick"><span className="tick-dot" />Background-checked cleaners</span>
-					<span className="tick"><span className="tick-dot" />Flat-rate from $175</span>
-					<span className="tick"><span className="tick-dot" />100% happiness guarantee</span>
-					<span className="tick"><span className="tick-dot" />Bonded &amp; insured every visit</span>
-					<span className="tick"><span className="tick-dot" />Manhattan specialists</span>
-					<span className="tick"><span className="tick-dot" />Same-week availability</span>
-					<span className="tick"><span className="tick-dot" />Eco-friendly products included</span>
-					<span className="tick"><span className="tick-dot" />No contracts, ever</span>
-					<span className="tick"><span className="tick-dot" />COI-ready for buildings</span>
-					<span className="tick"><span className="tick-dot" />Doorman &amp; lockbox handling</span>
-					<span className="tick"><span className="tick-dot" />Background-checked cleaners</span>
-					<span className="tick"><span className="tick-dot" />Flat-rate from $175</span>
-					<span className="tick"><span className="tick-dot" />100% happiness guarantee</span>
-					<span className="tick"><span className="tick-dot" />Bonded &amp; insured every visit</span>
-					<span className="tick"><span className="tick-dot" />Manhattan specialists</span>
-					<span className="tick"><span className="tick-dot" />Same-week availability</span>
-					<span className="tick"><span className="tick-dot" />Eco-friendly products included</span>
-					<span className="tick"><span className="tick-dot" />No contracts, ever</span>
-					<span className="tick"><span className="tick-dot" />COI-ready for buildings</span>
-					<span className="tick"><span className="tick-dot" />Doorman &amp; lockbox handling</span>
-				</div>
-			</div>
-
-			{/* NAV */}
-			<nav>
-				<a className="logo" href="#">manhattan<em>mint</em></a>
-				<div className="nav-links">
-					<a href="#services">Services</a>
-					<a href="#pricing">Pricing</a>
-					<a href="#how-it-works">How it works</a>
-					<a href="#areas">Areas</a>
-					<a href="#reviews">Reviews</a>
-				</div>
-				<div className="nav-r">
-					<a className="btn-tel" href="tel:9148637902">(914) 863-7902</a>
-					<button className="btn-book" onClick={() => scrollToSection("booking")}>Book a clean</button>
-				</div>
-			</nav>
-
 			{/* HERO */}
 			<div className="hero">
 				<div className="hero-l">
-					<div className="eyebrow">NYC apartment cleaning</div>
+					<div className="eyebrow">Manhattan apartment cleaning</div>
 					<h1>Your apartment,<br /><em>immaculate.</em><br />Your time, yours.</h1>
-					<p className="hero-body">Premium cleaning built for Manhattan professionals. Background-checked cleaners, same-week availability, and results that are guaranteed — every single time.</p>
+					<p className="hero-body">Luxury home cleaning built for Manhattan professionals. Background-checked cleaners, eco-friendly supplies, next-day and same-week availability — and results that are guaranteed, every single time.</p>
 					<div className="hero-btns">
 						<button className="btn-primary" onClick={() => scrollToSection("booking")}>Book your first clean</button>
 						<button className="btn-secondary" onClick={() => scrollToSection("pricing")}>View pricing</button>
 					</div>
-					<div className="hero-micro">Studio and 1-bedroom homes from <span>$175</span> &nbsp;·&nbsp; Flat-rate pricing &nbsp;·&nbsp; Same-week availability</div>
+					<div className="hero-micro">Studio and 1-bedroom homes from <span>$175</span> &nbsp;·&nbsp; <Link href="/pricing-availability">Flat-rate pricing</Link> &nbsp;·&nbsp; Same-week availability</div>
 				</div>
 				<div className="hero-r" id="booking">
 					<div className="form-head">Get a fast quote</div>
@@ -476,7 +237,7 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 			</div>
 
 			{/* FEATURES */}
-			<section className="section" id="services" style={{ background: "#fff" }}>
+			<section className="section section-white" id="services">
 				<div className="sect-eye">Why manhattan mint</div>
 				<h2>Built for the way<br /><em>New Yorkers live.</em></h2>
 				<p className="sect-sub">Your schedule is packed, your space is tight, and your standards are high. Every part of Manhattan Mint was built around that.</p>
@@ -590,7 +351,7 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 								{(pricingMode === "flat" ? effectiveFlatPrice : effectiveHourlyPrice).replace("$", "")}
 							</div>
 							<div className="pcb-note">All supplies included · No hidden fees</div>
-							<div style={{ fontSize: ".7rem", color: "rgba(255,255,255,.25)", marginBottom: "1.5rem" }}>
+							<div className="pcb-detail">
 								{pricingMode === "flat"
 									? "Deep clean +$75 · Move-in/out +$100 · Recurring saves 30%"
 									: `$${hourlyRates.ratePerCleaner}/hr per cleaner · same supplies included`}
@@ -610,7 +371,7 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 			</section>
 
 			{/* HOW IT WORKS */}
-			<section className="section" id="how-it-works" style={{ background: "#fff" }}>
+			<section className="section section-white" id="how-it-works">
 				<div className="sect-eye">How it works</div>
 				<h2>Clean in three<br /><em>simple steps.</em></h2>
 				<p className="sect-sub">Every friction point removed — from booking to billing.</p>
@@ -618,6 +379,56 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 					<div className="step-card"><div className="step-n">01</div><div className="step-title">Book online in 60 seconds</div><p className="step-body">Select your size, date, and any add-ons. Instant confirmation — no phone call needed.</p></div>
 					<div className="step-card"><div className="step-n">02</div><div className="step-title">We show up. You don&apos;t have to.</div><p className="step-body">Your cleaner arrives at the scheduled time. Key handoff, lockbox, or doorman — whatever works for your building.</p></div>
 					<div className="step-card"><div className="step-n">03</div><div className="step-title">Come home to perfection</div><p className="step-body">You receive a photo summary. Rate your clean. Subscribe for recurring visits and lock in your preferred cleaner.</p></div>
+				</div>
+			</section>
+
+			{/* CREDENTIALS / TRUST */}
+			<section className="section cred-bg" id="credentials">
+				<div className="sect-eye">Who you&apos;re letting in</div>
+				<h2>A team you can<br /><em>actually vet.</em></h2>
+				<p className="sect-sub">Trust isn&apos;t a tagline — it&apos;s paperwork, screening, and a founder who reviews every job.</p>
+				<div className="cred-grid">
+					<div className="cred-copy">
+						<p>Manhattan Mint is an owner-operated NYC company, not a lead-generation marketplace. Every cleaner on our team is interviewed in person, background-checked before their first booking, and trained on our checklist — the same one behind every clean in our <Link href="/case-studies">case studies</Link>.</p>
+						<p>We work exclusively in Manhattan buildings, which means COIs, service-elevator reservations, doorman check-ins, and <Link href="/blog/cleaning-services-for-co-ops">co-op house rules</Link> are part of our normal workflow — not a surprise.</p>
+						<div className="founder-card">
+							<div className="founder-avatar">mm</div>
+							<div>
+								<div className="founder-name">Owner-operated, Manhattan-based</div>
+								<div className="founder-role">The owner personally reviews every job&apos;s photo summary before it&apos;s closed out</div>
+							</div>
+						</div>
+					</div>
+					<div className="cred-list">
+						<div className="cred-item">
+							<div className="cred-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div>
+							<div>
+								<div className="cred-title">Background-checked, every hire</div>
+								<div className="cred-body">Third-party screening is completed before a cleaner ever enters a client&apos;s home.</div>
+							</div>
+						</div>
+						<div className="cred-item">
+							<div className="cred-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div>
+							<div>
+								<div className="cred-title">Bonded &amp; fully insured</div>
+								<div className="cred-body">Liability coverage on every visit, with certificates of insurance issued for buildings that require them.</div>
+							</div>
+						</div>
+						<div className="cred-item">
+							<div className="cred-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div>
+							<div>
+								<div className="cred-title">Photo-verified quality</div>
+								<div className="cred-body">A photo summary is sent after every clean, and the founder reviews the results before the job is closed out.</div>
+							</div>
+						</div>
+						<div className="cred-item">
+							<div className="cred-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div>
+							<div>
+								<div className="cred-title">100% re-clean guarantee</div>
+								<div className="cred-body">If anything isn&apos;t right, we come back and fix it at no charge — our standard policy, in writing in our <Link href="/terms">terms</Link>.</div>
+							</div>
+						</div>
+					</div>
 				</div>
 			</section>
 
@@ -640,18 +451,63 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 			</section>
 
 			{/* REVIEWS */}
-			<section className="section" id="reviews" style={{ background: "#fff" }}>
+			<section className="section section-white" id="reviews">
 				<div className="sect-eye">Reviews</div>
 				<h2>What Manhattan<br /><em>is saying.</em></h2>
 				<p className="sect-sub">Word of mouth built this business. These are the New Yorkers who trusted us first.</p>
 				<div className="reviews-grid">
-					<div className="review"><div className="stars"><div className="star" /><div className="star" /><div className="star" /><div className="star" /><div className="star" /></div><div className="rev-text">&quot;Fast booking, clear pricing, great results. My apartment has never been this clean — and I&apos;ve tried four services.&quot;</div><div className="rev-author">— Jason M., Midtown</div></div>
-					<div className="review"><div className="stars"><div className="star" /><div className="star" /><div className="star" /><div className="star" /><div className="star" /></div><div className="rev-text">&quot;They cleaned behind the radiators. Nobody does that. Genuinely the most thorough clean I&apos;ve ever had in New York.&quot;</div><div className="rev-author">— Alex T., Tribeca</div></div>
-					<div className="review"><div className="stars"><div className="star" /><div className="star" /><div className="star" /><div className="star" /><div className="star" /></div><div className="rev-text">&quot;Reliable, respectful, and worth every penny. I switched from a larger service six months ago and haven&apos;t looked back.&quot;</div><div className="rev-author">— Maya L., UWS</div></div>
-					<div className="review"><div className="stars"><div className="star" /><div className="star" /><div className="star" /><div className="star" /><div className="star" /></div><div className="rev-text">&quot;Same cleaner every time, which I really value. My apartment feels like a hotel every single visit.&quot;</div><div className="rev-author">— David K., Chelsea</div></div>
-					<div className="review"><div className="stars"><div className="star" /><div className="star" /><div className="star" /><div className="star" /><div className="star" /></div><div className="rev-text">&quot;Booked on a Tuesday, they were there Thursday. The doorman even complimented how professionally they handled building entry.&quot;</div><div className="rev-author">— Sarah P., UES</div></div>
-					<div className="review"><div className="stars"><div className="star" /><div className="star" /><div className="star" /><div className="star" /><div className="star" /></div><div className="rev-text">&quot;As someone with a 3-bedroom in the West Village, finding a reliable team was hard. Manhattan Mint nailed it on the first visit.&quot;</div><div className="rev-author">— Marcus W., West Village</div></div>
+					{reviews.map((review) => (
+						<div className="review" key={`${review.author}-${review.date}`}>
+							<div className="rev-head">
+								<div className="rev-avatar">{review.author.charAt(0)}</div>
+								<div className="rev-who">
+									<div className="rev-name">{review.author}</div>
+									<div className="rev-place">{review.neighborhood}</div>
+								</div>
+								{review.source === "Google" && (
+									<svg className="rev-g" viewBox="0 0 24 24" aria-label="Posted on Google">
+										<path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" />
+										<path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z" />
+										<path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18A11 11 0 0 0 1 12c0 1.77.43 3.45 1.18 4.94l3.66-2.84z" />
+										<path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15A11 11 0 0 0 12 1 11 11 0 0 0 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+									</svg>
+								)}
+							</div>
+							<div className="rev-stars" aria-label={`${review.rating} out of 5 stars`}>
+								{"★★★★★".slice(0, review.rating)}
+								<span className="rev-stars-empty">{"★★★★★".slice(review.rating)}</span>
+							</div>
+							<div className="rev-text">&quot;{review.text}&quot;</div>
+							<div className="rev-date">
+								{review.date}
+								{review.source === "Google" ? " · Posted on Google" : " · Verified client"}
+							</div>
+						</div>
+					))}
 				</div>
+				{GOOGLE_REVIEWS_URL && (
+					<a className="rev-all" href={GOOGLE_REVIEWS_URL} target="_blank" rel="noopener noreferrer">
+						Read all of our reviews on Google →
+					</a>
+				)}
+			</section>
+
+			{/* CASE STUDIES */}
+			<section className="section" id="case-studies">
+				<div className="sect-eye">Case studies</div>
+				<h2>Real Manhattan apartments,<br /><em>real results.</em></h2>
+				<p className="sect-sub">Pre-war walk-ups, strict co-op boards, tight layouts — see how we handle the challenges unique to cleaning in Manhattan.</p>
+				<div className="cs-grid">
+					{caseStudies.map((study) => (
+						<Link key={study.slug} href={`/case-studies/${study.slug}`} className="cs-card">
+							<span className="cs-tag">{study.neighborhood} · {study.propertyType}</span>
+							<div className="cs-title">{study.title}</div>
+							<p className="cs-excerpt">{study.excerpt}</p>
+							<span className="cs-more">Read the case study →</span>
+						</Link>
+					))}
+				</div>
+				<Link href="/case-studies" className="cs-all">View all case studies →</Link>
 			</section>
 
 			{/* EMAIL CAPTURE */}
@@ -667,8 +523,10 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 					<div className="faq-item"><div className="faq-q">Do you bring your own supplies?</div><div className="faq-a">Yes, always. All cleaning products and equipment are included in your flat rate. We use eco-friendly, non-toxic products by default.</div></div>
 					<div className="faq-item"><div className="faq-q">What if I&apos;m not satisfied?</div><div className="faq-a">We&apos;ll come back and re-clean at no charge. 100% satisfaction is not a marketing line — it&apos;s our standard operating policy.</div></div>
 					<div className="faq-item"><div className="faq-q">Can I request the same cleaner every time?</div><div className="faq-a">Yes. Once you&apos;ve had a great experience with a specific cleaner, you can request them for all future visits when you subscribe.</div></div>
-					<div className="faq-item"><div className="faq-q">Is your team insured?</div><div className="faq-a">Every cleaner is fully bonded and insured. We are also COI-ready for co-op and condo buildings that require it.</div></div>
+					<div className="faq-item"><div className="faq-q">Is your team insured?</div><div className="faq-a">Every cleaner is fully bonded and insured. We are also COI-ready for co-op and condo buildings that require it — see how that works in <Link href="/case-studies/co-op-coi-cleaning-upper-east-side">our Upper East Side co-op case study</Link>.</div></div>
 					<div className="faq-item"><div className="faq-q">How do I cancel or reschedule?</div><div className="faq-a">Text or email us any time. No cancellation fees, no contracts. We only ask for 24 hours notice when possible.</div></div>
+					<div className="faq-item"><div className="faq-q">Do you offer same-day cleaning in NYC?</div><div className="faq-a">Online booking guarantees next-day at the earliest, but same-day cleans are often possible when a cleaner has an opening — call or text <a href="tel:9148637902">(914) 863-7902</a> and we&apos;ll tell you straight away if we can fit you in today.</div></div>
+					<div className="faq-item"><div className="faq-q">Are your products safe for kids and pets?</div><div className="faq-a">Yes — we use eco-friendly, non-toxic cleaning products by default on every visit, at no extra charge. If you prefer a specific product for certain surfaces, leave it out and a note, and we&apos;ll use yours.</div></div>
 				</div>
 			</section>
 
@@ -678,36 +536,6 @@ footer{background:var(--charcoal);padding:5rem 4rem 2.5rem;}
 				<button className="btn-cta-w" onClick={() => scrollToSection("booking")}>Book your first clean →</button>
 			</div>
 
-			{/* FOOTER */}
-			<footer>
-				<div className="footer-top">
-					<div>
-						<div className="footer-brand-name">manhattan<em>mint</em></div>
-						<div className="footer-tagline">Flawless clean. Honest service. True to New York.</div>
-						<a className="footer-phone" href="tel:9148637902">(914) 863-7902</a>
-					</div>
-					<div className="fcol">
-						<div className="fcol-head">Services</div>
-						<a href="#">Standard clean</a><a href="#">Deep clean</a>
-						<a href="#">Move-in / out</a><a href="#">Recurring plans</a><a href="#">Add-ons</a>
-					</div>
-					<div className="fcol">
-						<div className="fcol-head">Company</div>
-						<a href="#">About us</a><a href="#">Areas served</a>
-						<a href="#">FAQ</a><a href="#">Careers</a><a href="#">Share &amp; save $20</a>
-					</div>
-					<div className="fcol">
-						<div className="fcol-head">Contact</div>
-						<a href="mailto:hello@manhattanmintnyc.com">hello@manhattanmintnyc.com</a>
-						<a href="tel:9148637902">(914) 863-7902</a>
-						<a href="#">Google Reviews</a>
-					</div>
-				</div>
-				<div className="footer-bottom">
-					<div>&copy; 2026 Manhattan Mint NYC LLC. All rights reserved.</div>
-					<div>Bonded · Insured · COI-ready · <a href="tel:9148637902">(914) 863-7902</a></div>
-				</div>
-			</footer>
 		</>
 	);
 }

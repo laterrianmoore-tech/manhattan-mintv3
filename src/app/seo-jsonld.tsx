@@ -10,9 +10,19 @@ export default function SEOJsonLd() {
     url: "https://www.manhattanmintnyc.com",
     description:
       "Luxury home cleaning for busy New Yorkers — insured, building-friendly, and fully digital from booking to receipt.",
+    telephone: "+1-914-863-7902",
+    email: "hello@manhattanmintnyc.com",
+    sameAs: ["https://share.google/ZE4GZwjFnRtf9SZTU"],
+    priceRange: "$175+",
     areaServed: {
       "@type": "City",
       name: "New York City",
+    },
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: "New York",
+      addressRegion: "NY",
+      addressCountry: "US",
     },
     image: [
       "https://www.manhattanmintnyc.com/opengraph-image",

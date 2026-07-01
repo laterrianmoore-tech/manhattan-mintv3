@@ -6,6 +6,10 @@ Manhattan Mint is a New York City residential cleaning service. This Next.js cod
 
 **Read `credentials/README.md` (gitignored) for all API keys, service accounts, and current system state before making changes.**
 
+## Directory layout — IMPORTANT
+
+The repo has both `app/` and `src/app/`. **Next.js serves the root `app/` directory** — that is where pages live. Exceptions that still live in `src/`: `src/app/layout.tsx` (re-exported by `app/layout.tsx`), `src/app/globals.css`, `src/app/seo-jsonld.tsx`, `src/components/`, `src/lib/`. Everything else under `src/app/` is dead code — never add new pages or API routes there.
+
 ---
 
 ## Vision
