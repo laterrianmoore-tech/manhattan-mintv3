@@ -49,7 +49,7 @@ export default function CaseStudiesPage() {
 				</div>
 				<p>
 					Flat-rate pricing from $175, same-week availability, and a team that already knows
-					your building type. See <Link href="/pricing-availability">pricing &amp; availability</Link> or get started below.
+					your building type. See <Link href="/#pricing">flat-rate pricing</Link> or get started below.
 				</p>
 				<Link href="/quote" className="cs-cta-btn">
 					Get your quote →

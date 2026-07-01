@@ -1,79 +1,73 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// REVIEWS — paste your real Google reviews here.
+// REVIEWS — real Google reviews, pulled from the Manhattan Mint
+// Google Business Profile (5.0 rating, 16 reviews as of July 2026).
 //
-// To swap in a real review: copy the reviewer's first name + last initial,
-// their star rating, the review text (trim if long), and the month it was
-// posted, straight from your Google Business Profile.
-//
-// Set GOOGLE_REVIEWS_URL to your Google Business Profile share link
-// (Google Business Profile → Ask for reviews → copy the short link, or the
-// Maps URL of your listing). Until it's set, the "Read all reviews" button
-// is hidden automatically.
-//
-// The current entries are the site's original testimonials, marked
-// source: "Direct". When you paste a real Google review, set its
-// source to "Google" — that switches the card to the Google badge.
+// To add a new one: copy the reviewer's name, star rating, text, and month
+// from the profile and add an entry with source: "Google".
+// GOOGLE_REVIEWS_URL is the official profile share link.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Official Google Business Profile share link for Manhattan Mint
 export const GOOGLE_REVIEWS_URL = "https://share.google/ZE4GZwjFnRtf9SZTU";
 
+export const GOOGLE_RATING = "5.0";
+export const GOOGLE_REVIEW_COUNT = 16;
+
 export type Review = {
 	author: string;
-	neighborhood: string;
+	neighborhood?: string;
 	rating: 1 | 2 | 3 | 4 | 5;
 	text: string;
-	date: string; // e.g. "March 2026" — shown under the review
+	date: string; // e.g. "June 2026" — shown under the review
 	source: "Google" | "Yelp" | "Direct";
 };
 
 export const reviews: Review[] = [
 	{
-		author: "Jason M.",
-		neighborhood: "Midtown",
+		author: "Ethan Kaplan",
 		rating: 5,
-		text: "Fast booking, clear pricing, great results. My apartment has never been this clean — and I've tried four services.",
-		date: "April 2026",
-		source: "Direct",
-	},
-	{
-		author: "Alex T.",
-		neighborhood: "Tribeca",
-		rating: 5,
-		text: "They cleaned behind the radiators. Nobody does that. Genuinely the most thorough clean I've ever had in New York.",
-		date: "May 2026",
-		source: "Direct",
-	},
-	{
-		author: "Maya L.",
-		neighborhood: "Upper West Side",
-		rating: 5,
-		text: "Reliable, respectful, and worth every penny. I switched from a larger service six months ago and haven't looked back.",
-		date: "February 2026",
-		source: "Direct",
-	},
-	{
-		author: "David K.",
-		neighborhood: "Chelsea",
-		rating: 5,
-		text: "Same cleaner every time, which I really value. My apartment feels like a hotel every single visit.",
-		date: "May 2026",
-		source: "Direct",
-	},
-	{
-		author: "Sarah P.",
-		neighborhood: "Upper East Side",
-		rating: 5,
-		text: "Booked on a Tuesday, they were there Thursday. The doorman even complimented how professionally they handled building entry.",
+		text: "Found my new cleaning service. They came on time and did a great job. Definitely recommend if you live in the city.",
 		date: "June 2026",
-		source: "Direct",
+		source: "Google",
 	},
 	{
-		author: "Marcus W.",
-		neighborhood: "West Village",
+		author: "Alexia Martin",
 		rating: 5,
-		text: "As someone with a 3-bedroom in the West Village, finding a reliable team was hard. Manhattan Mint nailed it on the first visit.",
-		date: "March 2026",
-		source: "Direct",
+		text: "Exceptional service, always friendly professional and do a great job. Highly recommend.",
+		date: "June 2026",
+		source: "Google",
 	},
+	{
+		author: "Brianna Heaney",
+		rating: 5,
+		text: "Amazing experience! Very thorough, professional, and always timely. 10/10 recommend",
+		date: "June 2026",
+		source: "Google",
+	},
+	{
+		author: "Hailey S",
+		rating: 5,
+		text: "quick and easy booking, employees are professional and trustworthy!",
+		date: "June 2026",
+		source: "Google",
+	},
+	{
+		author: "Ricky Dodge",
+		rating: 5,
+		text: "Quality doesn't cost, it pays. Worth every penny!",
+		date: "June 2026",
+		source: "Google",
+	},
+	{
+		author: "Xhesika Doci",
+		rating: 5,
+		text: "great service and great results. highly recommend!",
+		date: "June 2026",
+		source: "Google",
+	},
+	// More from the profile, ready to swap in:
+	// Caroline Welsh — "Always great! Very timely and professional!"
+	// Florence Amelia — "Great service, would definitely recommend"
+	// Connor Byrne — "Quick and efficient"
+	// Zachary Petrolia — "Highly recommend"
 ];

@@ -1,6 +1,7 @@
 export type CaseStudy = {
 	slug: string;
 	title: string;
+	metaTitle: string; // short <60-char title for the <title> tag; title is the on-page H1
 	metaDescription: string;
 	neighborhood: string;
 	propertyType: string;
@@ -17,6 +18,7 @@ export type CaseStudy = {
 export const caseStudies: CaseStudy[] = [
 	{
 		slug: "pre-war-walk-up-deep-clean-upper-west-side",
+		metaTitle: "Pre-War Walk-Up Deep Clean: UWS Case Study",
 		title: "Deep-cleaning a pre-war walk-up studio on the Upper West Side",
 		metaDescription:
 			"How Manhattan Mint deep-cleaned a 450 sq ft pre-war walk-up studio on the Upper West Side — radiator grime, decades-old fixtures, and small-space storage dust.",
@@ -55,6 +57,7 @@ export const caseStudies: CaseStudy[] = [
 	},
 	{
 		slug: "co-op-coi-cleaning-upper-east-side",
+		metaTitle: "Co-op COI Cleaning: UES Case Study",
 		title: "Navigating co-op rules and COI requirements in an Upper East Side building",
 		metaDescription:
 			"How Manhattan Mint handles strict co-op building requirements — certificates of insurance, service elevator reservations, and doorman protocols — for an Upper East Side clean.",
@@ -93,6 +96,7 @@ export const caseStudies: CaseStudy[] = [
 	},
 	{
 		slug: "three-bedroom-family-reset-west-village",
+		metaTitle: "West Village 3BR Reset: Case Study",
 		title: "A full reset for a busy family's three-bedroom in the West Village",
 		metaDescription:
 			"How Manhattan Mint took a West Village family's three-bedroom from overwhelming to maintainable — first a deep clean, then a recurring schedule built around school pickup.",
@@ -131,6 +135,7 @@ export const caseStudies: CaseStudy[] = [
 	},
 	{
 		slug: "loft-detail-clean-tribeca",
+		metaTitle: "Tribeca Loft Detail Clean: Case Study",
 		title: "Detail-cleaning a Tribeca loft: high ceilings, open space, hidden dust",
 		metaDescription:
 			"How Manhattan Mint detail-cleaned a Tribeca loft — exposed beams, open shelving, oversized windows, and the dust problems that come with open-plan living.",

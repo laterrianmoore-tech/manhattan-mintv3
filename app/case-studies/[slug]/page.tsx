@@ -15,11 +15,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	const study = caseStudies.find((s) => s.slug === slug);
 	if (!study) return {};
 	return {
-		title: study.title,
+		title: study.metaTitle,
 		description: study.metaDescription,
 		alternates: { canonical: `/case-studies/${study.slug}` },
 		openGraph: {
-			title: `${study.title} | Manhattan Mint`,
+			title: `${study.metaTitle} | Manhattan Mint`,
 			description: study.metaDescription,
 			type: "article",
 			publishedTime: study.publishedAt,
@@ -77,6 +77,9 @@ export default async function CaseStudyPage({ params }: Props) {
 						Reviewed by <strong>the founder</strong>
 					</span>
 					<span>{publishedDate}</span>
+					<span>
+						Service: <Link href="/#services">{study.service}</Link>
+					</span>
 				</div>
 
 				<h2 className="cs-section-head">The challenge</h2>
@@ -110,7 +113,7 @@ export default async function CaseStudyPage({ params }: Props) {
 					</div>
 					<p>
 						Flat-rate pricing from $175, COIs handled, same-week availability. Check{" "}
-						<Link href="/pricing-availability">pricing &amp; availability</Link> or request your
+						<Link href="/#pricing">flat-rate pricing</Link> or request your
 						quote now.
 					</p>
 					<Link href="/quote" className="cs-cta-btn">
@@ -125,6 +128,7 @@ export default async function CaseStudyPage({ params }: Props) {
 							{s.title} →
 						</Link>
 					))}
+					<Link href="/blog">Manhattan cleaning guides →</Link>
 				</div>
 			</article>
 		</div>

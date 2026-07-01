@@ -115,6 +115,10 @@
 	font-weight: 500;
 }
 
+.cs-byline a {
+	color: var(--mint-dark, #085041);
+}
+
 .cs-section-head {
 	font-family: "DM Serif Display", serif;
 	font-size: 1.6rem;

@@ -129,7 +129,7 @@ function Footer() {
                 <Link href="/#services">Move In/Out</Link>
               </li>
               <li>
-                <Link href="/pricing-availability">Pricing &amp; Availability</Link>
+                <Link href="/#pricing">Pricing</Link>
               </li>
               <li>
                 <Link href="/quote">Get a Quote</Link>

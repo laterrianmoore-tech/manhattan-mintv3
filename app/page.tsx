@@ -131,7 +131,7 @@ export default function Page() {
 						<button className="btn-primary" onClick={() => scrollToSection("booking")}>Book your first clean</button>
 						<button className="btn-secondary" onClick={() => scrollToSection("pricing")}>View pricing</button>
 					</div>
-					<div className="hero-micro">Studio and 1-bedroom homes from <span>$175</span> &nbsp;·&nbsp; <Link href="/pricing-availability">Flat-rate pricing</Link> &nbsp;·&nbsp; Same-week availability</div>
+					<div className="hero-micro">Studio and 1-bedroom homes from <span>$175</span> &nbsp;·&nbsp; <Link href="/quote">Flat-rate pricing</Link> &nbsp;·&nbsp; Same-week availability</div>
 				</div>
 				<div className="hero-r" id="booking">
 					<div className="form-head">Get a fast quote</div>
@@ -231,7 +231,7 @@ export default function Page() {
 			{/* STATS BAND */}
 			<div className="stats-band">
 				<div className="stat-item"><div className="stat-n">500+</div><div className="stat-d">Manhattan apartments cleaned</div></div>
-				<div className="stat-item"><div className="stat-n">4.9★</div><div className="stat-d">Average verified rating</div></div>
+				<div className="stat-item"><div className="stat-n">5.0★</div><div className="stat-d">Google rating, all 5-star reviews</div></div>
 				<div className="stat-item"><div className="stat-n">24hr</div><div className="stat-d">Earliest available booking</div></div>
 				<div className="stat-item"><div className="stat-n">100%</div><div className="stat-d">Satisfaction guarantee</div></div>
 			</div>
@@ -454,7 +454,7 @@ export default function Page() {
 			<section className="section section-white" id="reviews">
 				<div className="sect-eye">Reviews</div>
 				<h2>What Manhattan<br /><em>is saying.</em></h2>
-				<p className="sect-sub">Word of mouth built this business. These are the New Yorkers who trusted us first.</p>
+				<p className="sect-sub">Rated 5.0 on Google. Word of mouth built this business — these are the New Yorkers who trusted us first.</p>
 				<div className="reviews-grid">
 					{reviews.map((review) => (
 						<div className="review" key={`${review.author}-${review.date}`}>
@@ -462,7 +462,7 @@ export default function Page() {
 								<div className="rev-avatar">{review.author.charAt(0)}</div>
 								<div className="rev-who">
 									<div className="rev-name">{review.author}</div>
-									<div className="rev-place">{review.neighborhood}</div>
+									<div className="rev-place">{review.neighborhood ?? "Google review"}</div>
 								</div>
 								{review.source === "Google" && (
 									<svg className="rev-g" viewBox="0 0 24 24" aria-label="Posted on Google">

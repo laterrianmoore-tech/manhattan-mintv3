@@ -15,11 +15,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	const post = blogPosts.find((p) => p.slug === slug);
 	if (!post) return {};
 	return {
-		title: post.title,
+		title: post.metaTitle,
 		description: post.metaDescription,
 		alternates: { canonical: `/blog/${post.slug}` },
 		openGraph: {
-			title: `${post.title} | Manhattan Mint`,
+			title: `${post.metaTitle} | Manhattan Mint`,
 			description: post.metaDescription,
 			type: "article",
 			publishedTime: post.publishedAt,
@@ -98,15 +98,11 @@ export default async function BlogPostPage({ params }: Props) {
 
 				<div className="cs-cta">
 					<div className="cs-cta-h">
-						Live in a co-op? <em>We speak board.</em>
+						{post.cta.heading.split("|")[0]} <em>{post.cta.heading.split("|")[1]}</em>
 					</div>
 					<p>
-						COIs issued before your first visit, service elevators booked for you, flat rates
-						from $175. See the real thing in our{" "}
-						<Link href="/case-studies/co-op-coi-cleaning-upper-east-side">
-							Upper East Side co-op case study
-						</Link>
-						.
+						{post.cta.body}{" "}
+						<Link href={`/case-studies/${post.cta.caseStudySlug}`}>{post.cta.caseStudyLabel}</Link>.
 					</p>
 					<Link href="/quote" className="cs-cta-btn">
 						Get your quote →
@@ -116,7 +112,7 @@ export default async function BlogPostPage({ params }: Props) {
 				<div className="cs-related">
 					<div className="cs-related-head">Keep reading</div>
 					<Link href="/case-studies">Manhattan cleaning case studies →</Link>
-					<Link href="/pricing-availability">Pricing &amp; availability →</Link>
+					<Link href="/#pricing">Pricing &amp; what&apos;s included →</Link>
 				</div>
 			</article>
 		</div>
