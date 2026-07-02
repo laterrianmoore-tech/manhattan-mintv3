@@ -482,6 +482,23 @@ export async function POST(req: Request) {
       if (result !== "sent") console.error(`Notification ${channel} — ${result}`);
     }
 
+    // If the owner alert email failed, warn by SMS so an email outage is
+    // discovered at the first affected booking — not weeks later in dispatch.
+    if (ownerEmail !== "sent" && ownerSms === "sent" && ownerPhones.length) {
+      try {
+        await sendSms({
+          to: ownerPhones[0],
+          body: `⚠️ Manhattan Mint: booking alert EMAILS are failing (${ownerEmail.slice(0, 100)}). Check SendGrid. SMS alerts still working — booking details in admin dispatch.`,
+          bookingId: supabaseBookingId ?? null,
+          cleanerId: null,
+          recipientType: "customer",
+          eventType: "other",
+        });
+      } catch (warnErr) {
+        console.error("Email-outage warning SMS failed:", warnErr);
+      }
+    }
+
     console.log("booking submitted", {
       customer: fullName,
       serviceDate: body.serviceDate,
