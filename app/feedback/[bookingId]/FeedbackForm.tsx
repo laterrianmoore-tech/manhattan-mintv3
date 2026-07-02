@@ -1,6 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { GOOGLE_REVIEWS_URL } from "../../reviews";
+
+const HEARD_ABOUT_OPTIONS = [
+  "Google Search",
+  "Google Maps",
+  "Instagram",
+  "Facebook",
+  "TikTok",
+  "Referred by a friend",
+  "Flyer / saw us in the neighborhood",
+  "Other",
+] as const;
 
 interface Props {
   bookingId: string;
@@ -26,6 +38,7 @@ export default function FeedbackForm({
   const [rating, setRating] = useState(0);
   const [hovered, setHovered] = useState(0);
   const [wouldBookAgain, setWouldBookAgain] = useState<boolean | null>(null);
+  const [heardAboutUs, setHeardAboutUs] = useState("");
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -44,6 +57,7 @@ export default function FeedbackForm({
         bookingId,
         rating,
         wouldBookAgain: wouldBookAgain,
+        heardAboutUs: heardAboutUs || null,
         comment: comment.trim() || null,
       }),
     });
@@ -66,8 +80,20 @@ export default function FeedbackForm({
           <h2 className="text-xl font-semibold mb-2" style={{ color: "#0f0f0f" }}>
             Thanks for the feedback.
           </h2>
-          <p className="text-sm" style={{ color: "#6b7280" }}>
+          <p className="text-sm mb-6" style={{ color: "#6b7280" }}>
             See you next time. — Manhattan Mint NYC
+          </p>
+          <a
+            href={GOOGLE_REVIEWS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block w-full h-12 leading-[3rem] rounded-xl text-white font-medium text-sm"
+            style={{ backgroundColor: "#1d9e75" }}
+          >
+            Share it on Google ★
+          </a>
+          <p className="text-xs mt-3" style={{ color: "#9ca3af" }}>
+            Public reviews help our small team more than anything else.
           </p>
         </div>
       </div>
@@ -158,6 +184,38 @@ export default function FeedbackForm({
                 );
               })}
             </div>
+          </div>
+
+          {/* How did you hear about us */}
+          <div>
+            <label
+              htmlFor="heardAboutUs"
+              className="block text-sm font-medium mb-2"
+              style={{ color: "#374151" }}
+            >
+              How did you hear about us?
+              <span className="ml-1 font-normal" style={{ color: "#9ca3af" }}>
+                Optional
+              </span>
+            </label>
+            <select
+              id="heardAboutUs"
+              value={heardAboutUs}
+              onChange={(e) => setHeardAboutUs(e.target.value)}
+              className="w-full rounded-xl border px-4 py-3 text-sm focus:outline-none focus:ring-2 bg-white"
+              style={{
+                borderColor: "#e5e7eb",
+                color: heardAboutUs ? "#0f0f0f" : "#9ca3af",
+                "--tw-ring-color": "#1d9e75",
+              } as React.CSSProperties}
+            >
+              <option value="">Select one…</option>
+              {HEARD_ABOUT_OPTIONS.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Comment */}

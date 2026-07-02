@@ -64,15 +64,42 @@ export async function POST(req: Request) {
       .update({ completed_at: now, status: "completed" })
       .eq("id", bookingId);
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://manhattanmintnyc.com";
+
+    // Post-clean sequence: review ask, then recurring upsell + referral.
+    // Sent as two texts — a single message with every ask buries the review link.
     await sendSms({
       to: customer.phone,
-      body: `Your clean is done. Thank you for choosing Manhattan Mint — we'd love your feedback: ${siteUrl}/feedback/${bookingId}`,
+      body: `Hi ${customer.first_name} — your Manhattan Mint clean is complete! 💚 How did we do? It takes 30 seconds and means the world to our team: ${siteUrl}/feedback/${bookingId}`,
       cleanerId: cleaner.id,
       bookingId,
       recipientType: "customer",
       eventType: "completed",
     });
+    await sendSms({
+      to: customer.phone,
+      body: `Loved the clean? Lock it in — reply WEEKLY, BIWEEKLY, or MONTHLY and save up to 30% on every clean. Same great cleaner, zero rebooking. Plus: refer a friend and you BOTH get $25 off your next clean. — Manhattan Mint NYC`,
+      cleanerId: cleaner.id,
+      bookingId,
+      recipientType: "customer",
+      eventType: "other",
+    });
     await supabaseAdmin.from("bookings").update({ complete_sms_sent_at: now }).eq("id", bookingId);
+
+    // Alert the owner that the job is done and the follow-ups went out.
+    const ownerPhones = (process.env.OWNER_NOTIFY_PHONE || "")
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
+    for (const phone of ownerPhones) {
+      await sendSms({
+        to: phone,
+        body: `✅ JOB DONE: ${cleaner.first_name} completed ${customer.first_name} ${customer.last_name || ""}'s clean (${booking.service_date}). Customer texted: review link + recurring offer (up to 30% off) + $25 referral. Watch OpenPhone for their reply. Reminder: collect payment.`,
+        cleanerId: cleaner.id,
+        bookingId,
+        recipientType: "customer",
+        eventType: "other",
+      });
+    }
   } else {
     return NextResponse.json({ ok: false, error: "Unknown event" }, { status: 400 });
   }

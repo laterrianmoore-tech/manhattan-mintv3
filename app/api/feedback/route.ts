@@ -7,7 +7,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { bookingId, rating, wouldBookAgain, comment } = body;
+  const { bookingId, rating, wouldBookAgain, heardAboutUs, comment } = body;
 
   // Validate rating
   if (!bookingId || !Number.isInteger(rating) || rating < 1 || rating > 5) {
@@ -30,12 +30,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Booking not found" }, { status: 404 });
   }
 
+  // "How did you hear about us?" is stored inside the comment column
+  // (prefixed marker) to avoid a schema change.
+  const heardTag =
+    typeof heardAboutUs === "string" && heardAboutUs.trim() && heardAboutUs.length <= 60
+      ? `[Heard about us: ${heardAboutUs.trim()}]`
+      : "";
+  const combinedComment = [heardTag, comment?.trim() || ""].filter(Boolean).join("\n") || null;
+
   const { error } = await supabaseAdmin.from("feedback").insert({
     booking_id: bookingId,
     cleaner_id: booking.assigned_cleaner_id ?? null,
     rating,
     would_book_again: wouldBookAgain ?? null,
-    comment: comment?.trim() || null,
+    comment: combinedComment,
   });
 
   if (error) {
