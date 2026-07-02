@@ -26,9 +26,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Stripe customer not found" }, { status: 404 });
     }
 
-    const defaultPm = (customer as Stripe.Customer).invoice_settings?.default_payment_method;
+    // Prefer the default payment method; fall back to the most recently added
+    // card (cards added via the post-booking Checkout setup link attach to the
+    // customer but are not set as default).
+    let defaultPm = (customer as Stripe.Customer).invoice_settings?.default_payment_method;
     if (!defaultPm) {
-      return NextResponse.json({ error: "No default payment method on file for this customer" }, { status: 400 });
+      const pms = await stripe.paymentMethods.list({ customer: stripeCustomerId, type: "card", limit: 1 });
+      defaultPm = pms.data[0]?.id;
+    }
+    if (!defaultPm) {
+      return NextResponse.json({ error: "No payment method on file for this customer" }, { status: 400 });
     }
 
     const paymentIntent = await stripe.paymentIntents.create({

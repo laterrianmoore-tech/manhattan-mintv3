@@ -110,21 +110,32 @@ function isDateAtLeastMin(serviceDate: string, minDate: string) {
   return Boolean(serviceDate) && serviceDate >= minDate;
 }
 
-function PaymentCardField() {
+type PaymentCardFieldProps = {
+  onCardChange: (complete: boolean, errorMessage: string) => void;
+  cardError: string;
+};
+
+function PaymentCardField({ onCardChange, cardError }: PaymentCardFieldProps) {
   return (
-    <div style={{ border: "1px solid rgba(15,15,15,0.15)", borderRadius: 8, padding: "0.9rem", background: "#fff" }}>
-      <CardElement
-        options={{
-          style: {
-            base: {
-              fontSize: "16px",
-              color: "#0F0F0F",
-              fontFamily: "DM Sans, sans-serif",
-              "::placeholder": { color: "#888" },
+    <div>
+      <div style={{ border: `1px solid ${cardError ? "#b42318" : "rgba(15,15,15,0.15)"}`, borderRadius: 8, padding: "0.9rem", background: "#fff" }}>
+        <CardElement
+          options={{
+            style: {
+              base: {
+                fontSize: "16px",
+                color: "#0F0F0F",
+                fontFamily: "DM Sans, sans-serif",
+                "::placeholder": { color: "#888" },
+              },
             },
-          },
-        }}
-      />
+          }}
+          onChange={(e) => onCardChange(e.complete, e.error?.message || "")}
+        />
+      </div>
+      {cardError ? (
+        <p style={{ color: "#b42318", marginTop: ".45rem", fontSize: ".82rem" }}>{cardError}</p>
+      ) : null}
     </div>
   );
 }
@@ -159,6 +170,9 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [cardComplete, setCardComplete] = useState(false);
+  const [cardError, setCardError] = useState("");
+  const [cardAttempts, setCardAttempts] = useState(0);
   const [sourceSelection, setSourceSelection] = useState("");
   const [hourlySelection, setHourlySelection] = useState<{ hours: number; cleaners: number } | null>(null);
   const minServiceDate = useMemo(() => getMinServiceDate(), []);
@@ -235,8 +249,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitBooking = async (skipCard: boolean) => {
     setError("");
 
     if (!form.termsAccepted) {
@@ -254,53 +267,68 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
       return;
     }
 
+    // Attempt card capture only when the Stripe form is usable and the customer
+    // isn't using the no-card fallback. If Stripe.js failed to load entirely
+    // (ad blockers, some in-app browsers), the booking still goes through — the
+    // server texts the customer a secure card setup link instead.
+    const canUseCard = stripeReady && !skipCard && Boolean(stripe && elements);
+
+    if (canUseCard && !cardComplete) {
+      setCardError("Please finish entering your card details — number, expiry, CVC, and ZIP.");
+      setCardAttempts((a) => a + 1);
+      return;
+    }
+
     setSubmitting(true);
     try {
       let stripePaymentMethodId: string | undefined;
       let stripeCustomerId: string | undefined;
 
-      if (stripeReady) {
-        if (!stripe || !elements) {
-          throw new Error("Stripe is not ready. Verify NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.");
-        }
+      if (canUseCard) {
+        try {
+          const intentRes = await fetch("/api/bookings/create-setup-intent", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: form.email, fullName: `${form.firstName} ${form.lastName}` }),
+          });
 
-        const intentRes = await fetch("/api/bookings/create-setup-intent", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: form.email, fullName: `${form.firstName} ${form.lastName}` }),
-        });
+          if (!intentRes.ok) {
+            throw new Error("Unable to initialize card setup.");
+          }
 
-        if (!intentRes.ok) {
-          throw new Error("Unable to initialize card setup.");
-        }
+          const intentData = await intentRes.json();
+          const card = elements!.getElement(CardElement);
+          if (!card) throw new Error("Card input is missing.");
 
-        const intentData = await intentRes.json();
-        const card = elements.getElement(CardElement);
-        if (!card) throw new Error("Card input is missing.");
-
-        const result = await stripe.confirmCardSetup(intentData.clientSecret, {
-          payment_method: {
-            card,
-            billing_details: {
-              name: `${form.firstName} ${form.lastName}`,
-              email: form.email,
-              phone: form.phone,
-              address: {
-                line1: form.address,
-                line2: form.aptNo || undefined,
+          const result = await stripe!.confirmCardSetup(intentData.clientSecret, {
+            payment_method: {
+              card,
+              billing_details: {
+                name: `${form.firstName} ${form.lastName}`,
+                email: form.email,
+                phone: form.phone,
+                address: {
+                  line1: form.address,
+                  line2: form.aptNo || undefined,
+                },
               },
             },
-          },
-        });
+          });
 
-        if (result.error) {
-          throw new Error(result.error.message || "Card setup failed.");
+          if (result.error) {
+            throw new Error(result.error.message || "Card setup failed.");
+          }
+
+          stripePaymentMethodId = result.setupIntent?.payment_method as string | undefined;
+          stripeCustomerId = intentData.stripeCustomerId as string | undefined;
+        } catch (cardErr: any) {
+          // Card failure must not silently eat the booking — surface the exact
+          // reason and unlock the "reserve without card" fallback.
+          setCardAttempts((a) => a + 1);
+          setCardError(cardErr?.message || "Card setup failed. Please check your card details and try again.");
+          setSubmitting(false);
+          return;
         }
-
-        stripePaymentMethodId = result.setupIntent?.payment_method as string | undefined;
-        stripeCustomerId = intentData.stripeCustomerId as string | undefined;
-      } else {
-        throw new Error("Payment processing is unavailable. Please refresh and try again.");
       }
 
       const submitRes = await fetch("/api/bookings/submit", {
@@ -319,9 +347,9 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
         }),
       });
 
-      const submitData = await submitRes.json();
+      const submitData = await submitRes.json().catch(() => ({}));
       if (!submitRes.ok) {
-        throw new Error(submitData.error || "Booking submission failed.");
+        throw new Error(submitData.error || "Booking submission failed. Please try again or text us at (646) 620-0747 — do not re-enter your card.");
       }
 
       localStorage.setItem("mm_name", `${form.firstName} ${form.lastName}`.trim());
@@ -337,6 +365,11 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await submitBooking(false);
   };
 
   return (
@@ -568,11 +601,45 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
                 ))}
               </div>
 
-              {stripeReady && <PaymentCardField />}
+              {stripeReady && (
+                <PaymentCardField
+                  cardError={cardError}
+                  onCardChange={(complete, errorMessage) => {
+                    setCardComplete(complete);
+                    setCardError(errorMessage);
+                  }}
+                />
+              )}
 
               {!stripeReady && (
                 <div style={{ border: "1px solid rgba(0,0,0,.15)", borderRadius: 8, padding: ".9rem", background: "#fafafa", color: "#555", fontSize: ".86rem" }}>
-                  Stripe is not connected yet. You can still save the booking now, and add live card authorization after you connect Stripe.
+                  The secure card form couldn&apos;t load — this can happen with ad blockers or some in-app browsers. You can
+                  still book now: we&apos;ll text you a secure link to add your card, and it&apos;s only charged after your clean.
+                </div>
+              )}
+
+              {stripeReady && cardAttempts >= 1 && (
+                <div style={{ marginTop: ".75rem", border: "1px solid rgba(29,158,117,.25)", background: "var(--mint-light)", borderRadius: 10, padding: ".8rem .9rem", fontSize: ".85rem", color: "var(--mint-dark)" }}>
+                  <p style={{ margin: "0 0 .55rem" }}>
+                    Having trouble with the card form? You can reserve your booking now — we&apos;ll text you a secure link to
+                    add your card, and it&apos;s only charged after your clean.
+                  </p>
+                  <button
+                    type="button"
+                    disabled={submitting}
+                    onClick={() => submitBooking(true)}
+                    style={{
+                      border: "1px solid var(--mint)",
+                      borderRadius: 8,
+                      background: "#fff",
+                      color: "var(--mint-dark)",
+                      padding: ".5rem .8rem",
+                      fontSize: ".84rem",
+                      cursor: submitting ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    Reserve without card
+                  </button>
                 </div>
               )}
 

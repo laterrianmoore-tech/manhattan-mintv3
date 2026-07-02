@@ -130,7 +130,8 @@ STRIPE_SECRET_KEY
 SENDGRID_API_KEY
 SENDGRID_FROM_EMAIL
 SENDGRID_FROM_NAME
-SENDGRID_TO_EMAIL
+SENDGRID_TO_EMAIL          # owner alert inbox — supports comma-separated list
+OWNER_NOTIFY_PHONE         # new-booking SMS alerts — comma-separated E.164 list (personal cell + company line)
 GOOGLE_CALENDAR_ID
 GOOGLE_CALENDAR_OWNER_EMAIL
 GOOGLE_SERVICE_ACCOUNT_EMAIL

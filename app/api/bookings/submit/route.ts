@@ -117,6 +117,7 @@ export async function POST(req: Request) {
     const sendgridApiKey = process.env.SENDGRID_API_KEY;
     const sendgridFrom = process.env.SENDGRID_FROM_EMAIL;
     const calendarId = process.env.GOOGLE_CALENDAR_ID;
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://manhattanmintnyc.com";
     const { email: googleServiceEmail, privateKey: googlePrivateKey } = getGoogleCredentials();
 
     const integrations = {
@@ -125,6 +126,37 @@ export async function POST(req: Request) {
       calendarConfigured: Boolean(calendarId && googleServiceEmail && googlePrivateKey),
     };
 
+    // ── Duplicate guard ──────────────────────────────────────────────────────
+    // If this customer already saved a booking for the same service date in the
+    // last 2 hours, treat this as a retry of the same booking. Prevents the
+    // duplicate calendar events / bookings that happen when a customer clicks
+    // "Save Booking" again after a transient error.
+    try {
+      const { data: existingCustomer } = await supabaseAdmin
+        .from("customers")
+        .select("id")
+        .eq("email", body.email)
+        .maybeSingle();
+
+      if (existingCustomer) {
+        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+        const { data: recentDup } = await supabaseAdmin
+          .from("bookings")
+          .select("id")
+          .eq("customer_id", existingCustomer.id)
+          .eq("service_date", body.serviceDate)
+          .gte("created_at", twoHoursAgo)
+          .limit(1);
+
+        if (recentDup?.length) {
+          console.log("Duplicate booking retry detected — returning existing booking", recentDup[0].id);
+          return NextResponse.json({ ok: true, bookingId: recentDup[0].id, duplicate: true });
+        }
+      }
+    } catch (dupErr) {
+      console.error("Duplicate check failed (continuing with booking):", dupErr);
+    }
+
     const fullName = `${body.firstName} ${body.lastName}`.trim();
     const fullAddress = `${body.address}${body.aptNo ? `, Apt ${body.aptNo}` : ""}`;
     const isHourlyBooking = Boolean(body.serviceSummary?.startsWith("Hourly clean"));
@@ -132,31 +164,57 @@ export async function POST(req: Request) {
       ? body.selectedExtras.map((x) => `${x.label} ($${x.price})`).join(", ")
       : "None";
 
-    // Run Stripe customer update and Google Calendar in parallel — non-fatal if either fails.
-    // The customer was already created in create-setup-intent (so the SetupIntent could be
-    // attached to them, triggering a real $0 network auth). Here we just fill in the full
-    // booking metadata and set the confirmed payment method as their default.
-    const hasStripePaymentMethod =
-      integrations.stripeConfigured &&
-      body.stripePaymentMethodId &&
-      body.stripeCustomerId;
+    const hasCardOnFile = Boolean(
+      integrations.stripeConfigured && body.stripePaymentMethodId && body.stripeCustomerId
+    );
+
+    // ── Stripe + Google Calendar in parallel — non-fatal if either fails ────
+    // Card saved at checkout: update the customer created in create-setup-intent
+    // with full booking metadata and set the confirmed card as default.
+    // No card saved (card entry failed / Stripe blocked in customer's browser):
+    // create a customer anyway and generate a Checkout link (setup mode) so the
+    // customer can add their card from a plain hosted Stripe page.
+    let cardSetupUrl: string | undefined;
 
     const [stripeResult, calendarResult] = await Promise.allSettled([
-      hasStripePaymentMethod
+      integrations.stripeConfigured
         ? (async () => {
             const stripe = new Stripe(stripeKey as string, { apiVersion: "2026-02-25.clover" });
-            await stripe.customers.update(body.stripeCustomerId as string, {
+            if (hasCardOnFile) {
+              await stripe.customers.update(body.stripeCustomerId as string, {
+                name: fullName,
+                phone: body.phone,
+                invoice_settings: { default_payment_method: body.stripePaymentMethodId },
+                metadata: {
+                  address: fullAddress,
+                  serviceDate: body.serviceDate,
+                  frequency: body.frequency,
+                  bookingTotal: String(body.pricing.total),
+                },
+              });
+              return body.stripeCustomerId;
+            }
+            const customer = await stripe.customers.create({
+              email: body.email,
               name: fullName,
               phone: body.phone,
-              invoice_settings: { default_payment_method: body.stripePaymentMethodId },
               metadata: {
                 address: fullAddress,
                 serviceDate: body.serviceDate,
                 frequency: body.frequency,
                 bookingTotal: String(body.pricing.total),
+                cardCapture: "pending — link sent at booking",
               },
             });
-            return body.stripeCustomerId;
+            const session = await stripe.checkout.sessions.create({
+              mode: "setup",
+              customer: customer.id,
+              payment_method_types: ["card"],
+              success_url: `${siteUrl}/thank-you?card=saved`,
+              cancel_url: `${siteUrl}/thank-you`,
+            });
+            cardSetupUrl = session.url || undefined;
+            return customer.id;
           })()
         : Promise.resolve(undefined),
 
@@ -171,6 +229,7 @@ export async function POST(req: Request) {
             const calendar = google.calendar({ version: "v3", auth });
             const recurrence = getRecurrenceRule(body.frequency);
             const calendarDescription = [
+              ...(!hasCardOnFile ? ["⚠️ NO CARD ON FILE — setup link sent to customer", ""] : []),
               `Customer: ${fullName}`,
               `Phone: ${body.phone}`,
               `Email: ${body.email}`,
@@ -188,7 +247,7 @@ export async function POST(req: Request) {
             await calendar.events.insert({
               calendarId,
               requestBody: {
-                summary: `${body.frequency !== "One-Time" ? "🔁 " : ""}New Cleaning Booking - ${fullName}`,
+                summary: `${body.frequency !== "One-Time" ? "🔁 " : ""}${!hasCardOnFile ? "⚠️ " : ""}New Cleaning Booking - ${fullName}`,
                 location: fullAddress,
                 description: calendarDescription,
                 ...getCalendarTimes(body.serviceDate, body.preferredTimeRanges),
@@ -203,7 +262,7 @@ export async function POST(req: Request) {
       stripeResult.status === "fulfilled" ? (stripeResult.value as string | undefined) : undefined;
 
     if (stripeResult.status === "rejected") {
-      console.error("Stripe customer creation failed (booking still saved):", stripeResult.reason);
+      console.error("Stripe step failed (booking still saved):", stripeResult.reason);
     }
     if (calendarResult.status === "rejected") {
       console.error("Google Calendar error (booking still saved):", calendarResult.reason);
@@ -268,19 +327,25 @@ export async function POST(req: Request) {
         }
       }
     } catch (supabaseError) {
-      // Non-fatal: booking email still sends even if Supabase write fails
+      // Non-fatal: notifications still go out even if Supabase write fails
       console.error("Supabase error (booking still processed):", supabaseError);
     }
     // ── End Supabase ────────────────────────────────────────────────────────
 
+    // ── Notifications — ALL non-fatal, owner + customer, email + SMS ────────
+    // The booking is already saved above. Nothing past this point may throw the
+    // request into a 500: a notification failure must never make the customer
+    // see an error (that is what caused retry-duplicates and missed jobs).
+    const serviceLabel = body.serviceSummary || `${body.bedrooms} BR / ${body.bathrooms} BA`;
     const eventDescription = [
+      ...(!hasCardOnFile ? ["⚠️ NO CARD ON FILE — customer was sent a secure card setup link", ""] : []),
       `Customer: ${fullName}`,
       `Email: ${body.email}`,
       `Phone: ${body.phone}`,
       `SMS Reminder: ${body.smsReminder ? "Yes" : "No"}`,
       `Address: ${fullAddress}`,
       `Frequency: ${body.frequency}`,
-      `Service: ${body.serviceSummary || `${body.bedrooms} BR / ${body.bathrooms} BA`}`,
+      `Service: ${serviceLabel}`,
       ...(!isHourlyBooking ? [`Bedrooms: ${body.bedrooms}`, `Bathrooms: ${body.bathrooms}`] : []),
       `Extras: ${extrasLabel}`,
       `Preferred Time: ${body.preferredTimeRanges?.length ? body.preferredTimeRanges.join(", ") : "Flexible"}`,
@@ -289,6 +354,8 @@ export async function POST(req: Request) {
       `Cleaning Notes: ${body.cleaningNotes || "-"}`,
       `Coupon: ${body.couponCode || "None"}`,
       `Payment Method: card`,
+      `Card On File: ${hasCardOnFile ? "Yes" : "NO — setup link sent"}`,
+      ...(cardSetupUrl ? [`Card Setup Link: ${cardSetupUrl}`] : []),
       `Stripe Payment Method ID: ${body.stripePaymentMethodId || "n/a"}`,
       `Stripe Customer ID: ${stripeCustomerId || "n/a"}`,
       `Card Charge Timing: ${body.cardChargeTiming || "AFTER appointment"}`,
@@ -298,14 +365,57 @@ export async function POST(req: Request) {
 
     if (integrations.emailConfigured) {
       sgMail.setApiKey(sendgridApiKey as string);
-      const internalTo = process.env.SENDGRID_TO_EMAIL || sendgridFrom;
-      const serviceLabel = body.serviceSummary || `${body.bedrooms} BR / ${body.bathrooms} BA`;
+    }
+    const internalRecipients = (process.env.SENDGRID_TO_EMAIL || sendgridFrom || "")
+      .split(",")
+      .map((e) => e.trim())
+      .filter(Boolean);
+    const ownerPhones = (process.env.OWNER_NOTIFY_PHONE || "")
+      .split(",")
+      .map((p) => p.trim())
+      .filter(Boolean);
 
-      await sgMail.send({
-        to: body.email,
-        from: { email: sendgridFrom as string, name: process.env.SENDGRID_FROM_NAME || "Manhattan Mint" },
-        subject: "Booking Confirmed — Manhattan Mint",
-        html: `
+    const paymentLineHtml = hasCardOnFile
+      ? `<p style="margin:0 0 6px;color:#555;font-size:14px;">💳 <strong>Payment:</strong> Your card is on file and will be charged after your appointment is complete.</p>`
+      : `<p style="margin:0 0 6px;color:#555;font-size:14px;">💳 <strong>Payment:</strong> We couldn't save a card during booking. Please add one securely here: <a href="${cardSetupUrl || `${siteUrl}/quote`}" style="color:#2d6a4f;">Add card</a>. Your card is only charged after your appointment.</p>`;
+
+    const notificationResults = await Promise.allSettled([
+      // 1. Owner alert email — FIRST priority
+      integrations.emailConfigured && internalRecipients.length
+        ? sgMail.send({
+            to: internalRecipients,
+            from: { email: sendgridFrom as string, name: process.env.SENDGRID_FROM_NAME || "Manhattan Mint" },
+            subject: `${hasCardOnFile ? "" : "⚠️ NO CARD — "}New Booking — ${fullName} · ${body.serviceDate} · $${body.pricing.total}`,
+            text: eventDescription,
+          })
+        : Promise.reject(new Error("email not configured")),
+
+      // 2. Owner alert SMS — independent of SendGrid, so booking alerts survive email outages.
+      // OWNER_NOTIFY_PHONE supports a comma-separated list (e.g. personal cell + company line).
+      ownerPhones.length
+        ? Promise.all(
+            ownerPhones.map((phone) =>
+              sendSms({
+                to: phone,
+                body: `NEW BOOKING${hasCardOnFile ? "" : " (NO CARD!)"}: ${fullName}, ${body.serviceDate}, ${serviceLabel}, $${body.pricing.total}, ${fullAddress}. Ph: ${body.phone}`,
+                bookingId: supabaseBookingId ?? null,
+                cleanerId: null,
+                recipientType: "customer",
+                eventType: "other",
+              }).then((r) => {
+                if (!r.ok) throw new Error(r.errorMessage || `owner SMS to ${phone} failed`);
+              })
+            )
+          )
+        : Promise.reject(new Error("OWNER_NOTIFY_PHONE not set")),
+
+      // 3. Customer confirmation email
+      integrations.emailConfigured
+        ? sgMail.send({
+            to: body.email,
+            from: { email: sendgridFrom as string, name: process.env.SENDGRID_FROM_NAME || "Manhattan Mint" },
+            subject: "Booking Confirmed — Manhattan Mint",
+            html: `
 <!DOCTYPE html>
 <html>
 <body style="margin:0;padding:0;background:#f7f7f5;font-family:'DM Sans',Arial,sans-serif;">
@@ -330,7 +440,7 @@ export async function POST(req: Request) {
             <tr><td style="padding:8px 0 0;color:#555;font-size:14px;border-top:1px solid #e0e0e0;">Total</td><td style="padding:8px 0 0;color:#2d6a4f;font-size:16px;font-weight:700;border-top:1px solid #e0e0e0;">$${body.pricing.total}</td></tr>
           </table>
 
-          <p style="margin:0 0 6px;color:#555;font-size:14px;">💳 <strong>Payment:</strong> Your card is on file and will be charged after your appointment is complete.</p>
+          ${paymentLineHtml}
           ${body.frequency !== "One-Time" ? `<p style="margin:0 0 24px;color:#555;font-size:14px;">🔁 <strong>Recurring rate:</strong> $${body.pricing.nextCleanTotal ?? body.pricing.total} per clean starting with your second visit.</p>` : `<p style="margin:0 0 24px;"></p>`}
 
           <p style="margin:0;color:#888;font-size:13px;">Questions? Reply to this email or text us at <a href="tel:+16466200747" style="color:#2d6a4f;">(646) 620-0747</a>.</p>
@@ -343,30 +453,33 @@ export async function POST(req: Request) {
   </table>
 </body>
 </html>`,
-      });
+          })
+        : Promise.reject(new Error("email not configured")),
 
-      await sgMail.send({
-        to: internalTo as string,
-        from: { email: sendgridFrom as string, name: process.env.SENDGRID_FROM_NAME || "Manhattan Mint" },
-        subject: `New Booking — ${fullName} · ${body.serviceDate}`,
-        text: eventDescription,
-      });
-    }
+      // 4. Customer confirmation SMS (includes card setup link when no card saved)
+      body.phone
+        ? sendSms({
+            to: body.phone,
+            body: hasCardOnFile
+              ? `Thanks for booking Manhattan Mint, ${body.firstName}. If you need to cancel or reschedule, please give us at least 24 hours notice. — Manhattan Mint NYC`
+              : `Thanks for booking Manhattan Mint, ${body.firstName}! One last step — add your card securely here (charged only after your clean): ${cardSetupUrl || siteUrl} — Manhattan Mint NYC`,
+            bookingId: supabaseBookingId ?? null,
+            cleanerId: null,
+            recipientType: "customer",
+            eventType: "other",
+          }).then((r) => {
+            if (!r.ok) throw new Error(r.errorMessage || "customer SMS failed");
+          })
+        : Promise.reject(new Error("no customer phone")),
+    ]);
 
-    // Booking confirmation SMS (non-fatal)
-    if (body.phone) {
-      try {
-        await sendSms({
-          to: body.phone,
-          body: `Thanks for booking Manhattan Mint, ${body.firstName}. If you need to cancel or reschedule, please give us at least 24 hours notice. — Manhattan Mint NYC`,
-          bookingId: supabaseBookingId ?? null,
-          cleanerId: null,
-          recipientType: "customer",
-          eventType: "other",
-        });
-      } catch (smsErr) {
-        console.error("Booking confirmation SMS failed (non-fatal):", smsErr);
-      }
+    const [ownerEmail, ownerSms, customerEmail, customerSms] = notificationResults.map((r) =>
+      r.status === "fulfilled" ? "sent" : `failed: ${(r as PromiseRejectedResult).reason?.message || r}`
+    );
+    const notifications = { ownerEmail, ownerSms, customerEmail, customerSms };
+
+    for (const [channel, result] of Object.entries(notifications)) {
+      if (result !== "sent") console.error(`Notification ${channel} — ${result}`);
     }
 
     console.log("booking submitted", {
@@ -374,13 +487,16 @@ export async function POST(req: Request) {
       serviceDate: body.serviceDate,
       address: fullAddress,
       total: body.pricing.total,
+      hasCardOnFile,
+      cardSetupUrl: cardSetupUrl ? "generated" : "n/a",
       stripeCustomerId,
       supabaseBookingId,
       calendarCreated: calendarResult.status === "fulfilled",
+      notifications,
       integrations,
     });
 
-    return NextResponse.json({ ok: true, integrations, bookingId: supabaseBookingId });
+    return NextResponse.json({ ok: true, integrations, notifications, bookingId: supabaseBookingId });
   } catch (error) {
     console.error("booking submit error", error);
     return NextResponse.json({ error: "Failed to submit booking" }, { status: 500 });
