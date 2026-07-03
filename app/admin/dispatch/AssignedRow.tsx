@@ -48,7 +48,7 @@ export default function AssignedRow({
       return;
     setBusy(true);
     setError("");
-    const res = await fetch("/api/bookings/cancel", {
+    const res = await fetch("/api/bookings/cancel/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ bookingId: booking.id }),
@@ -70,7 +70,7 @@ export default function AssignedRow({
     }
     setBusy(true);
     setError("");
-    const res = await fetch("/api/bookings/reschedule", {
+    const res = await fetch("/api/bookings/reschedule/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ bookingId: booking.id, newDate }),
