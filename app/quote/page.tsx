@@ -349,7 +349,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
 
       const submitData = await submitRes.json().catch(() => ({}));
       if (!submitRes.ok) {
-        throw new Error(submitData.error || "Booking submission failed. Please try again or text us at (646) 620-0747 — do not re-enter your card.");
+        throw new Error(submitData.error || "Booking submission failed. Please try again or text us at (914) 863-7902 — do not re-enter your card.");
       }
 
       localStorage.setItem("mm_name", `${form.firstName} ${form.lastName}`.trim());

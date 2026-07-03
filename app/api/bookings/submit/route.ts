@@ -443,7 +443,7 @@ export async function POST(req: Request) {
           ${paymentLineHtml}
           ${body.frequency !== "One-Time" ? `<p style="margin:0 0 24px;color:#555;font-size:14px;">🔁 <strong>Recurring rate:</strong> $${body.pricing.nextCleanTotal ?? body.pricing.total} per clean starting with your second visit.</p>` : `<p style="margin:0 0 24px;"></p>`}
 
-          <p style="margin:0;color:#888;font-size:13px;">Questions? Reply to this email or text us at <a href="tel:+16466200747" style="color:#2d6a4f;">(646) 620-0747</a>.</p>
+          <p style="margin:0;color:#888;font-size:13px;">Questions? Reply to this email or text us at <a href="tel:+19148637902" style="color:#2d6a4f;">(914) 863-7902</a>.</p>
         </td></tr>
         <tr><td style="background:#f7f7f5;padding:20px 40px;text-align:center;">
           <p style="margin:0;color:#aaa;font-size:12px;">Manhattan Mint NYC LLC · New York, NY · <a href="https://manhattanmintnyc.com" style="color:#aaa;">manhattanmintnyc.com</a></p>
