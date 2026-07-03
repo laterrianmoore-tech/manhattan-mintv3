@@ -36,6 +36,7 @@ export default function DispatchRow({
   const [loading, setLoading] = useState(false);
   const [dispatched, setDispatched] = useState(false);
   const [dispatchedName, setDispatchedName] = useState("");
+  const [cancelled, setCancelled] = useState(false);
   const [error, setError] = useState("");
 
   const dateStr = new Date(booking.service_date + "T12:00:00").toLocaleDateString("en-US", {
@@ -72,6 +73,47 @@ export default function DispatchRow({
       setError(data.error ?? "Something went wrong. Try again.");
       setLoading(false);
     }
+  }
+
+  async function handleCancel() {
+    if (
+      !window.confirm(
+        `Cancel ${booking.customers.first_name}'s ${dateStr} booking? Use this to clear duplicates and tests too.`
+      )
+    )
+      return;
+    setLoading(true);
+    setError("");
+
+    const res = await fetch("/api/bookings/cancel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingId: booking.id }),
+    });
+
+    if (res.ok) {
+      setCancelled(true);
+      router.refresh();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Something went wrong. Try again.");
+      setLoading(false);
+    }
+  }
+
+  if (cancelled) {
+    return (
+      <div className="flex items-center gap-2 py-3 px-4 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-500">
+        <span>✕</span>
+        <span>
+          Canceled{" "}
+          <strong>
+            {booking.customers.first_name} {booking.customers.last_name}
+          </strong>{" "}
+          · {dateStr}
+        </span>
+      </div>
+    );
   }
 
   if (dispatched) {
@@ -128,6 +170,14 @@ export default function DispatchRow({
           }}
         >
           {loading ? "Sending…" : "Assign & Dispatch"}
+        </button>
+        <button
+          onClick={handleCancel}
+          disabled={loading}
+          className="h-10 px-3 rounded-lg border border-red-200 bg-white text-xs text-red-600 hover:border-red-400 disabled:opacity-50 whitespace-nowrap"
+          title="Cancel this booking (duplicates, tests, customer cancellations)"
+        >
+          Cancel
         </button>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}

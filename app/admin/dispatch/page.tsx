@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase";
 import AdminLoginForm from "./AdminLoginForm";
 import DispatchRow from "./DispatchRow";
+import AssignedRow from "./AssignedRow";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export default async function DispatchPage() {
         "id, service_date, service_summary, bedrooms, preferred_time_ranges, customers(first_name, last_name, address, apt_no)"
       )
       .is("assigned_cleaner_id", null)
-      .not("status", "eq", "cancelled")
+      .eq("status", "pending")
       .order("service_date", { ascending: true }),
 
     supabaseAdmin
@@ -35,7 +36,8 @@ export default async function DispatchPage() {
         "id, service_date, service_summary, assigned_cleaner_id, dispatch_sms_sent_at, status, customers(first_name, last_name, address)"
       )
       .not("assigned_cleaner_id", "is", null)
-      .order("updated_at", { ascending: false })
+      .in("status", ["confirmed", "in_progress"])
+      .order("service_date", { ascending: true })
       .limit(20),
   ]);
 
@@ -74,55 +76,23 @@ export default async function DispatchPage() {
         )}
       </section>
 
-      {/* Recently assigned */}
+      {/* Upcoming assigned jobs — completed and cancelled are hidden */}
       <section>
         <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-700 mb-4">
-          Recently Assigned
+          Assigned Jobs
         </h2>
         {!assigned?.length ? (
-          <p className="text-sm text-gray-400">No assigned bookings yet.</p>
+          <p className="text-sm text-gray-400">No active assigned jobs.</p>
         ) : (
           <div className="space-y-2">
             {assigned.map((b) => {
               const cleaner = cleanerMap.get(b.assigned_cleaner_id!);
-              const customer = b.customers as any;
-              const dateStr = new Date(b.service_date + "T12:00:00").toLocaleDateString("en-US", {
-                weekday: "short",
-                month: "short",
-                day: "numeric",
-              });
               return (
-                <div
+                <AssignedRow
                   key={b.id}
-                  className="flex items-center justify-between py-3 px-4 rounded-xl bg-gray-50 text-sm"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="font-medium text-gray-900 truncate">
-                      {customer?.first_name} {customer?.last_name} &middot; {dateStr}
-                    </div>
-                    <div className="text-gray-500 text-xs truncate mt-0.5">
-                      {customer?.address} &middot; {b.service_summary}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 ml-4">
-                    {cleaner && (
-                      <span className="text-gray-600 text-xs">{cleaner.first_name}</span>
-                    )}
-                    {b.dispatch_sms_sent_at ? (
-                      <span
-                        className="text-base font-bold"
-                        style={{ color: "#1d9e75" }}
-                        title="SMS sent"
-                      >
-                        ✓
-                      </span>
-                    ) : (
-                      <span className="text-gray-300 text-base" title="SMS not sent">
-                        ○
-                      </span>
-                    )}
-                  </div>
-                </div>
+                  booking={b as any}
+                  cleanerName={cleaner ? cleaner.first_name : null}
+                />
               );
             })}
           </div>

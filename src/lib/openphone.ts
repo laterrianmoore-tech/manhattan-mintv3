@@ -9,7 +9,14 @@ type SendArgs = {
   cleanerId?: string | null;
   bookingId?: string | null;
   recipientType: "cleaner" | "customer";
-  eventType: "dispatch" | "on_the_way" | "arrived" | "completed" | "other";
+  eventType:
+    | "dispatch"
+    | "on_the_way"
+    | "arrived"
+    | "completed"
+    | "cancelled"
+    | "rescheduled"
+    | "other";
 };
 
 export async function sendSms(args: SendArgs) {
