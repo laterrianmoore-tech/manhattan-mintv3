@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import ScheduleEditor from "./ScheduleEditor";
 
 type Cleaner = {
   id: string;
@@ -37,6 +38,8 @@ export default function DispatchRow({
   const [dispatched, setDispatched] = useState(false);
   const [dispatchedName, setDispatchedName] = useState("");
   const [cancelled, setCancelled] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState(false);
+  const [scheduleNotice, setScheduleNotice] = useState("");
   const [error, setError] = useState("");
 
   const dateStr = new Date(booking.service_date + "T12:00:00").toLocaleDateString("en-US", {
@@ -144,6 +147,21 @@ export default function DispatchRow({
         <span className="mx-2 text-gray-300">·</span>
         {booking.bedrooms}BR · {booking.service_summary}
       </div>
+      {editingSchedule ? (
+        <ScheduleEditor
+          bookingId={booking.id}
+          initialDate={booking.service_date}
+          initialRanges={
+            Array.isArray(booking.preferred_time_ranges) ? booking.preferred_time_ranges : []
+          }
+          onDone={() => {
+            setEditingSchedule(false);
+            setScheduleNotice("Schedule updated.");
+            router.refresh();
+          }}
+          onClose={() => setEditingSchedule(false)}
+        />
+      ) : (
       <div className="flex flex-wrap items-center gap-2">
         <select
           value={selectedCleaner}
@@ -172,6 +190,14 @@ export default function DispatchRow({
           {loading ? "Sending…" : "Assign & Dispatch"}
         </button>
         <button
+          onClick={() => setEditingSchedule(true)}
+          disabled={loading}
+          className="h-10 px-3 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:border-gray-400 disabled:opacity-50 whitespace-nowrap"
+          title="Change the day or time window"
+        >
+          Edit day / time
+        </button>
+        <button
           onClick={handleCancel}
           disabled={loading}
           className="h-10 px-3 rounded-lg border border-red-200 bg-white text-xs text-red-600 hover:border-red-400 disabled:opacity-50 whitespace-nowrap"
@@ -180,6 +206,8 @@ export default function DispatchRow({
           Cancel
         </button>
       </div>
+      )}
+      {scheduleNotice && <p className="text-xs text-green-700">{scheduleNotice}</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   );

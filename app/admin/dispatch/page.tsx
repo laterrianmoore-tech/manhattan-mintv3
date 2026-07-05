@@ -33,7 +33,7 @@ export default async function DispatchPage() {
     supabaseAdmin
       .from("bookings")
       .select(
-        "id, service_date, service_summary, assigned_cleaner_id, dispatch_sms_sent_at, status, customers(first_name, last_name, address)"
+        "id, service_date, service_summary, assigned_cleaner_id, dispatch_sms_sent_at, status, preferred_time_ranges, customers(first_name, last_name, address)"
       )
       .not("assigned_cleaner_id", "is", null)
       .in("status", ["confirmed", "in_progress"])

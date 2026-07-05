@@ -10,12 +10,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
 
-  const { bookingId, newDate } = await req.json();
+  const { bookingId, newDate, newTimeRanges } = await req.json();
   if (!bookingId || !newDate) {
     return NextResponse.json({ ok: false, error: "Missing fields" }, { status: 400 });
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(newDate)) {
     return NextResponse.json({ ok: false, error: "Bad date format" }, { status: 400 });
+  }
+
+  const VALID_RANGES = ["Morning", "Midday", "Afternoon", "Evening"];
+  if (
+    newTimeRanges !== undefined &&
+    (!Array.isArray(newTimeRanges) || newTimeRanges.some((r) => !VALID_RANGES.includes(r)))
+  ) {
+    return NextResponse.json({ ok: false, error: "Bad time ranges" }, { status: 400 });
   }
 
   const { data: booking, error: bookingErr } = await supabaseAdmin
@@ -39,9 +47,14 @@ export async function POST(req: Request) {
 
   const oldDate = booking.service_date;
 
+  const updates: Record<string, unknown> = { service_date: newDate };
+  if (newTimeRanges !== undefined) {
+    updates.preferred_time_ranges = newTimeRanges;
+  }
+
   const { error: updateErr } = await supabaseAdmin
     .from("bookings")
-    .update({ service_date: newDate })
+    .update(updates)
     .eq("id", bookingId);
 
   if (updateErr) {
@@ -66,17 +79,19 @@ export async function POST(req: Request) {
           month: "short",
           day: "numeric",
         });
-      const timeRange = Array.isArray(booking.preferred_time_ranges)
+      const oldTimeRange = Array.isArray(booking.preferred_time_ranges)
         ? booking.preferred_time_ranges.join(", ")
         : booking.preferred_time_ranges || "";
+      const effectiveRanges = newTimeRanges !== undefined ? newTimeRanges : null;
+      const newTimeRange = effectiveRanges ? effectiveRanges.join(", ") : oldTimeRange;
       const aptSuffix = customer?.apt_no ? ` Apt ${customer.apt_no}` : "";
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://manhattanmintnyc.com";
 
       const result = await sendSms({
         to: cleaner.phone,
-        body: `RESCHEDULED — ${customer?.first_name}'s job moved from ${fmt(oldDate)} to ${fmt(
-          newDate
-        )}${timeRange ? ` ${timeRange}` : ""}
+        body: `RESCHEDULED — ${customer?.first_name}'s job is now ${fmt(newDate)}${
+          newTimeRange ? ` ${newTimeRange}` : ""
+        } (was ${fmt(oldDate)}${oldTimeRange ? ` ${oldTimeRange}` : ""})
 ${customer?.address}${aptSuffix}
 View: ${siteUrl}/cleaner/${cleaner.portal_token}`,
         cleanerId: cleaner.id,
