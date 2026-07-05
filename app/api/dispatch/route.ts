@@ -26,6 +26,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Booking not found" }, { status: 404 });
   }
 
+  if (booking.status === "cancelled" || booking.status === "completed") {
+    return NextResponse.json(
+      { ok: false, error: `Can't dispatch a ${booking.status} booking.` },
+      { status: 400 }
+    );
+  }
+
   const { data: cleaner, error: cleanerErr } = await supabaseAdmin
     .from("cleaners")
     .select("id, first_name, last_name, phone, portal_token")
@@ -39,6 +46,11 @@ export async function POST(req: Request) {
   if (!cleaner.portal_token) {
     return NextResponse.json({ ok: false, error: "Cleaner has no portal token" }, { status: 400 });
   }
+
+  // Switching cleaners on an already-dispatched job — tell the old cleaner they're off it
+  const previousCleanerId = booking.assigned_cleaner_id;
+  const isReassignment =
+    previousCleanerId && previousCleanerId !== cleanerId && booking.dispatch_sms_sent_at;
 
   const { error: updateErr } = await supabaseAdmin
     .from("bookings")
@@ -80,5 +92,26 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`;
     eventType: "dispatch",
   });
 
-  return NextResponse.json({ ok: true });
+  let previousCleanerNotified = false;
+  if (isReassignment) {
+    const { data: previousCleaner } = await supabaseAdmin
+      .from("cleaners")
+      .select("id, first_name, phone")
+      .eq("id", previousCleanerId)
+      .single();
+
+    if (previousCleaner?.phone) {
+      const result = await sendSms({
+        to: previousCleaner.phone,
+        body: `REASSIGNED — you're off ${customer?.first_name}'s ${serviceDate} job at ${customer?.address}${aptSuffix}. No need to go.`,
+        cleanerId: previousCleaner.id,
+        bookingId,
+        recipientType: "cleaner",
+        eventType: "reassigned",
+      });
+      previousCleanerNotified = result.ok;
+    }
+  }
+
+  return NextResponse.json({ ok: true, previousCleanerNotified });
 }

@@ -4,11 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ScheduleEditor from "./ScheduleEditor";
 
+type Cleaner = {
+  id: string;
+  first_name: string;
+  last_name: string;
+};
+
 type Booking = {
   id: string;
   service_date: string;
   service_summary: string;
   status: string;
+  assigned_cleaner_id: string;
   dispatch_sms_sent_at: string | null;
   preferred_time_ranges: string[] | null;
   customers: {
@@ -21,13 +28,17 @@ type Booking = {
 export default function AssignedRow({
   booking,
   cleanerName,
+  cleaners,
 }: {
   booking: Booking;
   cleanerName: string | null;
+  cleaners: Cleaner[];
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [rescheduling, setRescheduling] = useState(false);
+  const [switching, setSwitching] = useState(false);
+  const [newCleaner, setNewCleaner] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
@@ -60,6 +71,44 @@ export default function AssignedRow({
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
       setNotice(data.cleanerNotified ? "Canceled — cleaner texted." : "Canceled.");
+      router.refresh();
+    } else {
+      setError(data.error ?? "Something went wrong. Try again.");
+      setBusy(false);
+    }
+  }
+
+  async function handleSwitchCleaner() {
+    if (!newCleaner) {
+      setError("Select the new cleaner first.");
+      return;
+    }
+    const name = cleaners.find((c) => c.id === newCleaner);
+    if (
+      !window.confirm(
+        `Move ${customer?.first_name}'s ${dateStr} job to ${name?.first_name ?? "this cleaner"}? ${
+          name?.first_name ?? "They"
+        } gets the job text${
+          booking.dispatch_sms_sent_at ? ` and ${cleanerName ?? "the current cleaner"} is told they're off it` : ""
+        }.`
+      )
+    )
+      return;
+    setBusy(true);
+    setError("");
+    const res = await fetch("/api/dispatch/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingId: booking.id, cleanerId: newCleaner }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      setNotice(
+        data.previousCleanerNotified
+          ? `Moved to ${name?.first_name ?? "new cleaner"} — both cleaners texted.`
+          : `Moved to ${name?.first_name ?? "new cleaner"} — job text sent.`
+      );
+      setSwitching(false);
       router.refresh();
     } else {
       setError(data.error ?? "Something went wrong. Try again.");
@@ -125,6 +174,41 @@ export default function AssignedRow({
             setError("");
           }}
         />
+      ) : switching ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={newCleaner}
+            onChange={(e) => setNewCleaner(e.target.value)}
+            className="rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs focus:outline-none"
+          >
+            <option value="">— New cleaner —</option>
+            {cleaners
+              .filter((c) => c.id !== booking.assigned_cleaner_id)
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.first_name} {c.last_name}
+                </option>
+              ))}
+          </select>
+          <button
+            onClick={handleSwitchCleaner}
+            disabled={busy || !newCleaner}
+            className="px-3 py-1 rounded-lg text-white text-xs font-medium disabled:opacity-50"
+            style={{ backgroundColor: "#1d9e75" }}
+          >
+            {busy ? "Switching…" : "Switch & text"}
+          </button>
+          <button
+            onClick={() => {
+              setSwitching(false);
+              setError("");
+            }}
+            disabled={busy}
+            className="px-3 py-1 rounded-lg text-xs text-gray-500 hover:text-gray-700"
+          >
+            Back
+          </button>
+        </div>
       ) : (
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -133,6 +217,13 @@ export default function AssignedRow({
             className="px-3 py-1 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:border-gray-400"
           >
             Edit day / time
+          </button>
+          <button
+            onClick={() => setSwitching(true)}
+            disabled={busy}
+            className="px-3 py-1 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:border-gray-400"
+          >
+            Change cleaner
           </button>
           <button
             onClick={handleCancel}

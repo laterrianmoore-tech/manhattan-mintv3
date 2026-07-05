@@ -92,6 +92,7 @@ export default async function DispatchPage() {
                   key={b.id}
                   booking={b as any}
                   cleanerName={cleaner ? cleaner.first_name : null}
+                  cleaners={cleaners ?? []}
                 />
               );
             })}
