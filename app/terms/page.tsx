@@ -129,6 +129,14 @@ export default function TermsPage() {
             please move them prior to our arrival.
           </p>
 
+          <h2>Valuables &amp; Personal Items</h2>
+          <p>
+            To keep your treasured belongings safe, we ask that jewelry, cash, and small valuables or
+            irreplaceable items be stored away before your cleaning — it lets your cleaner work confidently
+            in every corner of your home. Manhattan Mint cannot be responsible for loose cash, jewelry, or
+            other small valuables left out during a cleaning.
+          </p>
+
           <h2>Arrival</h2>
           <p>
             We reserve the right to arrive within a 30 minute window of the scheduled cleaning time. For example, if the booking time is 12:00 PM,

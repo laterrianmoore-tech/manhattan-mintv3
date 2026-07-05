@@ -443,6 +443,15 @@ export async function POST(req: Request) {
           ${paymentLineHtml}
           ${body.frequency !== "One-Time" ? `<p style="margin:0 0 24px;color:#555;font-size:14px;">🔁 <strong>Recurring rate:</strong> $${body.pricing.nextCleanTotal ?? body.pricing.total} per clean starting with your second visit.</p>` : `<p style="margin:0 0 24px;"></p>`}
 
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f7f4;border-radius:8px;padding:18px 24px;margin-bottom:24px;">
+            <tr><td>
+              <p style="margin:0 0 10px;color:#0f0f0f;font-size:14px;font-weight:600;">✨ How to prep for your clean</p>
+              <p style="margin:0 0 6px;color:#555;font-size:13px;">💎 To keep your treasured items safe, please store away jewelry, cash, and fragile valuables — it lets your cleaner work confidently in every corner.</p>
+              <p style="margin:0 0 6px;color:#555;font-size:13px;">🐶 If you have pets, let us know how they like to say hello (or set them up in a comfy spot).</p>
+              <p style="margin:0;color:#555;font-size:13px;">🔑 Double-check your building access notes — doorman, key, or codes — so your cleaner can get right to work.</p>
+            </td></tr>
+          </table>
+
           <p style="margin:0;color:#888;font-size:13px;">Questions? Reply to this email or text us at <a href="tel:+19148637902" style="color:#2d6a4f;">(914) 863-7902</a>.</p>
         </td></tr>
         <tr><td style="background:#f7f7f5;padding:20px 40px;text-align:center;">
