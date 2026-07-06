@@ -138,4 +138,5 @@ GOOGLE_SERVICE_ACCOUNT_EMAIL
 GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
 NEXT_PUBLIC_SITE_URL
 SITE_URL
+CRON_SECRET                # auth for scheduled jobs (daily cleaner reminders) — must match in Netlify
 ```

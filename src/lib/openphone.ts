@@ -17,6 +17,7 @@ type SendArgs = {
     | "cancelled"
     | "rescheduled"
     | "reassigned"
+    | "reminder"
     | "other";
 };
 
