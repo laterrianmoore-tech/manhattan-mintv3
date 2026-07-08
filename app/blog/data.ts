@@ -5,6 +5,7 @@ export type BlogPost = {
 	metaDescription: string;
 	tag: string;
 	publishedAt: string; // ISO date
+	updatedAt?: string; // ISO date — set when a post is substantially revised
 	excerpt: string;
 	intro: string[];
 	sections: {
@@ -22,6 +23,84 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
 	{
+		slug: "how-nyc-weather-affects-apartment-cleanliness",
+		metaTitle: "How NYC Weather Affects Apartment Cleanliness",
+		title: "How NYC weather affects your apartment: a season-by-season cleaning guide",
+		metaDescription:
+			"Manhattan dirt runs on a calendar — radiator heat season, tracked-in winter salt, plane-tree pollen, summer humidity in fan-less pre-war bathrooms. What each season does to your apartment, and the cleaning schedule that keeps up.",
+		tag: "Seasonal upkeep",
+		publishedAt: "2026-07-08",
+		excerpt:
+			"Heat season, salt season, pollen season, humidity season — Manhattan dirt runs on a calendar. What each season does to your apartment, and the schedule that keeps up.",
+		intro: [
+			"Ask anyone who cleans Manhattan apartments for a living and they'll tell you the borough has more than four seasons. There's radiator season, salt season, pollen season, and humidity season — and each one changes what shows up on your floors, sills, and shelves. The dust you fight in January is not the same problem as the yellow-green film on your sills in April or the white haze by your front door in February.",
+			"This guide walks the calendar the way we plan it for our recurring clients: what each season actually does to a Manhattan apartment, what to do about it yourself, and when the big cleans are worth scheduling. It pairs with our [pre-war cleaning guide](/blog/how-to-clean-pre-war-apartments) — the techniques there, the timing here.",
+		],
+		sections: [
+			{
+				heading: "Heat season: October 1 to May 31, by law",
+				paragraphs: [
+					"New York City's heat law requires residential buildings to provide heat from October 1 through May 31 — at least 68°F inside during the day whenever it drops below 55°F outside, and 62°F at night no matter the outdoor temperature. In a steam-heated building, that means your radiators run for eight months of the year. And for those eight months, they drive the convection currents that pull dust through the apartment, bake it onto the fins, and redistribute it around every room.",
+					"Steam heat also dries the air out — in a January cold snap, indoor humidity in a radiator-heated apartment can fall into desert range. Dry air keeps dust airborne longer and adds static, which is why it clings to screens and dark furniture all winter. Two things help more than any amount of extra dusting: clean the radiators in September, before the heat comes on and the summer's dust gets baked on, and run a humidifier toward 35–40% humidity so dust settles instead of circulating.",
+					"One more heat-season habit: after cold nights, check the sills of single-pane windows. Warm interior air condenses on cold glass, water pools on the sill, and by March you have mildew speckling in the paint. A ten-second wipe after a cold night prevents a spring repaint.",
+				],
+			},
+			{
+				heading: "Winter: salt season is floor season",
+				paragraphs: [
+					"From November to March, every sidewalk in Manhattan is dressed with rock salt and calcium chloride, and a share of it comes home on your shoes. The white haze it leaves isn't ordinary dirt: dry mopping won't lift it, calcium chloride residue stays faintly tacky and attracts more grime, and ground underfoot the crystals work like fine sandpaper on a floor finish. The six feet inside your front door take a whole winter's worth of that wear.",
+					"The fix happens at the door, not after the fact: a stiff-bristle mat outside, an absorbent washable mat inside, and a boot tray so wet soles aren't parked on hardwood. Then damp-mop the entry zone weekly through the winter with a pH-neutral cleaner — if a white film survives the first pass, that's salt residue, not dirt, and a second pass with plain water and a well-wrung mop takes it off. On original pre-war floors, don't let salt slush sit; the standing-moisture rules from our [pre-war floor care section](/blog/how-to-clean-pre-war-apartments) apply double in January.",
+				],
+			},
+			{
+				heading: "Spring: plane-tree pollen and the open-window trap",
+				paragraphs: [
+					"The first 70-degree week of spring, the whole city throws its windows open — which is exactly when the London plane trees, Manhattan's most common street tree, release their pollen. From late April into May, that's the yellow-green film that appears on sills, sticks to window screens, and smears instead of lifting when you dry-dust it. Right behind it comes the fluff from the trees' seed balls, which drifts through any open window and collects along baseboards.",
+					"During those weeks: keep screens in even when it's beautiful out, and wipe sills with a damp cloth weekly — pollen is sticky, so dry dusting just spreads it. And time your spring deep clean for after the pollen peak, not before. A deep clean in mid-April looks wonderful for about a week; the same clean in late May resets the apartment for the whole summer. That's when we book them for our own recurring clients.",
+				],
+			},
+			{
+				heading: "Summer: humidity is a cleaning problem, not just a comfort problem",
+				paragraphs: [
+					"Once indoor humidity sits above roughly 55–60% — most of July and August in New York — two things wake up: dust mites, which thrive in humid textiles, and mold, which gets its foothold in bathroom grout and caulk lines. Pre-war apartments have it hardest, because many pre-war bathrooms have no exhaust fan at all — a window or an air-shaft vent is the only ventilation, and on a still August day neither moves much air.",
+					"The routine that works: after showers, leave the bathroom door open and the window cracked; squeegee the tile if your bathroom is mold-prone. Check caulk lines monthly through the summer — pink or black speckling caught in its first weeks wipes away with a bathroom cleaner, but mold that's colonized the caulk itself has to be recaulked, not scrubbed. No amount of cleaning fixes caulk that's gone dark all the way through.",
+					"Window air conditioners deserve their own line item. A window unit recirculates your room air through its filter dozens of times a day — a clean filter is a dust trap working for you, a dirty one is a dust distributor. Most filters slide out from behind the front grille and rinse clean under a faucet in five minutes; do it monthly in season. Wipe the intake grille while you're there, and check that the unit tilts slightly outward so condensation drips outside, not into the wall or down your sill.",
+				],
+			},
+			{
+				heading: "All year: avenue soot doesn't take a season off",
+				paragraphs: [
+					"One Manhattan constant ignores the calendar entirely: traffic soot. If your windows face an avenue or a bus route, the black film on your sills is oily exhaust particulate, and it lands every day of the year. It needs a degreasing wipe — warm water with a drop of dish soap — not a dry dust, and it rewards a weekly cadence over a monthly scrub. The full technique is in our [pre-war cleaning guide](/blog/how-to-clean-pre-war-apartments), and it applies to new construction just as much.",
+				],
+			},
+			{
+				heading: "The seasonal calendar we build for recurring clients",
+				paragraphs: [
+					"Put together, the year looks like this — it's the rhythm we build into recurring plans, and you can run it yourself between professional visits:",
+				],
+				list: [
+					"September: radiator and heat-prep clean — fins, behind the units, window gaskets — before the October 1 heat comes on.",
+					"November–March: weekly damp-mop of the entryway to keep salt off the floor finish, on top of the normal cleaning rhythm.",
+					"Late May: the spring deep clean, timed after plane-tree pollen peaks — windows, screens, sills, and everything heat season left behind.",
+					"July: AC filter rinse, bathroom caulk-and-grout check, and a look inside closets and under-sink cabinets for humidity trouble.",
+					"Every week, all year: a damp wipe of avenue-facing sills. Two minutes that keeps soot from becoming a scrubbing job.",
+				],
+			},
+			{
+				heading: "A schedule beats a heroic clean",
+				paragraphs: [
+					"The pattern in all of this: Manhattan apartments don't get dirty randomly, they get dirty on a schedule — so the cleaning has to run on one too. A single deep clean fixes a moment; a calendar fixes the year. That's the thinking behind our recurring plans, and you can see what the switch looks like in practice in our [West Village family reset case study](/case-studies/three-bedroom-family-reset-west-village), where the fix wasn't one heroic clean — it was a system.",
+				],
+			},
+		],
+		cta: {
+			heading: "Cleaning in NYC is seasonal.|We plan for it.",
+			body: "Recurring plans that track the seasons — same cleaner every visit, flat rates from $175, up to 30% off recurring. See the real thing in our",
+			caseStudySlug: "three-bedroom-family-reset-west-village",
+			caseStudyLabel: "West Village family reset case study",
+		},
+	},
+	{
 		slug: "how-to-clean-pre-war-apartments",
 		metaTitle: "How to Clean a Pre-War Apartment",
 		title: "How to clean a pre-war apartment: techniques for radiators, moldings, and old-building grime",
@@ -29,6 +108,7 @@ export const blogPosts: BlogPost[] = [
 			"Pre-war Manhattan apartments collect dirt in ways modern buildings don't. Cleaning techniques for cast-iron radiators, crown moldings, avenue-facing windows, and original hardwood.",
 		tag: "Pre-war living",
 		publishedAt: "2026-07-01",
+		updatedAt: "2026-07-08",
 		excerpt:
 			"Cast-iron radiators, crown moldings, single-pane windows facing a bus route — pre-war apartments are beautiful and they fight back. The techniques that actually work.",
 		intro: [
@@ -39,7 +119,7 @@ export const blogPosts: BlogPost[] = [
 			{
 				heading: "Radiators first: the engine of pre-war dust",
 				paragraphs: [
-					"Cast-iron radiators are the single biggest reason pre-war apartments feel dusty. All winter, they drive convection currents that pull dust through the fins, bake it on, and redistribute it around the room. Clean everything else and skip the radiator, and the room re-dusts itself within days.",
+					"Cast-iron radiators are the single biggest reason pre-war apartments feel dusty. Under New York's heat law they run from October 1 through May 31 — eight months a year of convection currents that pull dust through the fins, bake it on, and redistribute it around the room. Clean everything else and skip the radiator, and the room re-dusts itself within days. (Our [season-by-season NYC guide](/blog/how-nyc-weather-affects-apartment-cleanliness) covers what the rest of the calendar does to a Manhattan apartment.)",
 					"The technique: work top-down with a long radiator brush between every fin, then vacuum with a crevice tool — behind the unit too, where decades of felted dust collects against the wall. Do this at the start of the clean, not the end, so anything dislodged gets picked up by the rest of the pass. In summer, when radiators are cold, a damp microfiber wipe of each fin gets the baked-on layer that dry brushing won't.",
 				],
 			},
@@ -48,6 +128,14 @@ export const blogPosts: BlogPost[] = [
 				paragraphs: [
 					"Pre-war trim is deep — crown moldings, picture rails, panel doors — and every horizontal ledge is a dust shelf. The mistake most people make is dry-dusting, which pushes dust off the ledge and into the air, where it resettles.",
 					"Use a barely-damp microfiber cloth folded to a fresh face per ledge, and work the room clockwise from the highest trim down. Painted trim in older buildings often carries decades of paint layers that scuff easily, so skip abrasive sponges — if a mark won't lift with a damp cloth and a drop of dish soap, it's probably in the paint, not on it.",
+					"There's a safety reason to stay gentle, too. Paint applied before 1978 can contain lead, and pre-war trim almost always carries those older layers under the newer coats. Damp cleaning is safe; sanding, dry-scraping, or scrubbing paint down to dust is not. Watch window sashes and sills especially — that's where friction wears paint through fastest. If trim paint is chipping or flaking, don't try to clean it back to fresh paint yourself: in a pre-1960 rental, peeling paint is the owner's responsibility to fix under NYC law, so flag it to your landlord or managing agent instead.",
+				],
+			},
+			{
+				heading: "Plaster walls: dust that comes from inside the apartment",
+				paragraphs: [
+					"Pre-war walls are plaster over lath, not drywall, and plaster moves with the building. As it settles, hairline cracks open along ceiling lines and above door frames and shed a very fine white powder. Clients regularly point us at a shelf or a stretch of floor that 'gets dusty overnight' — if the dust is white and keeps reappearing in a line under the same spot, it's coming out of the wall, not out of the air. Cleaning cadence won't fix that; it's worth a patch next time the room is painted.",
+					"The walls themselves want a lighter touch than drywall. Flat and matte paint over plaster burnishes if you scrub it — you'll take the scuff off and leave a permanent shiny patch in its place. Dab marks with a barely-damp cloth and stop early, and keep melamine sponges ('magic erasers') away from matte plaster walls entirely; they're micro-abrasives, and every pass polishes the finish a little more.",
 				],
 			},
 			{
@@ -67,7 +155,7 @@ export const blogPosts: BlogPost[] = [
 				heading: "The cadence that keeps a pre-war apartment clean",
 				paragraphs: [
 					"Pre-war apartments reward rhythm over heroics: a weekly light pass on sills and open surfaces, a monthly proper clean including floors and bathrooms, and a deep clean with radiators, moldings, and window frames every season. That's the schedule we build for our recurring pre-war clients, and it's why their apartments stop feeling dusty between visits.",
-					"If your apartment hasn't had the deep baseline in a while, start there — you can see what that looks like in practice in our Upper West Side pre-war walk-up case study.",
+					"If your apartment hasn't had the deep baseline in a while, start there — you can see what that looks like in practice in our [Upper West Side pre-war walk-up case study](/case-studies/pre-war-walk-up-deep-clean-upper-west-side). And if the building is a co-op, our [co-op cleaning guide](/blog/cleaning-services-for-co-ops) covers the paperwork side before anyone touches a radiator.",
 				],
 			},
 		],
@@ -130,7 +218,7 @@ export const blogPosts: BlogPost[] = [
 			{
 				heading: "How we handle it at Manhattan Mint",
 				paragraphs: [
-					"Co-op logistics are built into our booking flow: we collect your building's requirements when you book, issue the COI to your managing agent before your first visit, reserve the service elevator as part of dispatch, and our cleaners check in with the doorman by the building's rules. You can read exactly how that played out for a client in our Upper East Side co-op case study.",
+					"Co-op logistics are built into our booking flow: we collect your building's requirements when you book, issue the COI to your managing agent before your first visit, reserve the service elevator as part of dispatch, and our cleaners check in with the doorman by the building's rules. You can read exactly how that played out for a client in our [Upper East Side co-op case study](/case-studies/co-op-coi-cleaning-upper-east-side). And once the paperwork is squared away, our [pre-war cleaning guide](/blog/how-to-clean-pre-war-apartments) covers what a proper clean should include in an older building.",
 				],
 			},
 		],

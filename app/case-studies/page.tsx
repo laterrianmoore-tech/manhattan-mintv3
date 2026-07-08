@@ -3,6 +3,8 @@ import Link from "next/link";
 import { caseStudies } from "./data";
 import "./case-studies.css";
 
+const SITE = "https://manhattanmintnyc.com";
+
 export const metadata: Metadata = {
 	title: "Manhattan Cleaning Case Studies",
 	description:
@@ -16,8 +18,32 @@ export const metadata: Metadata = {
 };
 
 export default function CaseStudiesPage() {
+	const jsonLd = {
+		"@context": "https://schema.org",
+		"@type": "CollectionPage",
+		name: "Manhattan Cleaning Case Studies",
+		url: `${SITE}/case-studies/`,
+		description:
+			"Real cleaning case studies from Manhattan apartments — pre-war walk-ups, co-op COI requirements, small spaces, and lofts.",
+		publisher: {
+			"@type": "Organization",
+			name: "Manhattan Mint",
+			url: SITE,
+		},
+		mainEntity: {
+			"@type": "ItemList",
+			itemListElement: caseStudies.map((study, index) => ({
+				"@type": "ListItem",
+				position: index + 1,
+				name: study.title,
+				url: `${SITE}/case-studies/${study.slug}/`,
+			})),
+		},
+	};
+
 	return (
 		<div className="cs-page">
+			<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 			<div className="cs-eye">Case studies</div>
 			<h1 className="cs-h1">
 				Cleaning Manhattan is <em>different.</em>
@@ -36,7 +62,7 @@ export default function CaseStudiesPage() {
 						<span className="cs-meta">
 							{study.neighborhood} · {study.propertyType} · {study.service}
 						</span>
-						<div className="cs-card-title">{study.title}</div>
+						<h2 className="cs-card-title">{study.title}</h2>
 						<p className="cs-card-excerpt">{study.excerpt}</p>
 						<span className="cs-read-more">Read the case study →</span>
 					</Link>
@@ -44,9 +70,9 @@ export default function CaseStudiesPage() {
 			</div>
 
 			<div className="cs-cta">
-				<div className="cs-cta-h">
+				<h2 className="cs-cta-h">
 					Your apartment could be <em>the next one.</em>
-				</div>
+				</h2>
 				<p>
 					Flat-rate pricing from $175, same-week availability, and a team that already knows
 					your building type. See <Link href="/#pricing">flat-rate pricing</Link> or get started below.

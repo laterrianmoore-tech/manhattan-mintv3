@@ -3,6 +3,8 @@ import Link from "next/link";
 import { blogPosts } from "./data";
 import "../case-studies/case-studies.css";
 
+const SITE = "https://manhattanmintnyc.com";
+
 export const metadata: Metadata = {
 	title: "Blog — Manhattan Cleaning Guides",
 	description:
@@ -11,8 +13,30 @@ export const metadata: Metadata = {
 };
 
 export default function BlogIndexPage() {
+	const jsonLd = {
+		"@context": "https://schema.org",
+		"@type": "Blog",
+		name: "Manhattan Mint Blog — Manhattan Cleaning Guides",
+		url: `${SITE}/blog/`,
+		description:
+			"Practical guides to keeping a Manhattan apartment clean — co-op and condo building rules, seasonal upkeep, and hiring the right cleaning service in NYC.",
+		publisher: {
+			"@type": "Organization",
+			name: "Manhattan Mint",
+			url: SITE,
+		},
+		blogPost: blogPosts.map((post) => ({
+			"@type": "BlogPosting",
+			headline: post.title,
+			url: `${SITE}/blog/${post.slug}/`,
+			datePublished: post.publishedAt,
+			dateModified: post.updatedAt ?? post.publishedAt,
+		})),
+	};
+
 	return (
 		<div className="cs-page">
+			<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 			<div className="cs-eye">Blog</div>
 			<h1 className="cs-h1">
 				Guides for keeping a<br />
@@ -33,7 +57,7 @@ export default function BlogIndexPage() {
 								year: "numeric",
 							})}
 						</span>
-						<div className="cs-card-title">{post.title}</div>
+						<h2 className="cs-card-title">{post.title}</h2>
 						<p className="cs-card-excerpt">{post.excerpt}</p>
 						<span className="cs-read-more">Read the guide →</span>
 					</Link>
@@ -41,7 +65,7 @@ export default function BlogIndexPage() {
 			</div>
 
 			<div className="cs-related">
-				<div className="cs-related-head">Prefer proof over advice?</div>
+				<h2 className="cs-related-head">Prefer proof over advice?</h2>
 				<Link href="/case-studies">Browse our Manhattan case studies →</Link>
 			</div>
 		</div>

@@ -13,6 +13,7 @@ export type CaseStudy = {
 	results: string[];
 	quote: string;
 	quoteAuthor: string;
+	relatedGuide: { slug: string; label: string }; // matching blog guide, linked from the article
 };
 
 export const caseStudies: CaseStudy[] = [
@@ -35,7 +36,7 @@ export const caseStudies: CaseStudy[] = [
 		approach: [
 			{
 				title: "Radiators first, floors last",
-				body: "We clean pre-war apartments top-down and radiators-first, because radiator dust travels. A dedicated brush set and vacuum attachment gets behind and inside the fins — the single most-skipped area in NYC apartment cleaning.",
+				body: "We clean pre-war apartments top-down and radiators-first, because radiator dust travels. A dedicated brush set and vacuum attachment gets behind and inside the fins — the single most-skipped area in NYC apartment cleaning. The full technique is in our [pre-war cleaning guide](/blog/how-to-clean-pre-war-apartments).",
 			},
 			{
 				title: "Small-space choreography",
@@ -54,6 +55,10 @@ export const caseStudies: CaseStudy[] = [
 		quote:
 			"Reliable, respectful, and worth every penny. I switched from a larger service six months ago and haven't looked back.",
 		quoteAuthor: "Maya L., Upper West Side",
+		relatedGuide: {
+			slug: "how-to-clean-pre-war-apartments",
+			label: "Guide: How to clean a pre-war apartment",
+		},
 	},
 	{
 		slug: "co-op-coi-cleaning-upper-east-side",
@@ -68,7 +73,7 @@ export const caseStudies: CaseStudy[] = [
 		excerpt:
 			"Her co-op board required a COI naming three entities, a service-elevator reservation, and vendor check-in before anyone could clean her apartment. That's a normal Tuesday for us.",
 		challenge: [
-			"Many Manhattan co-ops won't let a cleaning service through the lobby without paperwork. This Upper East Side building required a certificate of insurance naming the building corporation, the managing agent, and the board — plus a service elevator reservation made 48 hours ahead, and vendor check-in with the doorman on arrival.",
+			"Many Manhattan co-ops won't let a cleaning service through the lobby without paperwork. This Upper East Side building required a [certificate of insurance](/blog/cleaning-services-for-co-ops) naming the building corporation, the managing agent, and the board — plus a service elevator reservation made 48 hours ahead, and vendor check-in with the doorman on arrival.",
 			"The client had already lost a cleaner over this: her previous service missed the elevator window twice and was turned away at the door, leaving her to scramble before houseguests arrived.",
 		],
 		approach: [
@@ -93,6 +98,10 @@ export const caseStudies: CaseStudy[] = [
 		quote:
 			"Booked on a Tuesday, they were there Thursday. The doorman even complimented how professionally they handled building entry.",
 		quoteAuthor: "Sarah P., Upper East Side",
+		relatedGuide: {
+			slug: "cleaning-services-for-co-ops",
+			label: "Guide: Cleaning services for co-ops — what NYC boards require",
+		},
 	},
 	{
 		slug: "three-bedroom-family-reset-west-village",
@@ -117,7 +126,7 @@ export const caseStudies: CaseStudy[] = [
 			},
 			{
 				title: "A schedule built around the family",
-				body: "Weekly visits timed for school hours, so the apartment resets before the afternoon chaos begins. Same cleaner every week, who knows which toys live where and that the dog is friendly but dramatic.",
+				body: "Weekly visits timed for school hours, so the apartment resets before the afternoon chaos begins. Same cleaner every week, who knows which toys live where and that the dog is friendly but dramatic. It's the same schedule-first logic behind our [seasonal NYC cleaning calendar](/blog/how-nyc-weather-affects-apartment-cleanliness).",
 			},
 			{
 				title: "The 30% recurring rate",
@@ -132,6 +141,10 @@ export const caseStudies: CaseStudy[] = [
 		quote:
 			"As someone with a 3-bedroom in the West Village, finding a reliable team was hard. Manhattan Mint nailed it on the first visit.",
 		quoteAuthor: "Marcus W., West Village",
+		relatedGuide: {
+			slug: "how-nyc-weather-affects-apartment-cleanliness",
+			label: "Guide: How NYC weather shapes a cleaning schedule",
+		},
 	},
 	{
 		slug: "loft-detail-clean-tribeca",
@@ -171,5 +184,9 @@ export const caseStudies: CaseStudy[] = [
 		quote:
 			"They cleaned behind the radiators. Nobody does that. Genuinely the most thorough clean I've ever had in New York.",
 		quoteAuthor: "Alex T., Tribeca",
+		relatedGuide: {
+			slug: "how-nyc-weather-affects-apartment-cleanliness",
+			label: "Guide: How NYC weather affects apartment dust",
+		},
 	},
 ];
