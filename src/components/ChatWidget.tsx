@@ -14,6 +14,18 @@ const AUTO_OPEN_KEY = 'mm_chat_auto_opened';
 const AUTO_OPEN_PATHS = ['/quote', '/pricing-availability'];
 const AUTO_OPEN_DELAY_MS = 10_000;
 
+// Renders **bold** spans inside a plain-text segment.
+function renderBold(text: string, keyPrefix: string) {
+  const parts = text.split(/\*\*([^*]+)\*\*/g);
+  return parts.map((part, i) =>
+    i % 2 === 1 ? (
+      <strong key={`${keyPrefix}-b-${i}`}>{part}</strong>
+    ) : (
+      <span key={`${keyPrefix}-t-${i}`}>{part}</span>
+    ),
+  );
+}
+
 function renderContent(text: string, lineKey: number) {
   const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
   const nodes: React.ReactNode[] = [];
@@ -22,7 +34,7 @@ function renderContent(text: string, lineKey: number) {
 
   while ((match = linkRegex.exec(text)) !== null) {
     if (match.index > last) {
-      nodes.push(<span key={`t-${last}`}>{text.slice(last, match.index)}</span>);
+      nodes.push(...renderBold(text.slice(last, match.index), `t-${last}`));
     }
     const href = match[2];
     const isExternal = href.startsWith('http');
@@ -41,7 +53,7 @@ function renderContent(text: string, lineKey: number) {
   }
 
   if (last < text.length) {
-    nodes.push(<span key={`t-${last}`}>{text.slice(last)}</span>);
+    nodes.push(...renderBold(text.slice(last), `t-${last}`));
   }
 
   return <p key={lineKey} style={{ margin: '2px 0' }}>{nodes}</p>;
