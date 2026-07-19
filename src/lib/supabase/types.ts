@@ -100,6 +100,38 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["email_subscribers"]["Insert"]>;
         Relationships: [];
       };
+      email_unsubscribes: {
+        Row: {
+          id: string;
+          email: string;
+          source: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          source?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["email_unsubscribes"]["Insert"]>;
+        Relationships: [];
+      };
+      campaign_sends: {
+        Row: {
+          id: string;
+          email: string;
+          campaign_key: string;
+          segment: "prospect" | "customer";
+          sent_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          campaign_key: string;
+          segment: "prospect" | "customer";
+        };
+        Update: Partial<Database["public"]["Tables"]["campaign_sends"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

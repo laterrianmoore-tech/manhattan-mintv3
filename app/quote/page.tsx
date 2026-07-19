@@ -77,6 +77,7 @@ function discountRateForFrequency(frequency: Frequency) {
 function couponDiscount(couponCode: string, subtotalAfterFrequency: number) {
   const normalized = couponCode.trim().toUpperCase();
   if (normalized === "MINT20") return Math.round(subtotalAfterFrequency * 0.2);
+  if (normalized === "MINT25") return 25;
   if (normalized === "WELCOME15") return 15;
   return 0;
 }

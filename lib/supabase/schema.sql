@@ -102,6 +102,39 @@ create index if not exists email_subscribers_email_idx on email_subscribers(emai
 create index if not exists email_subscribers_created_at_idx on email_subscribers(created_at);
 
 -- ============================================================
+-- EMAIL UNSUBSCRIBES
+-- Marketing suppression list. Anyone here never gets campaign
+-- email, whether they're a subscriber, customer, or both.
+-- ============================================================
+create table if not exists email_unsubscribes (
+  id          uuid primary key default uuid_generate_v4(),
+  email       text not null unique,
+  source      text not null default 'link',
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists email_unsubscribes_email_idx on email_unsubscribes(email);
+
+-- ============================================================
+-- CAMPAIGN SENDS
+-- One row per marketing email delivered. Drives rotation (each
+-- recipient gets the next unseen email in their track) and gives
+-- a full audit log of what went out.
+-- ============================================================
+create table if not exists campaign_sends (
+  id            uuid primary key default uuid_generate_v4(),
+  email         text not null,
+  campaign_key  text not null,
+  segment       text not null check (segment in ('prospect', 'customer')),
+  sent_at       timestamptz not null default now(),
+  unique (email, campaign_key)
+);
+
+create index if not exists campaign_sends_email_idx on campaign_sends(email);
+create index if not exists campaign_sends_campaign_key_idx on campaign_sends(campaign_key);
+create index if not exists campaign_sends_sent_at_idx on campaign_sends(sent_at);
+
+-- ============================================================
 -- ROW LEVEL SECURITY
 -- Locked down by default. Server-side admin client bypasses RLS.
 -- ============================================================
@@ -109,3 +142,5 @@ alter table customers enable row level security;
 alter table bookings enable row level security;
 alter table cleaners enable row level security;
 alter table email_subscribers enable row level security;
+alter table email_unsubscribes enable row level security;
+alter table campaign_sends enable row level security;
