@@ -53,7 +53,7 @@ Customer-facing booking flow, fully wired.
 - `/api/bookings/charge` endpoint built for post-appointment charging (manual for now)
 - Preferred time window selection (multi-select, shows in email + calendar)
 
-**What's still manual in Phase 1:** Owner must call `/api/bookings/charge` after each appointment to collect payment.
+**Update 2026-07-19:** Payment collection is now AUTOMATIC — when the cleaner taps "Job Complete", `/api/job-event` charges the saved card off-session (`src/lib/stripe-charge.ts`) and auto-creates the next booking for recurring frequencies. `/api/bookings/charge` remains for edge cases (failed auto-charge, custom amounts).
 
 ---
 

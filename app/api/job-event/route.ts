@@ -1,6 +1,17 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { sendSms } from "@/lib/openphone";
+import { chargeCustomer } from "@/lib/stripe-charge";
+
+// Next service date for a recurring frequency, from the just-completed date.
+function nextServiceDate(serviceDate: string, frequency: string): string | null {
+  const d = new Date(serviceDate + "T12:00:00");
+  if (frequency === "Weekly") d.setDate(d.getDate() + 7);
+  else if (frequency === "Bi-Weekly") d.setDate(d.getDate() + 14);
+  else if (frequency === "Monthly") d.setMonth(d.getMonth() + 1);
+  else return null;
+  return d.toISOString().slice(0, 10);
+}
 
 export async function POST(req: Request) {
   const { token, bookingId, event } = await req.json();
@@ -59,11 +70,85 @@ export async function POST(req: Request) {
     });
     await supabaseAdmin.from("bookings").update({ arrival_sms_sent_at: now }).eq("id", bookingId);
   } else if (event === "completed") {
+    // Idempotency: a second "Job Complete" tap must not re-charge the card
+    // or re-send the follow-up texts.
+    if (booking.completed_at) {
+      return NextResponse.json({ ok: true, alreadyCompleted: true });
+    }
+
     await supabaseAdmin
       .from("bookings")
       .update({ completed_at: now, status: "completed" })
       .eq("id", bookingId);
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://manhattanmintnyc.com";
+
+    // ── Auto-charge the saved card ─────────────────────────────────────
+    // Phase 2 goal: owner never charges a card manually. Failure never
+    // blocks the rest of the flow — the owner is told to collect manually.
+    let chargeLine = "";
+    const stripeCustomerId = booking.stripe_customer_id || customer.stripe_customer_id;
+    if (booking.stripe_charge_id) {
+      chargeLine = `Payment: already charged earlier.`;
+    } else if (!stripeCustomerId) {
+      chargeLine = `⚠️ Payment: NO CARD ON FILE — collect $${booking.pricing_total} manually.`;
+    } else if (!booking.pricing_total || booking.pricing_total <= 0) {
+      chargeLine = `Payment: $0 booking, nothing to charge.`;
+    } else {
+      const charge = await chargeCustomer({
+        stripeCustomerId,
+        amount: booking.pricing_total,
+        description: `Manhattan Mint clean — ${booking.service_date} (${booking.service_summary || booking.frequency})`,
+      });
+      if (charge.ok) {
+        await supabaseAdmin
+          .from("bookings")
+          .update({ stripe_charge_id: charge.paymentIntentId })
+          .eq("id", bookingId);
+        chargeLine = `💳 Card charged $${charge.amount} automatically (${charge.status}).`;
+      } else {
+        chargeLine = `⚠️ AUTO-CHARGE FAILED ($${booking.pricing_total}): ${charge.error} — collect manually via /api/bookings/charge.`;
+      }
+    }
+
+    // ── Auto-create the next recurring booking ─────────────────────────
+    // Recurring customers should never need a manual booking created.
+    let recurringLine = "";
+    const nextDate = nextServiceDate(booking.service_date, booking.frequency);
+    if (nextDate) {
+      // Dedupe: skip if this customer already has a future booking on the books
+      const { data: future } = await supabaseAdmin
+        .from("bookings")
+        .select("id, service_date")
+        .eq("customer_id", booking.customer_id)
+        .in("status", ["pending", "confirmed"])
+        .gt("service_date", booking.service_date)
+        .limit(1);
+      if (future?.length) {
+        recurringLine = `Next recurring visit already booked (${future[0].service_date}).`;
+      } else {
+        const nextTotal = booking.pricing_next_clean_total ?? booking.pricing_total;
+        const { error: createErr } = await supabaseAdmin.from("bookings").insert({
+          customer_id: booking.customer_id,
+          status: "pending",
+          frequency: booking.frequency,
+          bedrooms: booking.bedrooms,
+          bathrooms: booking.bathrooms,
+          service_summary: booking.service_summary,
+          service_date: nextDate,
+          preferred_time_ranges: booking.preferred_time_ranges ?? [],
+          selected_extras: booking.selected_extras ?? [],
+          cleaning_notes: booking.cleaning_notes,
+          pricing_total: nextTotal,
+          pricing_subtotal: booking.pricing_subtotal,
+          pricing_next_clean_total: booking.pricing_next_clean_total,
+          stripe_payment_method_id: booking.stripe_payment_method_id,
+          stripe_customer_id: stripeCustomerId,
+        });
+        recurringLine = createErr
+          ? `⚠️ Failed to auto-create next ${booking.frequency} booking: ${createErr.message}`
+          : `🔁 Next ${booking.frequency} visit auto-created for ${nextDate} (pending — assign a cleaner in dispatch).`;
+      }
+    }
 
     // Post-clean sequence: review ask, then recurring upsell + referral.
     // Sent as two texts — a single message with every ask buries the review link.
@@ -93,7 +178,7 @@ export async function POST(req: Request) {
     for (const phone of ownerPhones) {
       await sendSms({
         to: phone,
-        body: `✅ JOB DONE: ${cleaner.first_name} completed ${customer.first_name} ${customer.last_name || ""}'s clean (${booking.service_date}). Customer texted: review link + recurring offer (up to 30% off) + $25 referral. Watch OpenPhone for their reply. Reminder: collect payment.`,
+        body: `✅ JOB DONE: ${cleaner.first_name} completed ${customer.first_name} ${customer.last_name || ""}'s clean (${booking.service_date}). ${chargeLine}${recurringLine ? ` ${recurringLine}` : ""} Customer texted review link + recurring/referral offers.`,
         cleanerId: cleaner.id,
         bookingId,
         recipientType: "customer",
