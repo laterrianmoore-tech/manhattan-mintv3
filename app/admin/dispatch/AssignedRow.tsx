@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ScheduleEditor from "./ScheduleEditor";
+import PriceEditor from "./PriceEditor";
 
 type Cleaner = {
   id: string;
@@ -18,6 +19,7 @@ type Booking = {
   assigned_cleaner_id: string;
   dispatch_sms_sent_at: string | null;
   preferred_time_ranges: string[] | null;
+  pricing_total: number;
   customers: {
     first_name: string;
     last_name: string;
@@ -38,6 +40,7 @@ export default function AssignedRow({
   const [busy, setBusy] = useState(false);
   const [rescheduling, setRescheduling] = useState(false);
   const [switching, setSwitching] = useState(false);
+  const [repricing, setRepricing] = useState(false);
   const [newCleaner, setNewCleaner] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -142,7 +145,8 @@ export default function AssignedRow({
             )}
           </div>
           <div className="text-gray-500 text-xs truncate mt-0.5">
-            {customer?.address} &middot; {booking.service_summary}
+            {customer?.address} &middot; {booking.service_summary} &middot;{" "}
+            <span className="font-semibold text-gray-700">${booking.pricing_total}</span>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-4">
@@ -171,6 +175,20 @@ export default function AssignedRow({
           }}
           onClose={() => {
             setRescheduling(false);
+            setError("");
+          }}
+        />
+      ) : repricing ? (
+        <PriceEditor
+          bookingId={booking.id}
+          initialTotal={booking.pricing_total}
+          onDone={(message) => {
+            setNotice(message);
+            setRepricing(false);
+            router.refresh();
+          }}
+          onClose={() => {
+            setRepricing(false);
             setError("");
           }}
         />
@@ -224,6 +242,14 @@ export default function AssignedRow({
             className="px-3 py-1 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:border-gray-400"
           >
             Change cleaner
+          </button>
+          <button
+            onClick={() => setRepricing(true)}
+            disabled={busy}
+            className="px-3 py-1 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:border-gray-400"
+            title="Change what the card is charged at Job Complete"
+          >
+            Edit price
           </button>
           <button
             onClick={handleCancel}

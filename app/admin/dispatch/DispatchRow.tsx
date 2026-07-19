@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ScheduleEditor from "./ScheduleEditor";
+import PriceEditor from "./PriceEditor";
 
 type Cleaner = {
   id: string;
@@ -17,6 +18,7 @@ type Booking = {
   service_summary: string;
   bedrooms: number;
   preferred_time_ranges: string[] | null;
+  pricing_total: number;
   customers: {
     first_name: string;
     last_name: string;
@@ -39,6 +41,7 @@ export default function DispatchRow({
   const [dispatchedName, setDispatchedName] = useState("");
   const [cancelled, setCancelled] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState(false);
+  const [editingPrice, setEditingPrice] = useState(false);
   const [scheduleNotice, setScheduleNotice] = useState("");
   const [error, setError] = useState("");
 
@@ -146,6 +149,8 @@ export default function DispatchRow({
         {aptSuffix}
         <span className="mx-2 text-gray-300">·</span>
         {booking.bedrooms}BR · {booking.service_summary}
+        <span className="mx-2 text-gray-300">·</span>
+        <span className="font-semibold text-gray-800">${booking.pricing_total}</span>
       </div>
       {editingSchedule ? (
         <ScheduleEditor
@@ -160,6 +165,17 @@ export default function DispatchRow({
             router.refresh();
           }}
           onClose={() => setEditingSchedule(false)}
+        />
+      ) : editingPrice ? (
+        <PriceEditor
+          bookingId={booking.id}
+          initialTotal={booking.pricing_total}
+          onDone={(message) => {
+            setEditingPrice(false);
+            setScheduleNotice(message);
+            router.refresh();
+          }}
+          onClose={() => setEditingPrice(false)}
         />
       ) : (
       <div className="flex flex-wrap items-center gap-2">
@@ -196,6 +212,14 @@ export default function DispatchRow({
           title="Change the day or time window"
         >
           Edit day / time
+        </button>
+        <button
+          onClick={() => setEditingPrice(true)}
+          disabled={loading}
+          className="h-10 px-3 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:border-gray-400 disabled:opacity-50 whitespace-nowrap"
+          title="Change what the card is charged at Job Complete"
+        >
+          Edit price
         </button>
         <button
           onClick={handleCancel}
