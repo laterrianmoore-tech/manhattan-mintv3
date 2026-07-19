@@ -113,6 +113,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Service date must be at least 1 day from today" }, { status: 400 });
     }
 
+    // ── First-timer coupon guard ─────────────────────────────────────────────
+    // MINT25 / WELCOME15 are first-clean-only offers. If this email already
+    // has a real booking (confirmed, in progress, or completed), reject so
+    // the discount can't be reused on repeat cleans.
+    const FIRST_CLEAN_COUPONS = ["MINT25", "WELCOME15"];
+    const couponNormalized = (body.couponCode || "").trim().toUpperCase();
+    if (FIRST_CLEAN_COUPONS.includes(couponNormalized)) {
+      const { data: priorCustomer } = await supabaseAdmin
+        .from("customers")
+        .select("id")
+        .eq("email", body.email.toLowerCase().trim())
+        .maybeSingle();
+      if (priorCustomer) {
+        const { data: priorBookings } = await supabaseAdmin
+          .from("bookings")
+          .select("id")
+          .eq("customer_id", priorCustomer.id)
+          .in("status", ["confirmed", "in_progress", "completed"])
+          .limit(1);
+        if (priorBookings?.length) {
+          return NextResponse.json(
+            { error: `Code ${couponNormalized} is for first-time customers only. Remove it (or ask us about recurring plans — they save up to 30% on every clean) and try again.` },
+            { status: 400 },
+          );
+        }
+      }
+    }
+
     const stripeKey = process.env.STRIPE_SECRET_KEY;
     const sendgridApiKey = process.env.SENDGRID_API_KEY;
     const sendgridFrom = process.env.SENDGRID_FROM_EMAIL;
