@@ -106,6 +106,15 @@ export default function AssignedRow({
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
+      if (data.smsSent === false) {
+        setError(
+          `Moved to ${name?.first_name ?? "new cleaner"}, but the job TEXT DID NOT SEND — text them manually. (${data.smsError ?? "unknown error"})`
+        );
+        setSwitching(false);
+        setBusy(false);
+        router.refresh();
+        return;
+      }
       setNotice(
         data.previousCleanerNotified
           ? `Moved to ${name?.first_name ?? "new cleaner"} — both cleaners texted.`

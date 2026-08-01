@@ -1,7 +1,40 @@
+import sgMail from "@sendgrid/mail";
 import { supabaseAdmin } from "./supabase";
 
 const OPENPHONE_API_KEY = process.env.OPENPHONE_API_KEY!;
 const OPENPHONE_FROM_NUMBER = process.env.OPENPHONE_FROM_NUMBER!;
+
+// SMS is a critical path (dispatch, reminders, status updates) — when OpenPhone
+// rejects a send (e.g. out of prepaid credits, Aug 2026), the owner must hear
+// about it even though SMS itself is down, so fall back to email.
+async function emailOwnerSmsFailure(args: SendArgs, errorMessage: string) {
+  const apiKey = process.env.SENDGRID_API_KEY;
+  const from = process.env.SENDGRID_FROM_EMAIL;
+  const to = process.env.OWNER_NOTIFY_EMAIL || process.env.SENDGRID_TO_EMAIL;
+  if (!apiKey || !from || !to) return;
+  try {
+    sgMail.setApiKey(apiKey);
+    await sgMail.send({
+      to: to.split(",").map((e) => e.trim()),
+      from: { email: from, name: process.env.SENDGRID_FROM_NAME || "Manhattan Mint" },
+      subject: `⚠️ SMS FAILED — ${args.eventType} text to ${args.recipientType} did not send`,
+      text: [
+        `An automated text failed to send.`,
+        ``,
+        `Type: ${args.eventType} (${args.recipientType})`,
+        `To: ${args.to}`,
+        `Booking: ${args.bookingId ?? "-"}`,
+        `Error: ${errorMessage}`,
+        ``,
+        `If the error mentions credits, top up prepaid credits in OpenPhone (Settings → Billing) and turn on auto-recharge.`,
+        `Message that failed:`,
+        args.body,
+      ].join("\n"),
+    });
+  } catch (e) {
+    console.error("[sendSms] owner failure-alert email also failed:", e);
+  }
+}
 
 type SendArgs = {
   to: string;
@@ -50,6 +83,11 @@ export async function sendSms(args: SendArgs) {
     }
   } catch (err: any) {
     errorMessage = err?.message ?? "unknown error";
+  }
+
+  if (status === "failed") {
+    console.error(`[sendSms] ${args.eventType} to ${args.recipientType} failed:`, errorMessage);
+    await emailOwnerSmsFailure(args, errorMessage ?? "unknown error");
   }
 
   await supabaseAdmin.from("dispatch_log").insert({

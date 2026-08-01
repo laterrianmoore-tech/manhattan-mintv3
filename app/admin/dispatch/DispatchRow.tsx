@@ -70,8 +70,18 @@ export default function DispatchRow({
     });
 
     if (res.ok) {
+      const data = await res.json().catch(() => ({}));
       const name = cleaners.find((c) => c.id === selectedCleaner);
-      setDispatchedName(name ? `${name.first_name} ${name.last_name}` : "cleaner");
+      const cleanerName = name ? `${name.first_name} ${name.last_name}` : "cleaner";
+      if (data.smsSent === false) {
+        setError(
+          `Assigned to ${cleanerName}, but the job TEXT DID NOT SEND — text them manually. (${data.smsError ?? "unknown error"})`
+        );
+        setLoading(false);
+        router.refresh();
+        return;
+      }
+      setDispatchedName(cleanerName);
       setDispatched(true);
       router.refresh();
     } else {

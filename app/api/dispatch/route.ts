@@ -57,7 +57,6 @@ export async function POST(req: Request) {
     .update({
       assigned_cleaner_id: cleanerId,
       status: "confirmed",
-      dispatch_sms_sent_at: new Date().toISOString(),
     })
     .eq("id", bookingId);
 
@@ -83,7 +82,7 @@ ${customer?.first_name} · ${customer?.address}${aptSuffix}
 ${booking.bedrooms}BR · ${booking.service_summary}
 View: ${siteUrl}/cleaner/${cleaner.portal_token}`;
 
-  await sendSms({
+  const smsResult = await sendSms({
     to: cleaner.phone,
     body,
     cleanerId,
@@ -91,6 +90,15 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`;
     recipientType: "cleaner",
     eventType: "dispatch",
   });
+
+  // Only stamp dispatch_sms_sent_at when the cleaner actually got the text —
+  // downstream flows (reminders, cancel/reschedule notices) key off it.
+  if (smsResult.ok) {
+    await supabaseAdmin
+      .from("bookings")
+      .update({ dispatch_sms_sent_at: new Date().toISOString() })
+      .eq("id", bookingId);
+  }
 
   let previousCleanerNotified = false;
   if (isReassignment) {
@@ -113,5 +121,10 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`;
     }
   }
 
-  return NextResponse.json({ ok: true, previousCleanerNotified });
+  return NextResponse.json({
+    ok: true,
+    previousCleanerNotified,
+    smsSent: smsResult.ok,
+    smsError: smsResult.ok ? null : smsResult.errorMessage,
+  });
 }
