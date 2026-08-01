@@ -56,7 +56,9 @@ const timeRange = Array.isArray(booking.preferred_time_ranges)
   ? booking.preferred_time_ranges.join(", ")
   : booking.preferred_time_ranges || "";
 const aptSuffix = customer?.apt_no ? ` Apt ${customer.apt_no}` : "";
-const siteUrl = env.NEXT_PUBLIC_SITE_URL ?? "https://manhattanmintnyc.com";
+// Hardcoded on purpose — .env.local has NEXT_PUBLIC_SITE_URL=localhost, which
+// must NEVER end up in a real text (happened 2026-08-01).
+const siteUrl = "https://manhattanmintnyc.com";
 
 const body = `New job — ${serviceDate} ${timeRange}
 ${customer?.first_name} · ${customer?.address}${aptSuffix}

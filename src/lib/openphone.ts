@@ -54,7 +54,17 @@ type SendArgs = {
     | "other";
 };
 
+// OpenPhone only accepts E.164 (+15551234567). Customer-entered phones arrive
+// in every format — "(571) 325-7606", "5713257606" — so normalize before sending.
+export function toE164(phone: string): string {
+  const digits = String(phone || "").replace(/\D/g, "");
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  return String(phone || "").startsWith("+") ? String(phone) : `+${digits}`;
+}
+
 export async function sendSms(args: SendArgs) {
+  args = { ...args, to: toE164(args.to) };
   let openphoneMessageId: string | null = null;
   let status: "sent" | "failed" = "failed";
   let errorMessage: string | null = null;
