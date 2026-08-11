@@ -74,9 +74,16 @@ create table if not exists bookings (
   stripe_customer_id          text,
   stripe_charge_id            text,
   calendar_event_id           text,
+  reminder_email_sent_at      timestamptz,
   created_at                  timestamptz not null default now(),
   updated_at                  timestamptz not null default now()
 );
+
+-- Added 2026-08-11 for the day-before customer reminder email. On a database
+-- created before that date, run this once:
+--   alter table bookings add column if not exists reminder_email_sent_at timestamptz;
+-- /api/reminders claims each send by stamping this column, so until it exists
+-- the customer reminder fails closed (no email) rather than sending duplicates.
 
 -- ============================================================
 -- INDEXES
