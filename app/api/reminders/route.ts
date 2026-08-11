@@ -107,10 +107,20 @@ export async function GET(req: Request) {
       };
     }
 
+    // Blind-copy the owner so there's a record of every reminder in an inbox we
+    // can actually open. The SendGrid key is mail-send only — it can't query
+    // delivery, bounces, or suppressions — so this is the only way to confirm
+    // from outside the dashboard that a reminder went out.
+    const ownerCopy = (process.env.OWNER_NOTIFY_EMAIL || process.env.SENDGRID_TO_EMAIL || "")
+      .split(",")
+      .map((a) => a.trim())
+      .filter(Boolean);
+
     try {
       sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
       await sgMail.send({
         to: customer.email,
+        ...(ownerCopy.length ? { bcc: ownerCopy } : {}),
         from: {
           email: process.env.SENDGRID_FROM_EMAIL!,
           name: process.env.SENDGRID_FROM_NAME || "Manhattan Mint",
