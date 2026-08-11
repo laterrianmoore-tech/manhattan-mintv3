@@ -51,11 +51,14 @@ export async function GET(req: Request) {
   // conditional update — if another invocation already stamped
   // reminder_email_sent_at, the update matches no rows and we send nothing.
   // `force` skips the claim check for deliberate manual re-sends.
-  async function sendCustomerReminder(bookingId: string, force = false) {
+  async function sendCustomerReminder(bookingId: string, force = false, preview = false) {
     const { data: booking, error: bErr } = await supabaseAdmin
       .from("bookings")
+      // Deliberately does NOT select reminder_email_sent_at: the claim below is
+      // a conditional update, so reading the column first buys nothing and would
+      // fail the whole lookup on a database that hasn't added it yet.
       .select(
-        "id, status, frequency, service_date, service_summary, bedrooms, bathrooms, preferred_time_ranges, cleaning_notes, pricing_total, reminder_email_sent_at, customers(first_name, email)",
+        "id, status, frequency, service_date, service_summary, bedrooms, bathrooms, preferred_time_ranges, cleaning_notes, pricing_total, customers(first_name, email)",
       )
       .eq("id", bookingId)
       .single();
@@ -65,7 +68,7 @@ export async function GET(req: Request) {
     const customer = booking.customers as any;
     if (!customer?.email) return { ok: false, reason: "customer has no email" };
 
-    if (!force) {
+    if (!force && !preview) {
       const claim = await supabaseAdmin
         .from("bookings")
         .update({ reminder_email_sent_at: new Date().toISOString() })
@@ -94,6 +97,15 @@ export async function GET(req: Request) {
       total: booking.pricing_total ?? null,
       siteUrl: publicSiteUrl,
     });
+
+    if (preview) {
+      return {
+        ok: true,
+        preview: true,
+        subject,
+        to: `${customer.email[0]}***@${String(customer.email).split("@")[1]}`,
+      };
+    }
 
     try {
       sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
@@ -131,7 +143,10 @@ export async function GET(req: Request) {
 
   // Manual single send — ignores the date and frequency filters.
   if (remindBookingId) {
-    const result = await sendCustomerReminder(remindBookingId, true);
+    // ?dryRun=1 renders and reports without sending — safe way to check the
+    // wiring without putting a second email in a customer's inbox.
+    const previewOnly = url.searchParams.get("dryRun") === "1";
+    const result = await sendCustomerReminder(remindBookingId, true, previewOnly);
     return NextResponse.json(
       { ...result, mode: "remindBooking", bookingId: remindBookingId },
       { status: result.ok ? 200 : 400 },

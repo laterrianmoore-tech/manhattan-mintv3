@@ -62,6 +62,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: updateErr.message }, { status: 500 });
   }
 
+  // A moved job needs a fresh day-before reminder, so release the claim on the
+  // old date. Kept separate and best-effort: the column may not exist yet, and
+  // that must not fail a reschedule.
+  const clearReminder = await supabaseAdmin
+    .from("bookings")
+    .update({ reminder_email_sent_at: null })
+    .eq("id", bookingId);
+  if (clearReminder.error) {
+    console.warn("[reschedule] could not clear reminder stamp:", clearReminder.error.message);
+  }
+
   // Alert the cleaner only if they were actually dispatched for this job
   let cleanerNotified = false;
   if (booking.assigned_cleaner_id && booking.dispatch_sms_sent_at) {
