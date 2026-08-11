@@ -18,6 +18,14 @@ export const maxDuration = 300;
 const MAX_SENDS_PER_RUN = 500;
 const BATCH_SIZE = 10;
 
+// Nobody gets a second campaign email within this many days. The cron can fire
+// more than once for a single Tuesday (a timed-out or retried invocation), and
+// without this each extra run walks everyone one more step down their track —
+// on 2026-08-04 that put 2 to 6 emails in the same inbox inside one minute.
+// With the cooldown, a repeat run can only finish sends the first one missed.
+// ?force=1 overrides it for a deliberate off-schedule send.
+const SEND_COOLDOWN_DAYS = 4;
+
 type Recipient = { email: string; segment: "prospect" | "customer"; campaign: CampaignEmail };
 
 // Called weekly by netlify/functions/weekly-campaign.mjs.
@@ -32,6 +40,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
   const dryRun = url.searchParams.get("dryRun") === "1";
+  const force = url.searchParams.get("force") === "1";
   // ?test=<email> sends that one recipient their next campaign email
   // without logging it — for previewing. Everyone else is skipped.
   const testEmail = url.searchParams.get("test")?.trim().toLowerCase() || null;
@@ -44,7 +53,7 @@ export async function GET(req: Request) {
       .select("customer_id")
       .in("status", ["confirmed", "in_progress", "completed"]),
     supabaseAdmin.from("email_unsubscribes").select("email"),
-    supabaseAdmin.from("campaign_sends").select("email, campaign_key"),
+    supabaseAdmin.from("campaign_sends").select("email, campaign_key, sent_at"),
   ]);
 
   for (const [label, res] of Object.entries({ subsRes, customersRes, bookingsRes, unsubsRes, sendsRes })) {
@@ -72,21 +81,35 @@ export async function GET(req: Request) {
   const unsubscribed = new Set((unsubsRes.data ?? []).map((u) => norm(u.email)));
 
   const received = new Map<string, Set<string>>();
+  const lastSentAt = new Map<string, number>();
   for (const s of sendsRes.data ?? []) {
     const e = norm(s.email);
     if (!received.has(e)) received.set(e, new Set());
     received.get(e)!.add(s.campaign_key);
+    const at = s.sent_at ? new Date(s.sent_at).getTime() : 0;
+    if (at > (lastSentAt.get(e) ?? 0)) lastSentAt.set(e, at);
   }
 
   const nextInTrack = (email: string, track: CampaignEmail[]) =>
     track.find((c) => !received.get(email)?.has(c.key));
 
+  // ?test= previews to a single address and logs nothing, so the cooldown
+  // would only get in the way there.
+  const cooldownCutoff = Date.now() - SEND_COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+  const inCooldown = (email: string) =>
+    !force && !testEmail && (lastSentAt.get(email) ?? 0) > cooldownCutoff;
+
   const recipients: Recipient[] = [];
   const finished: string[] = [];
+  const cooling: string[] = [];
 
   // Customers get the customer track — even if they also subscribed.
   for (const email of customerEmails) {
     if (unsubscribed.has(email)) continue;
+    if (inCooldown(email)) {
+      cooling.push(email);
+      continue;
+    }
     const campaign = nextInTrack(email, CUSTOMER_TRACK);
     if (campaign) recipients.push({ email, segment: "customer", campaign });
     else finished.push(email);
@@ -100,6 +123,10 @@ export async function GET(req: Request) {
   ]);
   for (const email of prospectEmails) {
     if (customerEmails.has(email) || unsubscribed.has(email)) continue;
+    if (inCooldown(email)) {
+      cooling.push(email);
+      continue;
+    }
     const campaign = nextInTrack(email, PROSPECT_TRACK);
     if (campaign) recipients.push({ email, segment: "prospect", campaign });
     else finished.push(email);
@@ -118,8 +145,10 @@ export async function GET(req: Request) {
   const summary = {
     ok: true,
     dryRun,
+    force,
     planned: plan.length,
     skippedFinishedTrack: finished.length,
+    skippedInCooldown: cooling.length,
     truncatedBySafetyCap: recipients.length - plan.length,
     bySegment: {
       prospect: plan.filter((r) => r.segment === "prospect").length,
@@ -148,11 +177,30 @@ export async function GET(req: Request) {
 
   let sent = 0;
   let failed = 0;
+  let alreadyClaimed = 0;
 
   for (let i = 0; i < plan.length; i += BATCH_SIZE) {
     const batch = plan.slice(i, i + BATCH_SIZE);
     const results = await Promise.allSettled(
       batch.map(async (r) => {
+        // Claim the send BEFORE handing it to SendGrid. campaign_sends is
+        // unique on (email, campaign_key), so if two invocations overlap —
+        // close enough together that neither saw the other's rows — the
+        // loser's insert is rejected and it sends nothing. Claiming after
+        // the send would put the email in the inbox twice instead.
+        if (!testEmail) {
+          const { error: claimErr } = await supabaseAdmin.from("campaign_sends").insert({
+            email: r.email,
+            campaign_key: r.campaign.key,
+            segment: r.segment,
+          });
+          if (claimErr) {
+            // 23505 = unique violation: another run already owns this send.
+            if (claimErr.code === "23505") return "claimed-elsewhere";
+            throw new Error(`could not claim send: ${claimErr.message}`);
+          }
+        }
+
         const unsub = unsubscribeUrl(r.email, siteUrl);
         await sgMail.send({
           to: r.email,
@@ -169,25 +217,28 @@ export async function GET(req: Request) {
             "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
           },
         });
-        if (!testEmail) {
-          const { error } = await supabaseAdmin.from("campaign_sends").insert({
-            email: r.email,
-            campaign_key: r.campaign.key,
-            segment: r.segment,
-          });
-          if (error) console.error(`[campaigns] send log failed for ${r.email}:`, error);
-        }
+        return "sent";
       }),
     );
     for (const [j, res] of results.entries()) {
-      if (res.status === "fulfilled") sent++;
-      else {
+      if (res.status === "rejected") {
+        // The claim row stays behind, so this recipient skips this one email
+        // rather than risking a duplicate on the next run.
         failed++;
         console.error(`[campaigns] send failed for ${batch[j].email}:`, res.reason);
+      } else if (res.value === "claimed-elsewhere") {
+        alreadyClaimed++;
+        console.warn(
+          `[campaigns] ${batch[j].campaign.key} for ${batch[j].email} was already claimed by another run — skipped`,
+        );
+      } else {
+        sent++;
       }
     }
   }
 
-  console.log(`[campaigns] run complete — sent ${sent}, failed ${failed}`);
-  return NextResponse.json({ ...summary, sent, failed });
+  console.log(
+    `[campaigns] run complete — sent ${sent}, failed ${failed}, already claimed ${alreadyClaimed}, in cooldown ${cooling.length}`,
+  );
+  return NextResponse.json({ ...summary, sent, failed, alreadyClaimed });
 }
