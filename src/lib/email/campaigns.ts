@@ -164,6 +164,74 @@ export const PROSPECT_TRACK: CampaignEmail[] = [
       ${offerBlock("MINT25", "Still yours", "$25 off your first clean")}
       ${ctaBlock(`${siteUrl}/quote/`, "Book with $25 off", "60-second booking · same-week availability")}`,
   },
+  {
+    key: "p09-what-175-buys",
+    subject: "What $175 actually gets you",
+    preheader: "The full room-by-room list — including the parts people assume cost extra.",
+    body: (siteUrl) => `
+      ${hero(
+        "Line by line",
+        "What $175 buys, room by room",
+        "Cleaning prices in this city are famously vague: “starting at,” “plus supplies,” “depending on condition.” Here is the entire standard clean for a studio or one-bedroom, with nothing held back to sell you at the door.",
+      )}
+      ${featureRow("Kitchen.", "Counters and backsplash degreased, stovetop and grates scrubbed, the exterior of every appliance, sink and faucet descaled, cabinet fronts wiped, floor mopped, trash out.")}
+      ${featureRow("Bathroom.", "Tub or shower and tile scrubbed, glass de-spotted, toilet inside and out, sink and faucet, mirror left streak-free, floor mopped, bin emptied.")}
+      ${featureRow("Bedrooms and living areas.", "Every surface dusted, sills and reachable baseboards included, mirrors and glass, floors vacuumed and mopped where the material allows, bed made if fresh linens are laid out.")}
+      ${featureRow("Included, not extra.", "All supplies and equipment, eco-friendly and pet-safe products, a certificate of insurance for your building if it needs one, and a photo summary in your inbox when it's done.")}
+      ${para("Two bedrooms is $225, three is $275, and a deep clean adds $75 for the buildup a standard visit isn't priced to chase. That's the whole menu — no per-room fees, no travel charge, no supply surcharge, no “condition” adjustment when we arrive.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "See my exact price", "Flat rate shown before you enter a card")}`,
+  },
+  {
+    key: "p10-coop-buildings",
+    subject: "Your co-op board is not a problem",
+    preheader: "COIs, service elevators, doormen — the part most cleaners get wrong.",
+    body: (siteUrl) => `
+      ${hero(
+        "Building diplomacy",
+        "Doormen, COIs, and the co-op board — handled",
+        "In most of the country, hiring a cleaner is an arrangement between two people. In Manhattan it involves your building, and that is precisely where services from outside the borough come unstuck.",
+      )}
+      ${featureRow("The certificate of insurance.", "Most buildings here require one before anyone works in a unit, naming the building as additional insured. We issue them as a matter of routine, and a good number of managing agents already have ours on file.")}
+      ${featureRow("Service entrance, freight elevator, permitted hours.", "Plenty of buildings dictate which door a worker uses and which hours a vacuum may run. We ask before the booking rather than discovering it in your lobby.")}
+      ${featureRow("The doorman handoff.", "Key at the desk, a door code, or you're home — all three work, and your cleaner arrives already knowing which one applies to your line.")}
+      ${featureRow("Pre-war reality.", "Plaster walls, painted-shut windows, radiators wearing forty years of enamel, a bathroom the size of a phone booth. We work in these every week and price them the same as anywhere else.")}
+      ${para(`If you're in a co-op, our <a href="${siteUrl}/blog/cleaning-services-for-co-ops/" style="color:#2d6a4f;font-weight:600;text-decoration:none;">guide to co-op cleaning rules</a> covers what boards typically ask for and how to clear it in one email.`)}
+      ${ctaBlock(`${siteUrl}/quote/`, "Book with the paperwork handled", "Tell us your building at checkout — we'll sort the rest")}`,
+  },
+  {
+    key: "p11-heat-season",
+    subject: "Your radiators switch on October 1",
+    preheader: "Heat season starts Oct 1 — and it redistributes every particle in your apartment.",
+    body: (siteUrl) => `
+      ${hero(
+        "Seasonal",
+        "On October 1, your apartment starts making its own dust",
+        "City law requires your building to provide heat from October 1 through May 31. So on roughly the first cold night, every radiator in New York switches on and begins moving air — and everything suspended in it — around your apartment for the next eight months.",
+      )}
+      ${numberedCard(1, "Radiator tops become distribution centers.", "Whatever has settled on a radiator over the summer gets baked and lifted the moment steam arrives. Wiping the tops in September is the highest-value ten minutes available to you all year.")}
+      ${numberedCard(2, "The dust lands in the same four places.", "Bookshelves, the top edge of picture frames, electronics, and the side of the refrigerator. If you dust nothing else all winter, dust those.")}
+      ${numberedCard(3, "Dry air makes all of it worse.", "Steam heat drops indoor humidity hard, which is why winter is when your sinuses file complaints. A humidifier helps — but only once there's less in the air to begin with.")}
+      ${para("A deep clean in late September resets the whole system: radiator tops and backs, sills, baseboards, light fixtures, the tops of the cabinets. Standard cleans then hold the line through winter instead of fighting it from behind.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "Book before the heat comes on", "Deep clean is +$75 · late-September dates go first")}`,
+  },
+  {
+    key: "p12-offer-deep-mint20",
+    subject: "20% off — including the deep clean",
+    preheader: "MINT20 works on deep cleans, which is where it's worth the most.",
+    body: (siteUrl) => `
+      ${hero(
+        "Worth doing properly",
+        "If you only ever book one clean, make it the deep one",
+        "Almost everyone trying a cleaning service books the cheapest option, which is a perfectly sensible instinct. It's the wrong move exactly once: the first time. An apartment that has never been cleaned professionally is carrying months of buildup a standard visit isn't priced to chase.",
+      )}
+      ${offerBlock("MINT20", "Your code", "20% off any clean — deep cleans included")}
+      ${featureRow("1 bedroom deep clean:", "$250 becomes $200.")}
+      ${featureRow("2 bedroom deep clean:", "$300 becomes $240.")}
+      ${featureRow("3 bedroom deep clean:", "$350 becomes $280.")}
+      ${para("The deep clean adds baseboards, radiators, light fixtures, inside the microwave and oven, door frames, and the tops of the cabinets. Once that's done, a standard clean genuinely holds — which is the point at which a recurring plan starts to make financial sense.")}
+      ${para("Card charged only after the work is finished, as always, and the guarantee stands: anything not right and we come back to fix it.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "Use MINT20", "Enter it in the coupon field — the price updates instantly")}`,
+  },
 ];
 
 // ------------------------------------------------------------
@@ -293,5 +361,73 @@ export const CUSTOMER_TRACK: CampaignEmail[] = [
       ${numberedCard(3, "Plant leaves are surfaces too.", "Dust blocks the light your plants photosynthesize with. A monthly wipe with a damp cloth — support each leaf from below — and your fiddle-leaf fig stops sulking.")}
       ${para("Have a pet we should know about? Add them to your booking notes — how they greet strangers, where they like to hide — and your cleaner will plan around them. We keep notes.")}
       ${ctaBlock(`${siteUrl}/quote/`, "Book my next clean", "Pet notes welcome — we read all of them")}`,
+  },
+  {
+    key: "c09-same-cleaner",
+    subject: "The case for keeping the same cleaner",
+    preheader: "What changes on the third visit — and why recurring customers notice.",
+    body: (siteUrl) => `
+      ${hero(
+        "For our customers",
+        "What changes when it's the same cleaner every time",
+        "A first visit to any apartment involves a certain amount of detective work: where things live, which products you keep, whether the shower door tracks left or right, which floors take water and which absolutely must not. By the third visit, none of that is guesswork any more.",
+      )}
+      ${featureRow("They know the quirks.", "The cabinet that sticks, the radiator that weeps a little, the rug that must never be beaten. It goes in the notes and stays there.")}
+      ${featureRow("They know your standard.", "Some people want the books straightened. Others want them left exactly where they fell. Nobody should have to ask twice.")}
+      ${featureRow("The clean gets deeper, not just faster.", "Minutes not spent orienting are minutes spent on the grout instead. Same rate, more actual cleaning.")}
+      ${para("We assign the same cleaner to recurring bookings whenever the schedule allows, which is most of the time. It's the practical reason recurring customers report better cleans over time — that, and the rate: weekly saves 30%, bi-weekly 25%, monthly 15%.")}
+      ${pullQuote("By the third visit she knew the apartment better than I did.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "Set up a recurring plan", "Pick a frequency at checkout — the discount applies automatically")}`,
+  },
+  {
+    key: "c10-heat-season-reset",
+    subject: "Before the radiators come on",
+    preheader: "Heat season starts October 1. A late-September deep clean changes your winter.",
+    body: (siteUrl) => `
+      ${hero(
+        "Seasonal maintenance",
+        "The last quiet week before heat season",
+        "Under city law your building must provide heat from October 1 through May 31. From that first cold night, steam radiators spend eight months lifting whatever has settled on them and distributing it across everything you own.",
+      )}
+      ${featureRow("Radiator tops and backs.", "The surfaces that matter most and get reached least. Once the system is hot they're genuinely unpleasant to clean properly, which is why September is the window and October is not.")}
+      ${featureRow("Sills and window channels.", "Street-facing sills are holding a summer's worth of soot. Left to overwinter, it bonds to the paint and stops coming off with a cloth.")}
+      ${featureRow("The tops of everything.", "Cabinet tops, the refrigerator, door frames, the upper edge of picture frames — the horizontal surfaces above eye level that quietly feed the winter dust cycle.")}
+      ${para("This is exactly what the deep clean is for: +$75 on your usual flat rate. If your last one was more than three months ago, late September is the highest-value week of the year to book it.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "Book a deep clean", "Choose “Deep clean” as your service type")}`,
+  },
+  {
+    key: "c11-kitchen-five",
+    subject: "Five things in your kitchen a wipe won't fix",
+    preheader: "Range hood filter, cabinet tops, fridge seals — the jobs nobody thinks about.",
+    body: (siteUrl) => `
+      ${hero(
+        "For our customers",
+        "Five kitchen jobs a weekly wipe will never touch",
+        "Even a well-kept kitchen hides work. These five spots don't respond to the weekly wipe-down, and four of them are cheap to stay ahead of once you know they're there.",
+      )}
+      ${numberedCard(1, "The range hood filter.", "It's a metal mesh that slides straight out, and in most apartments it has never once been removed. Fifteen minutes in hot water with a squirt of dish soap and the change in airflow is immediately obvious. Twice a year is plenty.")}
+      ${numberedCard(2, "The tops of the cabinets.", "Grease travels much further than people expect — every sauté sends a fine film upward, and it settles on the one surface nobody can see. It goes tacky first, then brown.")}
+      ${numberedCard(3, "The refrigerator door seal.", "That rubber gasket collects crumbs and moisture and then mildews down in the folds. Wipe inside the folds monthly; a tired seal also quietly raises your electric bill.")}
+      ${numberedCard(4, "Under and behind the sink.", "Slow leaks announce themselves as a musty smell weeks before they show up as damage. Clear the cabinet twice a year and put a dry hand on the trap.")}
+      ${numberedCard(5, "The kettle or coffee maker, inside.", "Scale in the water path changes how everything tastes long before you'd think to blame the machine. Equal parts white vinegar and water through a cycle, then two cycles of clean water.")}
+      ${para("One, two, and four are all covered in a deep clean — if you'd rather they were somebody else's Saturday.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "Book a clean", "Your details are already on file — takes about a minute")}`,
+  },
+  {
+    key: "c12-gift-a-clean",
+    subject: "A clean apartment beats a candle",
+    preheader: "Pass MINT25 to someone who needs their weekend back more than another gift.",
+    body: (siteUrl) => `
+      ${hero(
+        "Share the mint",
+        "Nobody has ever been disappointed to come home to this",
+        "There's a specific person in most people's lives who would rather have a Saturday back than receive another candle: the friend who just had a baby, the one recovering from surgery, the couple who moved in July and still haven't found the cutlery.",
+      )}
+      ${para("Forward this email, or send them the code and tell them the first one's on you. Either works.")}
+      ${offerBlock("MINT25", "For your people", "$25 off a first clean · manhattanmintnyc.com")}
+      ${featureRow("New parents.", "The clean nobody in that apartment has the energy for. Book it for a weekday morning while everyone naps.")}
+      ${featureRow("Anyone mid-move.", "Our move-in/move-out clean is built for empty apartments and is the reason deposits come back intact.")}
+      ${featureRow("The chronically overbooked.", "A recurring plan is the version of this gift that keeps working — and runs 15 to 30% cheaper per clean.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "Or book your own next clean", "Same-week availability, as always")}`,
   },
 ];
