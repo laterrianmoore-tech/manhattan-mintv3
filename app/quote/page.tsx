@@ -74,8 +74,26 @@ function discountRateForFrequency(frequency: Frequency) {
   return 0;
 }
 
+// Flat-price codes: the clean costs exactly this much, whatever the size and
+// extras add up to. A code never raises the price — if the quote is already
+// under the flat amount, it discounts nothing.
+const FLAT_PRICE_COUPONS: Record<string, number> = {
+  MINT150: 150,
+  MINT250: 250,
+  MINT350: 350,
+  // Free clean — total drops to $0 for the first visit. The card is still
+  // saved at booking (nothing is charged), and recurring visits after the
+  // first are priced normally. Server-side it's first-clean-only.
+  MINTFREE: 0,
+  // Make-good code for one customer after the 2026-09-14 clean. Server-side
+  // it's locked to their email and to a single use.
+  LIAMFREE: 0,
+};
+
 function couponDiscount(couponCode: string, subtotalAfterFrequency: number) {
   const normalized = couponCode.trim().toUpperCase();
+  const flat = FLAT_PRICE_COUPONS[normalized];
+  if (flat !== undefined) return Math.max(0, subtotalAfterFrequency - flat);
   if (normalized === "MINT20") return Math.round(subtotalAfterFrequency * 0.2);
   if (normalized === "MINT25") return 25;
   if (normalized === "WELCOME15") return 15;

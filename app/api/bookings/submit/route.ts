@@ -114,11 +114,41 @@ export async function POST(req: Request) {
     }
 
     // ── First-timer coupon guard ─────────────────────────────────────────────
-    // MINT25 / WELCOME15 are first-clean-only offers. If this email already
-    // has a real booking (confirmed, in progress, or completed), reject so
-    // the discount can't be reused on repeat cleans.
-    const FIRST_CLEAN_COUPONS = ["MINT25", "WELCOME15"];
+    // MINT25 / WELCOME15 / MINTFREE are first-clean-only offers. If this email
+    // already has a real booking (confirmed, in progress, or completed), reject
+    // so the discount can't be reused on repeat cleans. MINTFREE makes the
+    // whole first clean $0, so it especially must not be reusable.
+    const FIRST_CLEAN_COUPONS = ["MINT25", "WELCOME15", "MINTFREE"];
     const couponNormalized = (body.couponCode || "").trim().toUpperCase();
+
+    // ── Make-good coupon guard ───────────────────────────────────────────────
+    // Personal codes handed to one customer after a bad clean. Each is locked
+    // to that customer's email and burns after one non-cancelled booking.
+    const MAKE_GOOD_COUPONS: Record<string, string> = {
+      LIAMFREE: "liamschorr@gmail.com",
+    };
+    if (couponNormalized in MAKE_GOOD_COUPONS) {
+      const owner = MAKE_GOOD_COUPONS[couponNormalized];
+      if (body.email.trim().toLowerCase() !== owner) {
+        return NextResponse.json(
+          { error: `Code ${couponNormalized} isn't valid for this email address.` },
+          { status: 400 },
+        );
+      }
+      const { data: used } = await supabaseAdmin
+        .from("bookings")
+        .select("id")
+        .eq("coupon_code", couponNormalized)
+        .neq("status", "cancelled")
+        .limit(1);
+      if (used?.length) {
+        return NextResponse.json(
+          { error: `Code ${couponNormalized} has already been used.` },
+          { status: 400 },
+        );
+      }
+    }
+
     if (FIRST_CLEAN_COUPONS.includes(couponNormalized)) {
       const { data: priorCustomer } = await supabaseAdmin
         .from("customers")
