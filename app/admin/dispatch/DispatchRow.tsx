@@ -36,6 +36,8 @@ export default function DispatchRow({
 }) {
   const router = useRouter();
   const [selectedCleaner, setSelectedCleaner] = useState("");
+  // Optional teammate — a 2-person job. Dispatched right after the first cleaner.
+  const [selectedSecond, setSelectedSecond] = useState("");
   const [loading, setLoading] = useState(false);
   const [dispatched, setDispatched] = useState(false);
   const [dispatchedName, setDispatchedName] = useState("");
@@ -81,7 +83,39 @@ export default function DispatchRow({
         router.refresh();
         return;
       }
-      setDispatchedName(cleanerName);
+
+      // Second cleaner, if one was picked. The job is already assigned to the
+      // first cleaner at this point, so a failure here is reported, not fatal.
+      let label = cleanerName;
+      if (selectedSecond && selectedSecond !== selectedCleaner) {
+        const second = cleaners.find((c) => c.id === selectedSecond);
+        const secondName = second ? `${second.first_name} ${second.last_name}` : "2nd cleaner";
+        const res2 = await fetch("/api/dispatch/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bookingId: booking.id, cleanerId: selectedSecond, slot: "second" }),
+        });
+        const data2 = await res2.json().catch(() => ({}));
+        if (!res2.ok) {
+          setError(
+            `Assigned to ${cleanerName} and texted, but adding ${secondName} failed: ${data2.error ?? "unknown error"}. Add them from the Assigned list.`
+          );
+          setLoading(false);
+          router.refresh();
+          return;
+        }
+        if (data2.smsSent === false) {
+          setError(
+            `Assigned to ${cleanerName} + ${secondName}, but ${secondName}'s job TEXT DID NOT SEND — text them manually. (${data2.smsError ?? "unknown error"})`
+          );
+          setLoading(false);
+          router.refresh();
+          return;
+        }
+        label = `${cleanerName} + ${secondName}`;
+      }
+
+      setDispatchedName(label);
       setDispatched(true);
       router.refresh();
     } else {
@@ -195,11 +229,28 @@ export default function DispatchRow({
           className="flex-1 min-w-[160px] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none"
         >
           <option value="">— Select cleaner —</option>
-          {cleaners.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.first_name} {c.last_name}
-            </option>
-          ))}
+          {cleaners
+            .filter((c) => c.id !== selectedSecond)
+            .map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.first_name} {c.last_name}
+              </option>
+            ))}
+        </select>
+        <select
+          value={selectedSecond}
+          onChange={(e) => setSelectedSecond(e.target.value)}
+          className="flex-1 min-w-[160px] rounded-lg border border-dashed border-gray-300 bg-white px-3 py-2 text-sm text-gray-600 focus:outline-none"
+          title="Optional — put a second cleaner on this job"
+        >
+          <option value="">+ 2nd cleaner (optional)</option>
+          {cleaners
+            .filter((c) => c.id !== selectedCleaner)
+            .map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.first_name} {c.last_name}
+              </option>
+            ))}
         </select>
         <button
           onClick={handleDispatch}
@@ -213,7 +264,7 @@ export default function DispatchRow({
             e.currentTarget.style.backgroundColor = "#1d9e75";
           }}
         >
-          {loading ? "Sending…" : "Assign & Dispatch"}
+          {loading ? "Sending…" : selectedSecond ? "Assign both & Dispatch" : "Assign & Dispatch"}
         </button>
         <button
           onClick={() => setEditingSchedule(true)}

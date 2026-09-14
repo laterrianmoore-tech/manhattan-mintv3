@@ -1,55 +1,155 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase";
 import { sendSms } from "@/lib/openphone";
 import { chargeCustomer } from "@/lib/stripe-charge";
 
+const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+const ORDINALS = ["1st", "2nd", "3rd", "4th"];
+
+// A monthly customer on a weekday cadence ("2nd Wednesday each month") has it
+// written in cleaning_notes, the same place the arrival window lives. Returns
+// { nth, weekday } or null when the notes don't name one.
+function monthlyCadence(notes: string | null | undefined) {
+  const m = (notes ?? "").match(
+    /\b(1st|2nd|3rd|4th|last)\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/i
+  );
+  if (!m) return null;
+  return { nth: m[1].toLowerCase(), weekday: WEEKDAYS.indexOf(m[2].toLowerCase()) };
+}
+
+// The Nth (or last) given weekday of a month. Computed in UTC so the answer
+// doesn't depend on the server's timezone.
+function nthWeekdayOfMonth(year: number, monthIndex: number, nth: string, weekday: number): Date {
+  if (nth === "last") {
+    const end = new Date(Date.UTC(year, monthIndex + 1, 0));
+    end.setUTCDate(end.getUTCDate() - ((end.getUTCDay() - weekday + 7) % 7));
+    return end;
+  }
+  const first = new Date(Date.UTC(year, monthIndex, 1));
+  const offset = (weekday - first.getUTCDay() + 7) % 7;
+  return new Date(Date.UTC(year, monthIndex, 1 + offset + 7 * ORDINALS.indexOf(nth)));
+}
+
 // Next service date for a recurring frequency, from the just-completed date.
-function nextServiceDate(serviceDate: string, frequency: string): string | null {
-  const d = new Date(serviceDate + "T12:00:00");
-  if (frequency === "Weekly") d.setDate(d.getDate() + 7);
-  else if (frequency === "Bi-Weekly") d.setDate(d.getDate() + 14);
-  else if (frequency === "Monthly") d.setMonth(d.getMonth() + 1);
-  else return null;
+// Monthly follows a weekday cadence when the notes give one (Katherine C. is
+// "2nd Wednesday" — adding a calendar month put her on the 3rd Wednesday);
+// otherwise it's the same day next month.
+function nextServiceDate(serviceDate: string, frequency: string, notes?: string | null): string | null {
+  const d = new Date(serviceDate + "T12:00:00Z");
+  if (frequency === "Weekly") d.setUTCDate(d.getUTCDate() + 7);
+  else if (frequency === "Bi-Weekly") d.setUTCDate(d.getUTCDate() + 14);
+  else if (frequency === "Monthly") {
+    const cadence = monthlyCadence(notes);
+    if (cadence) {
+      const next = nthWeekdayOfMonth(d.getUTCFullYear(), d.getUTCMonth() + 1, cadence.nth, cadence.weekday);
+      return next.toISOString().slice(0, 10);
+    }
+    d.setUTCMonth(d.getUTCMonth() + 1);
+  } else return null;
   return d.toISOString().slice(0, 10);
 }
 
 export async function POST(req: Request) {
   const { token, bookingId, event } = await req.json();
 
-  if (!token || !bookingId || !event) {
+  if (!bookingId || !event) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
 
-  const { data: cleaner, error: cleanerErr } = await supabaseAdmin
-    .from("cleaners")
-    .select("id, first_name, phone")
-    .eq("portal_token", token)
-    .single();
+  // Two ways in: the cleaner's own portal token, or an admin session from
+  // /admin/dispatch. The admin path exists so the owner can advance a job on
+  // behalf of a cleaner who has no portal token — an outside cover such as a
+  // TaskRabbit booking, or a cleaner whose phone is dead mid-job.
+  const cookieStore = await cookies();
+  const isAdmin = cookieStore.get("mm_admin")?.value === process.env.ADMIN_PASSWORD;
 
-  if (cleanerErr || !cleaner) {
+  let cleaner: { id: string; first_name: string; phone: string | null } | null = null;
+  let booking: any = null;
+
+  if (token) {
+    const { data: c, error: cleanerErr } = await supabaseAdmin
+      .from("cleaners")
+      .select("id, first_name, phone")
+      .eq("portal_token", token)
+      .single();
+
+    if (cleanerErr || !c) {
+      return NextResponse.json({ ok: false }, { status: 401 });
+    }
+    cleaner = c;
+
+    // Either cleaner on a 2-person job may advance it.
+    const { data: b, error: bookingErr } = await supabaseAdmin
+      .from("bookings")
+      .select("*, customers(*)")
+      .eq("id", bookingId)
+      .or(`assigned_cleaner_id.eq.${c.id},second_cleaner_id.eq.${c.id}`)
+      .single();
+
+    if (bookingErr || !b) {
+      return NextResponse.json({ ok: false }, { status: 403 });
+    }
+    booking = b;
+  } else if (isAdmin) {
+    const { data: b, error: bookingErr } = await supabaseAdmin
+      .from("bookings")
+      .select("*, customers(*)")
+      .eq("id", bookingId)
+      .single();
+
+    if (bookingErr || !b) {
+      return NextResponse.json({ ok: false, error: "Booking not found" }, { status: 404 });
+    }
+    booking = b;
+
+    // The assigned cleaner may have no cleaners row (outside cover). That is
+    // fine — sendSms takes a null cleanerId.
+    if (b.assigned_cleaner_id) {
+      const { data: c } = await supabaseAdmin
+        .from("cleaners")
+        .select("id, first_name, phone")
+        .eq("id", b.assigned_cleaner_id)
+        .single();
+      cleaner = c ?? null;
+    }
+  } else {
     return NextResponse.json({ ok: false }, { status: 401 });
-  }
-
-  const { data: booking, error: bookingErr } = await supabaseAdmin
-    .from("bookings")
-    .select("*, customers(*)")
-    .eq("id", bookingId)
-    .eq("assigned_cleaner_id", cleaner.id)
-    .single();
-
-  if (bookingErr || !booking) {
-    return NextResponse.json({ ok: false }, { status: 403 });
   }
 
   const customer = booking.customers as any;
   const now = new Date().toISOString();
+
+  // ── Order + date guards ────────────────────────────────────────────
+  // The portal lists every job a cleaner has, so a mis-tap on the wrong card
+  // is one thumb away. On 2026-09-11 a "Mark complete" on a job two days out
+  // charged a live card $350 and texted the customer a review link. Enforce
+  // the tap order here, not just in the UI, and never start or complete a
+  // job before its service date. Dates compare in New York time — the
+  // server runs in UTC, where "today" flips at 8pm ET.
+  const todayNy = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+  const isFuture = booking.service_date > todayNy;
+  const refuse = (error: string) => NextResponse.json({ ok: false, error }, { status: 409 });
+
+  if (event === "on_the_way" && isFuture) {
+    return refuse(`This job is on ${booking.service_date} — it can't be started yet.`);
+  }
+  if (event === "arrived" && !booking.on_the_way_at) {
+    return refuse(`Tap "On the way" first.`);
+  }
+  if (event === "completed" && (!booking.on_the_way_at || !booking.arrived_at)) {
+    return refuse(`Tap "On the way" and "Arrived" before marking the job complete.`);
+  }
+  if (event === "completed" && isFuture) {
+    return refuse(`This job is on ${booking.service_date} — it can't be completed yet.`);
+  }
 
   if (event === "on_the_way") {
     await supabaseAdmin.from("bookings").update({ on_the_way_at: now }).eq("id", bookingId);
     await sendSms({
       to: customer.phone,
       body: `Hi ${customer.first_name} — your Manhattan Mint cleaner is on the way.`,
-      cleanerId: cleaner.id,
+      cleanerId: cleaner?.id ?? null,
       bookingId,
       recipientType: "customer",
       eventType: "on_the_way",
@@ -63,7 +163,7 @@ export async function POST(req: Request) {
     await sendSms({
       to: customer.phone,
       body: `Your cleaner has arrived. We'll text again when the clean is complete.`,
-      cleanerId: cleaner.id,
+      cleanerId: cleaner?.id ?? null,
       bookingId,
       recipientType: "customer",
       eventType: "arrived",
@@ -113,7 +213,7 @@ export async function POST(req: Request) {
     // ── Auto-create the next recurring booking ─────────────────────────
     // Recurring customers should never need a manual booking created.
     let recurringLine = "";
-    const nextDate = nextServiceDate(booking.service_date, booking.frequency);
+    const nextDate = nextServiceDate(booking.service_date, booking.frequency, booking.cleaning_notes);
     if (nextDate) {
       // Dedupe: skip if this customer already has a future booking on the books
       const { data: future } = await supabaseAdmin
@@ -155,7 +255,7 @@ export async function POST(req: Request) {
     await sendSms({
       to: customer.phone,
       body: `Hi ${customer.first_name} — your Manhattan Mint clean is complete! 💚 How did we do? It takes 30 seconds and means the world to our team: ${siteUrl}/feedback/${bookingId}`,
-      cleanerId: cleaner.id,
+      cleanerId: cleaner?.id ?? null,
       bookingId,
       recipientType: "customer",
       eventType: "completed",
@@ -163,7 +263,7 @@ export async function POST(req: Request) {
     await sendSms({
       to: customer.phone,
       body: `Loved the clean? Lock it in — reply WEEKLY, BIWEEKLY, or MONTHLY and save up to 30% on every clean. Same great cleaner, zero rebooking. Plus: refer a friend and you BOTH get $25 off your next clean. — Manhattan Mint NYC`,
-      cleanerId: cleaner.id,
+      cleanerId: cleaner?.id ?? null,
       bookingId,
       recipientType: "customer",
       eventType: "other",
@@ -178,8 +278,8 @@ export async function POST(req: Request) {
     for (const phone of ownerPhones) {
       await sendSms({
         to: phone,
-        body: `✅ JOB DONE: ${cleaner.first_name} completed ${customer.first_name} ${customer.last_name || ""}'s clean (${booking.service_date}). ${chargeLine}${recurringLine ? ` ${recurringLine}` : ""} Customer texted review link + recurring/referral offers.`,
-        cleanerId: cleaner.id,
+        body: `✅ JOB DONE: ${cleaner?.first_name ?? "A cleaner"} completed ${customer.first_name} ${customer.last_name || ""}'s clean (${booking.service_date}). ${chargeLine}${recurringLine ? ` ${recurringLine}` : ""} Customer texted review link + recurring/referral offers.`,
+        cleanerId: cleaner?.id ?? null,
         bookingId,
         recipientType: "customer",
         eventType: "other",

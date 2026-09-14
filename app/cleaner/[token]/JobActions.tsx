@@ -10,6 +10,7 @@ interface Props {
   onTheWayAt: string | null;
   arrivedAt: string | null;
   completedAt: string | null;
+  isFuture: boolean;
 }
 
 export default function JobActions({
@@ -18,6 +19,7 @@ export default function JobActions({
   onTheWayAt,
   arrivedAt,
   completedAt,
+  isFuture,
 }: Props) {
   const [onWay, setOnWay] = useState(!!onTheWayAt);
   const [arrived, setArrived] = useState(!!arrivedAt);
@@ -42,7 +44,10 @@ export default function JobActions({
       if (event === "arrived") setArrived(true);
       if (event === "completed") setCompleted(true);
     } else {
-      setError("Something went wrong. Please try again.");
+      // The API refuses out-of-order or too-early taps with a plain reason —
+      // show that rather than a generic error.
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Something went wrong. Please try again.");
     }
   }
 
@@ -52,7 +57,7 @@ export default function JobActions({
         label="On the way"
         done={onWay}
         loading={loading === "on_the_way"}
-        disabled={onWay || loading !== null}
+        disabled={onWay || loading !== null || isFuture}
         onClick={() => tap("on_the_way")}
         primaryColor="#1d9e75"
       />
@@ -60,7 +65,7 @@ export default function JobActions({
         label="Arrived"
         done={arrived}
         loading={loading === "arrived"}
-        disabled={arrived || loading !== null}
+        disabled={arrived || loading !== null || !onWay}
         onClick={() => tap("arrived")}
         primaryColor="#1d9e75"
       />
@@ -68,10 +73,13 @@ export default function JobActions({
         label="Mark complete"
         done={completed}
         loading={loading === "completed"}
-        disabled={completed || loading !== null}
+        disabled={completed || loading !== null || !arrived}
         onClick={() => tap("completed")}
         primaryColor="#085041"
       />
+      {isFuture && !completed && (
+        <p className="text-xs text-gray-400 pt-1">Buttons unlock on the day of the job.</p>
+      )}
       {error && <p className="text-sm text-red-500 pt-1">{error}</p>}
     </div>
   );

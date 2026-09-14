@@ -18,7 +18,7 @@ export async function POST(req: Request) {
   const { data: booking, error: bookingErr } = await supabaseAdmin
     .from("bookings")
     .select(
-      "id, service_date, service_summary, status, assigned_cleaner_id, dispatch_sms_sent_at, preferred_time_ranges, customers(first_name, last_name, address, apt_no)"
+      "id, service_date, service_summary, status, assigned_cleaner_id, second_cleaner_id, dispatch_sms_sent_at, preferred_time_ranges, customers(first_name, last_name, address, apt_no)"
     )
     .eq("id", bookingId)
     .single();
@@ -47,23 +47,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: updateErr.message }, { status: 500 });
   }
 
-  // Alert the cleaner only if they were actually dispatched for this job
+  // Alert the cleaner(s) only if they were actually dispatched for this job.
+  // A 2-person job texts both.
   let cleanerNotified = false;
-  if (booking.assigned_cleaner_id && booking.dispatch_sms_sent_at) {
-    const { data: cleaner } = await supabaseAdmin
+  const cleanerIds = [booking.assigned_cleaner_id, booking.second_cleaner_id].filter(
+    (id): id is string => !!id
+  );
+  if (cleanerIds.length && booking.dispatch_sms_sent_at) {
+    const { data: jobCleaners } = await supabaseAdmin
       .from("cleaners")
       .select("id, first_name, phone")
-      .eq("id", booking.assigned_cleaner_id)
-      .single();
+      .in("id", cleanerIds);
 
-    if (cleaner?.phone) {
-      const customer = booking.customers as any;
-      const serviceDate = new Date(booking.service_date + "T12:00:00").toLocaleDateString(
-        "en-US",
-        { weekday: "short", month: "short", day: "numeric" }
-      );
-      const aptSuffix = customer?.apt_no ? ` Apt ${customer.apt_no}` : "";
+    const customer = booking.customers as any;
+    const serviceDate = new Date(booking.service_date + "T12:00:00").toLocaleDateString(
+      "en-US",
+      { weekday: "short", month: "short", day: "numeric" }
+    );
+    const aptSuffix = customer?.apt_no ? ` Apt ${customer.apt_no}` : "";
 
+    for (const cleaner of jobCleaners ?? []) {
+      if (!cleaner?.phone) continue;
       const result = await sendSms({
         to: cleaner.phone,
         body: `CANCELED — ${serviceDate} job for ${customer?.first_name} at ${customer?.address}${aptSuffix} is canceled. Do not go.`,
@@ -72,7 +76,7 @@ export async function POST(req: Request) {
         recipientType: "cleaner",
         eventType: "cancelled",
       });
-      cleanerNotified = result.ok;
+      if (result.ok) cleanerNotified = true;
     }
   }
 

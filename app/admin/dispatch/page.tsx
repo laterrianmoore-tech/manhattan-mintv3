@@ -33,7 +33,7 @@ export default async function DispatchPage() {
     supabaseAdmin
       .from("bookings")
       .select(
-        "id, service_date, service_summary, assigned_cleaner_id, dispatch_sms_sent_at, status, preferred_time_ranges, pricing_total, customers(first_name, last_name, address)"
+        "id, service_date, service_summary, assigned_cleaner_id, second_cleaner_id, dispatch_sms_sent_at, status, preferred_time_ranges, pricing_total, on_the_way_at, arrived_at, completed_at, customers(first_name, last_name, address)"
       )
       .not("assigned_cleaner_id", "is", null)
       .in("status", ["confirmed", "in_progress"])
@@ -87,11 +87,13 @@ export default async function DispatchPage() {
           <div className="space-y-2">
             {assigned.map((b) => {
               const cleaner = cleanerMap.get(b.assigned_cleaner_id!);
+              const second = b.second_cleaner_id ? cleanerMap.get(b.second_cleaner_id) : null;
               return (
                 <AssignedRow
                   key={b.id}
                   booking={b as any}
                   cleanerName={cleaner ? cleaner.first_name : null}
+                  secondCleanerName={second ? second.first_name : null}
                   cleaners={cleaners ?? []}
                 />
               );

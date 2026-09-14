@@ -32,24 +32,35 @@ export default async function CleanerPortal({ params }: Props) {
     );
   }
 
-  const today = new Date().toISOString().split("T")[0];
+  // New York date, not UTC — in UTC "today" rolls over at 8pm ET, which made
+  // an in-progress evening job vanish from the list while its neighbor stayed.
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
 
+  // A cleaner sees every job they're on — as the primary or as the second
+  // cleaner on a 2-person job. The teammate's name is pulled through both
+  // foreign keys so the card can say who they're working with.
   const { data: allBookings } = await supabaseAdmin
     .from("bookings")
     .select(
-      "id, service_date, service_summary, bedrooms, bathrooms, preferred_time_ranges, cleaning_notes, status, on_the_way_at, arrived_at, completed_at, customers(first_name, address, apt_no, access_notes, key_access)"
+      "id, service_date, service_summary, bedrooms, bathrooms, preferred_time_ranges, cleaning_notes, status, on_the_way_at, arrived_at, completed_at, assigned_cleaner_id, second_cleaner_id, customers(first_name, address, apt_no, access_notes, key_access), primary_cleaner:cleaners!assigned_cleaner_id(first_name), second_cleaner:cleaners!second_cleaner_id(first_name)"
     )
-    .eq("assigned_cleaner_id", cleaner.id)
+    .or(`assigned_cleaner_id.eq.${cleaner.id},second_cleaner_id.eq.${cleaner.id}`)
     .order("service_date", { ascending: true });
 
-  const bookings = allBookings ?? [];
+  const bookings = (allBookings ?? []).map((b: any) => {
+    const teammate =
+      b.assigned_cleaner_id === cleaner.id ? b.second_cleaner : b.primary_cleaner;
+    return { ...b, teammate_first_name: teammate?.first_name ?? null };
+  });
 
-  const todayJobs = bookings.filter(
-    (b) => b.service_date === today && !["completed", "cancelled"].includes(b.status ?? "")
-  );
-  const upcomingJobs = bookings.filter(
-    (b) => b.service_date > today && !["completed", "cancelled"].includes(b.status ?? "")
-  );
+  const isOpen = (b: (typeof bookings)[number]) =>
+    !["completed", "cancelled"].includes(b.status ?? "");
+  const isStarted = (b: (typeof bookings)[number]) => !!(b.on_the_way_at || b.arrived_at);
+
+  // A job the cleaner has started stays under Today until it's marked complete,
+  // whatever the date says.
+  const todayJobs = bookings.filter((b) => isOpen(b) && (b.service_date === today || isStarted(b)));
+  const upcomingJobs = bookings.filter((b) => isOpen(b) && b.service_date > today && !isStarted(b));
   const completedJobs = [...bookings]
     .filter((b) => b.completed_at)
     .sort((a, b) => (b.completed_at! > a.completed_at! ? 1 : -1))
@@ -74,7 +85,7 @@ export default async function CleanerPortal({ params }: Props) {
           </h2>
           <div className="space-y-4">
             {todayJobs.map((b) => (
-              <JobCard key={b.id} booking={b} token={token} />
+              <JobCard key={b.id} booking={b} token={token} isFuture={false} />
             ))}
           </div>
         </section>
@@ -90,7 +101,7 @@ export default async function CleanerPortal({ params }: Props) {
           </h2>
           <div className="space-y-4">
             {upcomingJobs.map((b) => (
-              <JobCard key={b.id} booking={b} token={token} />
+              <JobCard key={b.id} booking={b} token={token} isFuture={b.service_date > today} />
             ))}
           </div>
         </section>
@@ -127,7 +138,15 @@ export default async function CleanerPortal({ params }: Props) {
   );
 }
 
-function JobCard({ booking, token }: { booking: any; token: string }) {
+function JobCard({
+  booking,
+  token,
+  isFuture,
+}: {
+  booking: any;
+  token: string;
+  isFuture: boolean;
+}) {
   const customer = booking.customers as any;
   const timeRange = Array.isArray(booking.preferred_time_ranges)
     ? booking.preferred_time_ranges.join(", ")
@@ -149,6 +168,14 @@ function JobCard({ booking, token }: { booking: any; token: string }) {
         <div className="text-sm text-gray-700 font-medium pt-0.5">
           {booking.bedrooms}BR &middot; {booking.service_summary}
         </div>
+        {booking.teammate_first_name && (
+          <div
+            className="inline-block mt-1 text-xs font-semibold rounded px-2 py-1"
+            style={{ backgroundColor: "#e1f5ee", color: "#085041" }}
+          >
+            2-person job &middot; with {booking.teammate_first_name}
+          </div>
+        )}
       </div>
 
       {(booking.cleaning_notes ||
@@ -179,6 +206,7 @@ function JobCard({ booking, token }: { booking: any; token: string }) {
         onTheWayAt={booking.on_the_way_at}
         arrivedAt={booking.arrived_at}
         completedAt={booking.completed_at}
+        isFuture={isFuture}
       />
     </div>
   );

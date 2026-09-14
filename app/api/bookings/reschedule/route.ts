@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   const { data: booking, error: bookingErr } = await supabaseAdmin
     .from("bookings")
     .select(
-      "id, service_date, service_summary, bedrooms, status, assigned_cleaner_id, dispatch_sms_sent_at, preferred_time_ranges, customers(first_name, last_name, address, apt_no)"
+      "id, service_date, service_summary, bedrooms, status, assigned_cleaner_id, second_cleaner_id, dispatch_sms_sent_at, preferred_time_ranges, customers(first_name, last_name, address, apt_no)"
     )
     .eq("id", bookingId)
     .single();
@@ -73,31 +73,35 @@ export async function POST(req: Request) {
     console.warn("[reschedule] could not clear reminder stamp:", clearReminder.error.message);
   }
 
-  // Alert the cleaner only if they were actually dispatched for this job
+  // Alert the cleaner(s) only if they were actually dispatched for this job.
+  // A 2-person job texts both.
   let cleanerNotified = false;
-  if (booking.assigned_cleaner_id && booking.dispatch_sms_sent_at) {
-    const { data: cleaner } = await supabaseAdmin
+  const cleanerIds = [booking.assigned_cleaner_id, booking.second_cleaner_id].filter(
+    (id): id is string => !!id
+  );
+  if (cleanerIds.length && booking.dispatch_sms_sent_at) {
+    const { data: jobCleaners } = await supabaseAdmin
       .from("cleaners")
       .select("id, first_name, phone, portal_token")
-      .eq("id", booking.assigned_cleaner_id)
-      .single();
+      .in("id", cleanerIds);
 
-    if (cleaner?.phone) {
-      const customer = booking.customers as any;
-      const fmt = (d: string) =>
-        new Date(d + "T12:00:00").toLocaleDateString("en-US", {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-        });
-      const oldTimeRange = Array.isArray(booking.preferred_time_ranges)
-        ? booking.preferred_time_ranges.join(", ")
-        : booking.preferred_time_ranges || "";
-      const effectiveRanges = newTimeRanges !== undefined ? newTimeRanges : null;
-      const newTimeRange = effectiveRanges ? effectiveRanges.join(", ") : oldTimeRange;
-      const aptSuffix = customer?.apt_no ? ` Apt ${customer.apt_no}` : "";
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://manhattanmintnyc.com";
+    const customer = booking.customers as any;
+    const fmt = (d: string) =>
+      new Date(d + "T12:00:00").toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      });
+    const oldTimeRange = Array.isArray(booking.preferred_time_ranges)
+      ? booking.preferred_time_ranges.join(", ")
+      : booking.preferred_time_ranges || "";
+    const effectiveRanges = newTimeRanges !== undefined ? newTimeRanges : null;
+    const newTimeRange = effectiveRanges ? effectiveRanges.join(", ") : oldTimeRange;
+    const aptSuffix = customer?.apt_no ? ` Apt ${customer.apt_no}` : "";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://manhattanmintnyc.com";
 
+    for (const cleaner of jobCleaners ?? []) {
+      if (!cleaner?.phone) continue;
       const result = await sendSms({
         to: cleaner.phone,
         body: `RESCHEDULED — ${customer?.first_name}'s job is now ${fmt(newDate)}${
@@ -110,7 +114,7 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`,
         recipientType: "cleaner",
         eventType: "rescheduled",
       });
-      cleanerNotified = result.ok;
+      if (result.ok) cleanerNotified = true;
     }
   }
 

@@ -48,6 +48,7 @@ export interface Database {
           stripe_payment_method_id: string | null;
           stripe_customer_id: string | null;
           assigned_cleaner_id: string | null;
+          second_cleaner_id: string | null;
           calendar_event_id: string | null;
           created_at: string;
           updated_at: string;

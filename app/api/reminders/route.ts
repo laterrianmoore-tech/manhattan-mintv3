@@ -166,7 +166,7 @@ export async function GET(req: Request) {
   const { data: bookings, error } = await supabaseAdmin
     .from("bookings")
     .select(
-      "id, service_date, service_summary, bedrooms, preferred_time_ranges, cleaning_notes, assigned_cleaner_id, dispatch_sms_sent_at, customers(first_name, address, apt_no)"
+      "id, service_date, service_summary, bedrooms, preferred_time_ranges, cleaning_notes, assigned_cleaner_id, second_cleaner_id, dispatch_sms_sent_at, customers(first_name, address, apt_no)"
     )
     .eq("service_date", tomorrow)
     .eq("status", "confirmed")
@@ -188,13 +188,14 @@ export async function GET(req: Request) {
   const results: Array<{ bookingId: string; ok: boolean }> = [];
 
   for (const booking of bookings ?? []) {
-    const { data: cleaner } = await supabaseAdmin
+    // Both cleaners on a 2-person job get the reminder.
+    const cleanerIds = [booking.assigned_cleaner_id, booking.second_cleaner_id].filter(
+      (id): id is string => !!id
+    );
+    const { data: jobCleaners } = await supabaseAdmin
       .from("cleaners")
       .select("id, first_name, phone, portal_token")
-      .eq("id", booking.assigned_cleaner_id!)
-      .single();
-
-    if (!cleaner?.phone) continue;
+      .in("id", cleanerIds);
 
     const customer = booking.customers as any;
     const timeRange = Array.isArray(booking.preferred_time_ranges)
@@ -204,22 +205,28 @@ export async function GET(req: Request) {
     // Surface an exact arrival window if one was stamped into the notes
     const arrivalTag = (booking.cleaning_notes || "").match(/\[Arrival window: ([^\]]+)\]/)?.[1];
 
-    const result = await sendSms({
-      to: cleaner.phone,
-      body: `REMINDER — job tomorrow (${dateLabel})${timeRange ? ` ${timeRange}` : ""}${
-        arrivalTag ? ` — arrive ${arrivalTag}` : ""
-      }
-${customer?.first_name} · ${customer?.address}${aptSuffix}
-${booking.bedrooms ? `${booking.bedrooms}BR · ` : ""}${booking.service_summary}
-View: ${siteUrl}/cleaner/${cleaner.portal_token}`,
-      cleanerId: cleaner.id,
-      bookingId: booking.id,
-      recipientType: "cleaner",
-      eventType: "reminder",
-    });
+    for (const cleaner of jobCleaners ?? []) {
+      if (!cleaner?.phone) continue;
+      const teammate = (jobCleaners ?? []).find((c) => c.id !== cleaner.id);
+      const teammateLine = teammate ? `\n2-person job — with ${teammate.first_name}` : "";
 
-    if (result.ok) sent++;
-    results.push({ bookingId: booking.id, ok: result.ok });
+      const result = await sendSms({
+        to: cleaner.phone,
+        body: `REMINDER — job tomorrow (${dateLabel})${timeRange ? ` ${timeRange}` : ""}${
+          arrivalTag ? ` — arrive ${arrivalTag}` : ""
+        }
+${customer?.first_name} · ${customer?.address}${aptSuffix}
+${booking.bedrooms ? `${booking.bedrooms}BR · ` : ""}${booking.service_summary}${teammateLine}
+View: ${siteUrl}/cleaner/${cleaner.portal_token}`,
+        cleanerId: cleaner.id,
+        bookingId: booking.id,
+        recipientType: "cleaner",
+        eventType: "reminder",
+      });
+
+      if (result.ok) sent++;
+      results.push({ bookingId: booking.id, ok: result.ok });
+    }
   }
 
   // Customer-side reminders for tomorrow's recurring cleans. Deliberately not

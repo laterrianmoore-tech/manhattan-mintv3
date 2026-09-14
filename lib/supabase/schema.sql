@@ -56,6 +56,9 @@ create table if not exists bookings (
   id                          uuid primary key default uuid_generate_v4(),
   customer_id                 uuid not null references customers(id) on delete restrict,
   assigned_cleaner_id         uuid references cleaners(id) on delete set null,
+  -- Optional second cleaner on the same job (2-person team). Added 2026-09-14;
+  -- see migrations/2026-09-14-second-cleaner.sql for an existing database.
+  second_cleaner_id           uuid references cleaners(id) on delete set null,
   status                      text not null default 'pending'
                                 check (status in ('pending', 'confirmed', 'in_progress', 'completed', 'cancelled')),
   frequency                   text not null,
@@ -92,6 +95,7 @@ create index if not exists bookings_customer_id_idx on bookings(customer_id);
 create index if not exists bookings_service_date_idx on bookings(service_date);
 create index if not exists bookings_status_idx on bookings(status);
 create index if not exists bookings_assigned_cleaner_idx on bookings(assigned_cleaner_id);
+create index if not exists bookings_second_cleaner_idx on bookings(second_cleaner_id);
 
 -- ============================================================
 -- EMAIL SUBSCRIBERS
