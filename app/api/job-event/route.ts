@@ -250,25 +250,60 @@ export async function POST(req: Request) {
       }
     }
 
-    // Post-clean sequence: review ask, then recurring upsell + referral.
-    // Sent as two texts — a single message with every ask buries the review link.
-    await sendSms({
-      to: customer.phone,
-      body: `Hi ${customer.first_name} — your Manhattan Mint clean is complete! 💚 How did we do? It takes 30 seconds and means the world to our team: ${siteUrl}/feedback/${bookingId}`,
-      cleanerId: cleaner?.id ?? null,
-      bookingId,
-      recipientType: "customer",
-      eventType: "completed",
-    });
-    await sendSms({
-      to: customer.phone,
-      body: `Loved the clean? Lock it in — reply WEEKLY, BIWEEKLY, or MONTHLY and save up to 30% on every clean. Same great cleaner, zero rebooking. Plus: refer a friend and you BOTH get $25 off your next clean. — Manhattan Mint NYC`,
-      cleanerId: cleaner?.id ?? null,
-      bookingId,
-      recipientType: "customer",
-      eventType: "other",
-    });
+    // ── Post-clean texts ───────────────────────────────────────────────
+    // Recurring / repeat customers (Jody, Katherine, Skye, Melissa…) get ONE
+    // plain "clean is complete" text — no review ask, no upsell. They already
+    // book with us; asking for a review + a plan every visit is noise
+    // (owner decision 2026-09-15). First-time one-off customers still get the
+    // review ask, then the recurring upsell + referral as two texts.
+    // Stored values are inconsistent ("One-Time" and "one_time" both exist),
+    // so compare on a stripped form — same rule as app/api/reminders/route.ts.
+    const freqNorm = String(booking.frequency ?? "").toLowerCase().replace(/[^a-z]/g, "");
+    const isRecurringPlan = freqNorm.length > 0 && freqNorm !== "onetime";
+    let isRepeatCustomer = false;
+    if (!isRecurringPlan) {
+      const { count } = await supabaseAdmin
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("customer_id", booking.customer_id)
+        .eq("status", "completed")
+        .neq("id", bookingId);
+      isRepeatCustomer = (count ?? 0) > 0;
+    }
+    const skipReviewAndUpsell = isRecurringPlan || isRepeatCustomer;
+
+    if (skipReviewAndUpsell) {
+      await sendSms({
+        to: customer.phone,
+        body: `Hi ${customer.first_name} — your Manhattan Mint clean is complete! 💚 Thank you for having us back. See you next time. — Manhattan Mint NYC`,
+        cleanerId: cleaner?.id ?? null,
+        bookingId,
+        recipientType: "customer",
+        eventType: "completed",
+      });
+    } else {
+      // Sent as two texts — a single message with every ask buries the review link.
+      await sendSms({
+        to: customer.phone,
+        body: `Hi ${customer.first_name} — your Manhattan Mint clean is complete! 💚 How did we do? It takes 30 seconds and means the world to our team: ${siteUrl}/feedback/${bookingId}`,
+        cleanerId: cleaner?.id ?? null,
+        bookingId,
+        recipientType: "customer",
+        eventType: "completed",
+      });
+      await sendSms({
+        to: customer.phone,
+        body: `Loved the clean? Lock it in — reply WEEKLY, BIWEEKLY, or MONTHLY and save up to 30% on every clean. Same great cleaner, zero rebooking. Plus: refer a friend and you BOTH get $25 off your next clean. — Manhattan Mint NYC`,
+        cleanerId: cleaner?.id ?? null,
+        bookingId,
+        recipientType: "customer",
+        eventType: "other",
+      });
+    }
     await supabaseAdmin.from("bookings").update({ complete_sms_sent_at: now }).eq("id", bookingId);
+    const customerTextLine = skipReviewAndUpsell
+      ? "Customer texted a plain completion note (recurring/repeat — no review or upsell)."
+      : "Customer texted review link + recurring/referral offers.";
 
     // Alert the owner that the job is done and the follow-ups went out.
     const ownerPhones = (process.env.OWNER_NOTIFY_PHONE || "")
@@ -278,7 +313,7 @@ export async function POST(req: Request) {
     for (const phone of ownerPhones) {
       await sendSms({
         to: phone,
-        body: `✅ JOB DONE: ${cleaner?.first_name ?? "A cleaner"} completed ${customer.first_name} ${customer.last_name || ""}'s clean (${booking.service_date}). ${chargeLine}${recurringLine ? ` ${recurringLine}` : ""} Customer texted review link + recurring/referral offers.`,
+        body: `✅ JOB DONE: ${cleaner?.first_name ?? "A cleaner"} completed ${customer.first_name} ${customer.last_name || ""}'s clean (${booking.service_date}). ${chargeLine}${recurringLine ? ` ${recurringLine}` : ""} ${customerTextLine}`,
         cleanerId: cleaner?.id ?? null,
         bookingId,
         recipientType: "customer",
