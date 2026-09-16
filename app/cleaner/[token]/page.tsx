@@ -7,6 +7,17 @@ interface Props {
   params: Promise<{ token: string }>;
 }
 
+// Cleaners must never see job pricing. Notes/access fields are free text the
+// owner or customer typed, so strip any dollar amounts before rendering.
+function scrubForCleaner(text: string | null | undefined) {
+  if (!text) return text ?? null;
+  return text
+    .replace(/\(?\+?\$\s?\d[\d,]*(?:\.\d+)?\s*(?:flat|total|each|per\s+\w+)?\)?/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([.,;])/g, "$1")
+    .trim();
+}
+
 function formatDate(dateStr: string) {
   return new Date(dateStr + "T12:00:00").toLocaleDateString("en-US", {
     weekday: "long",
@@ -189,12 +200,12 @@ function JobCard({
           )}
           {customer?.access_notes && (
             <p className="text-xs text-gray-500">
-              <span className="font-semibold">Access:</span> {customer.access_notes}
+              <span className="font-semibold">Access:</span> {scrubForCleaner(customer.access_notes)}
             </p>
           )}
           {booking.cleaning_notes && (
             <p className="text-xs text-gray-500">
-              <span className="font-semibold">Notes:</span> {booking.cleaning_notes}
+              <span className="font-semibold">Notes:</span> {scrubForCleaner(booking.cleaning_notes)}
             </p>
           )}
         </div>

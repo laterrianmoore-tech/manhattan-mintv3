@@ -224,7 +224,13 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
         deepCleaning: storedService.includes("Deep clean"),
         moveInOut: storedService.includes("Move-in") || storedService.includes("Move In/Out"),
       },
-      cleaningNotes: prev.cleaningNotes || (storedService || storedSize ? `Home page selection: ${storedService || storedSize}` : ""),
+      // Notes are shown to the cleaner on their portal — strip the "(+$75)"
+      // price tag from the home-page label so job pricing never reaches them.
+      cleaningNotes:
+        prev.cleaningNotes ||
+        (storedService || storedSize
+          ? `Home page selection: ${(storedService || storedSize).replace(/\s*\(\+?\$[\d,.]+\)/g, "")}`
+          : ""),
     }));
 
     // GTM — fires Meta Pixel InitiateCheckout + Google Ads begin_checkout
