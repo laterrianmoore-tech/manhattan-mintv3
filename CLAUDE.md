@@ -117,6 +117,10 @@ Add Supabase, cleaner accounts, and full automation of the post-booking workflow
 | `POST /api/bookings/create-setup-intent` | Creates a Stripe SetupIntent so the quote form can save a card without charging it |
 | `POST /api/bookings/submit` | Validates the booking, creates a Stripe Customer, creates a Google Calendar event, sends confirmation emails |
 | `POST /api/bookings/charge` | Charges a saved card by Stripe Customer ID — call this after each appointment until Phase 2 auto-charges |
+| `POST /api/job-event/` | Cleaner portal / admin taps: on_the_way, arrived, completed. Complete auto-charges, books the next recurring visit, and texts the customer. First-time one-off customers get the review ask (feedback page → tracked Google link) and `review_link_sent_at` is stamped; repeat/recurring customers get one plain completion text |
+| `GET /api/r/[token]/` | Tracked Google review link. Stamps `bookings.review_link_clicked_at` on first tap, always 302s to the Google review URL (`src/lib/google-reviews.ts`) |
+| `GET /api/reminders/` | Daily cron (Netlify `job-reminders.mjs`, 21:00 UTC, `x-cron-secret`). Cleaner texts for tomorrow, recurring-customer reminder emails, and — only when `REVIEW_NUDGE_ENABLED=true` — the day-3 review nudge. `?reviewNudge=1&dryRun=1` previews the nudge without sending; `?remindBooking=<id>` sends one customer reminder |
+| `POST /api/bookings/review-received/` | Admin (cookie): `{ bookingId, received? }` sets/clears `review_received_at`. Used by the Reviews table on `/admin/dispatch` |
 
 ---
 
@@ -139,4 +143,9 @@ GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
 NEXT_PUBLIC_SITE_URL
 SITE_URL
 CRON_SECRET                # auth for scheduled jobs (daily cleaner reminders) — must match in Netlify
+GOOGLE_PLACES_API_KEY      # optional — live Google rating on the homepage (Places API enabled on the key)
+GOOGLE_PLACE_ID            # optional — the Manhattan Mint listing's place id; missing/failed fetch hides the number, never fakes it
+REVIEW_NUDGE_ENABLED       # optional — day-3 Google review nudge in /api/reminders; OFF unless exactly "true"
 ```
+
+Review tracking (2026-09-18) needs five columns on `bookings` — run `lib/supabase/migrations/2026-09-18-review-tracking.sql` once in the Supabase SQL editor. The code tolerates their absence (logs, falls back to the plain Google link) so deploy order doesn't matter.

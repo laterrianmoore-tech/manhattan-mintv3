@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { blogPosts } from "../data";
 import { renderInline } from "../inline-links";
+import GoogleRatedPhrase from "../../components/GoogleRatedPhrase";
 import "../../case-studies/case-studies.css";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -126,8 +127,8 @@ export default async function BlogPostPage({ params }: Props) {
 						Manhattan — pre-war walk-ups, doorman co-ops, and converted lofts across the borough. Our
 						guides come from our cleaners&apos; first-hand field experience, and every article is
 						reviewed by the founder, who still reads the photo summary from every completed job. The
-						company is fully bonded and insured, COI-ready for co-op and condo buildings, and rated
-						5.0 on Google.
+						company is fully bonded and insured, and COI-ready for co-op and condo buildings.
+						<GoogleRatedPhrase />
 					</p>
 					<p className="cs-author-links">
 						<Link href="/case-studies">See our work</Link> · <Link href="/#services">Services</Link>{" "}

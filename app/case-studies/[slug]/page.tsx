@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { caseStudies } from "../data";
 import { renderInline } from "../../blog/inline-links";
+import GoogleRatedPhrase from "../../components/GoogleRatedPhrase";
 import "../case-studies.css";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -135,8 +136,9 @@ export default async function CaseStudyPage({ params }: Props) {
 						Manhattan Mint is an owner-operated residential cleaning company working exclusively in
 						Manhattan — pre-war walk-ups, doorman co-ops, and converted lofts across the borough.
 						Every cleaner is interviewed in person and background-checked, every job&apos;s photo
-						summary is reviewed by the founder, and the company is fully bonded, insured, COI-ready
-						for co-op and condo buildings, and rated 5.0 on Google.
+						summary is reviewed by the founder, and the company is fully bonded, insured, and
+						COI-ready for co-op and condo buildings.
+						<GoogleRatedPhrase />
 					</p>
 					<p className="cs-author-links">
 						<Link href="/blog">Read our cleaning guides</Link> ·{" "}

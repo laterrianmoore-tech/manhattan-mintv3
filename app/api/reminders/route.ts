@@ -3,6 +3,7 @@ import sgMail from "@sendgrid/mail";
 import { supabaseAdmin } from "@/lib/supabase";
 import { sendSms } from "@/lib/openphone";
 import { renderCleanReminderEmail } from "@/lib/email/clean-reminder";
+import { trackedReviewUrl } from "@/lib/review-tracking";
 
 export const dynamic = "force-dynamic";
 
@@ -151,6 +152,131 @@ export async function GET(req: Request) {
     }
   }
 
+  // ── Day-3 Google review nudge ─────────────────────────────────────────
+  // One short text to first-time customers who were sent the review link 3–4
+  // days ago and never tapped it (review_link_clicked_at null), haven't been
+  // nudged, and haven't been marked as reviewed. Built 2026-09-18 and OFF by
+  // default: it sends only when REVIEW_NUDGE_ENABLED is exactly "true".
+  //   ?reviewNudge=1            runs just this step (the daily run includes it too)
+  //   ?reviewNudge=1&dryRun=1   lists who WOULD be texted, sends nothing —
+  //                             works while the flag is off, to preview safely.
+  // Each send is claimed via review_nudge_sent_at first, so a repeat run can't
+  // text anyone twice; the claim is handed back if OpenPhone rejects the send.
+  // Never offers anything in exchange for a review.
+  const nudgeEnabled = process.env.REVIEW_NUDGE_ENABLED === "true";
+  type NudgeResult = {
+    bookingId: string;
+    customer: string;
+    action: "sent" | "would send" | "skipped" | "failed";
+    reason?: string;
+    body?: string;
+  };
+  async function runReviewNudge(dryRun: boolean) {
+    const nowMs = Date.now();
+    const windowStart = new Date(nowMs - 4 * 24 * 60 * 60 * 1000).toISOString();
+    const windowEnd = new Date(nowMs - 3 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: candidates, error: candErr } = await supabaseAdmin
+      .from("bookings")
+      .select("id, customer_id, frequency, review_token, review_link_sent_at, customers(first_name, phone)")
+      .eq("status", "completed")
+      .gte("review_link_sent_at", windowStart)
+      .lte("review_link_sent_at", windowEnd)
+      .is("review_link_clicked_at", null)
+      .is("review_nudge_sent_at", null)
+      .is("review_received_at", null)
+      .not("review_token", "is", null)
+      .order("review_link_sent_at", { ascending: true });
+
+    if (candErr) {
+      // Most likely the 2026-09-18 review-tracking migration hasn't run.
+      console.error("[reminders] review nudge lookup failed:", candErr.message);
+      return { ok: false, enabled: nudgeEnabled, dryRun, error: candErr.message, candidates: 0, sent: 0, results: [] as NudgeResult[] };
+    }
+
+    const results: NudgeResult[] = [];
+    let sent = 0;
+
+    for (const b of candidates ?? []) {
+      const customer = b.customers as any;
+      const first = customer?.first_name || "there";
+      const skip = (reason: string) => results.push({ bookingId: b.id, customer: first, action: "skipped", reason });
+
+      // Same first-time rule /api/job-event applies to the review ask: not on
+      // a recurring plan, and no other completed booking on the account.
+      if (isRecurring(b.frequency)) { skip("recurring plan"); continue; }
+      const { count } = await supabaseAdmin
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("customer_id", b.customer_id)
+        .eq("status", "completed")
+        .neq("id", b.id);
+      if ((count ?? 0) > 0) { skip("repeat customer"); continue; }
+
+      // Never push someone toward Google who privately told us the clean fell short.
+      const { data: fb } = await supabaseAdmin
+        .from("feedback")
+        .select("rating")
+        .eq("booking_id", b.id)
+        .maybeSingle();
+      if (fb && typeof (fb as any).rating === "number" && (fb as any).rating <= 3) {
+        skip(`rated ${(fb as any).rating}/5 in private feedback`);
+        continue;
+      }
+
+      if (!customer?.phone) { skip("no phone on file"); continue; }
+
+      const link = trackedReviewUrl(b.review_token);
+      const body = `Hi ${first}, Manhattan Mint here. If you have a spare minute, a quick Google review helps our small team more than you'd think: ${link}. Thank you either way!`;
+
+      if (dryRun || !nudgeEnabled) {
+        results.push({ bookingId: b.id, customer: first, action: "would send", body });
+        continue;
+      }
+
+      const claim = await supabaseAdmin
+        .from("bookings")
+        .update({ review_nudge_sent_at: new Date().toISOString() })
+        .eq("id", b.id)
+        .is("review_nudge_sent_at", null)
+        .select("id");
+      if (claim.error) { results.push({ bookingId: b.id, customer: first, action: "failed", reason: `claim failed: ${claim.error.message}` }); continue; }
+      if (!claim.data?.length) { skip("already nudged"); continue; }
+
+      const res = await sendSms({
+        to: customer.phone,
+        body,
+        bookingId: b.id,
+        recipientType: "customer",
+        eventType: "other",
+      });
+      if (res.ok) {
+        sent++;
+        results.push({ bookingId: b.id, customer: first, action: "sent" });
+      } else {
+        // Hand the claim back so the next run can try again.
+        await supabaseAdmin.from("bookings").update({ review_nudge_sent_at: null }).eq("id", b.id);
+        results.push({ bookingId: b.id, customer: first, action: "failed", reason: res.errorMessage ?? "send failed" });
+      }
+    }
+
+    console.log(`[reminders] review nudge${dryRun ? " (dry run)" : ""}: ${sent} sent of ${candidates?.length ?? 0} candidates`);
+    return { ok: true, enabled: nudgeEnabled, dryRun, candidates: candidates?.length ?? 0, sent, results };
+  }
+
+  // Nudge-only mode.
+  if (url.searchParams.get("reviewNudge") === "1") {
+    const dryRun = url.searchParams.get("dryRun") === "1";
+    if (!nudgeEnabled && !dryRun) {
+      return NextResponse.json(
+        { ok: false, mode: "reviewNudge", enabled: false, error: 'REVIEW_NUDGE_ENABLED is not "true". Add &dryRun=1 to preview without sending.' },
+        { status: 400 },
+      );
+    }
+    const result = await runReviewNudge(dryRun);
+    return NextResponse.json({ ...result, mode: "reviewNudge" }, { status: result.ok ? 200 : 500 });
+  }
+
   // Manual single send — ignores the date and frequency filters.
   if (remindBookingId) {
     // ?dryRun=1 renders and reports without sending — safe way to check the
@@ -254,6 +380,18 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`,
     `[reminders] ${tomorrow}: cleaner texts ${sent}/${bookings?.length ?? 0}, customer emails ${emailsSent}/${emailResults.length}`,
   );
 
+  // Day-3 review nudge rides the same daily run. Gated by REVIEW_NUDGE_ENABLED
+  // and never allowed to break the reminders above.
+  let reviewNudge: Record<string, unknown> = { enabled: false, skipped: true };
+  if (nudgeEnabled) {
+    try {
+      reviewNudge = await runReviewNudge(false);
+    } catch (err: any) {
+      console.error("[reminders] review nudge step threw:", err?.message ?? err);
+      reviewNudge = { enabled: true, ok: false, error: err?.message ?? "unknown error" };
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     date: tomorrow,
@@ -262,5 +400,6 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`,
     results,
     customerEmailsSent: emailsSent,
     customerEmails: emailResults,
+    reviewNudge,
   });
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { GOOGLE_REVIEWS_URL } from "../../reviews";
 
 const HEARD_ABOUT_OPTIONS = [
   "Google Search",
@@ -19,6 +18,9 @@ interface Props {
   cleanerFirstName: string;
   serviceDate: string;
   serviceSummary: string | null;
+  // Tracked /api/r/<token>/ link (records the tap, then 302s to Google), or
+  // the plain Google URL when tracking isn't available for this booking.
+  googleReviewUrl: string;
 }
 
 function formatDate(dateStr: string) {
@@ -34,6 +36,7 @@ export default function FeedbackForm({
   cleanerFirstName,
   serviceDate,
   serviceSummary,
+  googleReviewUrl,
 }: Props) {
   const [rating, setRating] = useState(0);
   const [hovered, setHovered] = useState(0);
@@ -84,7 +87,7 @@ export default function FeedbackForm({
             See you next time. — Manhattan Mint NYC
           </p>
           <a
-            href={GOOGLE_REVIEWS_URL}
+            href={googleReviewUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-block w-full h-12 leading-[3rem] rounded-xl text-white font-medium text-sm"

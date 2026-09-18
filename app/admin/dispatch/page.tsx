@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import AdminLoginForm from "./AdminLoginForm";
 import DispatchRow from "./DispatchRow";
 import AssignedRow from "./AssignedRow";
+import ReviewsTable, { type ReviewRow } from "./ReviewsTable";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,26 @@ export default async function DispatchPage() {
   ]);
 
   const cleanerMap = new Map((cleaners ?? []).map((c) => [c.id, c]));
+
+  // Review-link tracking (2026-09-18). Queried on its own so a database that
+  // hasn't run the migration yet shows a note here instead of breaking dispatch.
+  const reviewsQuery = await supabaseAdmin
+    .from("bookings")
+    .select(
+      "id, service_date, review_link_sent_at, review_link_clicked_at, review_nudge_sent_at, review_received_at, customers(first_name, last_name)"
+    )
+    .not("review_link_sent_at", "is", null)
+    .order("review_link_sent_at", { ascending: false })
+    .limit(30);
+  const reviewRows: ReviewRow[] = (reviewsQuery.data ?? []).map((b: any) => ({
+    id: b.id,
+    service_date: b.service_date,
+    customer: [b.customers?.first_name, b.customers?.last_name].filter(Boolean).join(" ") || "—",
+    review_link_sent_at: b.review_link_sent_at ?? null,
+    review_link_clicked_at: b.review_link_clicked_at ?? null,
+    review_nudge_sent_at: b.review_nudge_sent_at ?? null,
+    review_received_at: b.review_received_at ?? null,
+  }));
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -99,6 +120,22 @@ export default async function DispatchPage() {
               );
             })}
           </div>
+        )}
+      </section>
+
+      {/* Google review tracking — first-time customers only (repeat/recurring get no review ask) */}
+      <section className="mt-10">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-700 mb-1">Reviews</h2>
+        <p className="text-xs text-gray-400 mb-4">
+          Who was sent the Google review link, who tapped it, who got the day-3 nudge. Mark a review received when it shows up on Google.
+        </p>
+        {reviewsQuery.error ? (
+          <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+            Review tracking isn&apos;t set up in the database yet — run{" "}
+            <code className="text-xs">lib/supabase/migrations/2026-09-18-review-tracking.sql</code> in the Supabase SQL editor.
+          </p>
+        ) : (
+          <ReviewsTable rows={reviewRows} />
         )}
       </section>
     </div>

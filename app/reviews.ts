@@ -1,17 +1,17 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// REVIEWS — real Google reviews, pulled from the Manhattan Mint
-// Google Business Profile (5.0 rating, 16 reviews as of July 2026).
+// REVIEWS — real Google reviews, copied from the Manhattan Mint
+// Google Business Profile.
 //
 // To add a new one: copy the reviewer's name, star rating, text, and month
 // from the profile and add an entry with source: "Google".
-// GOOGLE_REVIEWS_URL is the official profile share link.
+//
+// The overall rating and review count are NOT hardcoded here — the homepage
+// pulls them live from Google Places (src/lib/google-rating.ts) and hides the
+// number when the fetch fails. GOOGLE_REVIEWS_URL (the official profile share
+// link) lives in src/lib/google-reviews.ts and is re-exported for convenience.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Official Google Business Profile share link for Manhattan Mint
-export const GOOGLE_REVIEWS_URL = "https://share.google/ZE4GZwjFnRtf9SZTU";
-
-export const GOOGLE_RATING = "5.0";
-export const GOOGLE_REVIEW_COUNT = 16;
+export { GOOGLE_REVIEWS_URL } from "@/lib/google-reviews";
 
 export type Review = {
 	author: string;

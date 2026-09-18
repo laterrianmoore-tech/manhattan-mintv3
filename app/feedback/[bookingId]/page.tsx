@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase";
+import { ensureReviewToken, reviewUrlFor } from "@/lib/review-tracking";
 import FeedbackForm from "./FeedbackForm";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,7 @@ function NotFound() {
   );
 }
 
-function AlreadyReceived() {
+function AlreadyReceived({ googleReviewUrl }: { googleReviewUrl: string }) {
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: "#f9fafb" }}>
       <div className="w-full max-w-[28rem] bg-white rounded-2xl shadow-sm p-8 text-center">
@@ -25,9 +26,18 @@ function AlreadyReceived() {
         <h2 className="text-xl font-semibold mb-2" style={{ color: "#0f0f0f" }}>
           We already received your feedback — thank you!
         </h2>
-        <p className="text-sm" style={{ color: "#6b7280" }}>
+        <p className="text-sm mb-6" style={{ color: "#6b7280" }}>
           — Manhattan Mint NYC
         </p>
+        <a
+          href={googleReviewUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block w-full h-12 leading-[3rem] rounded-xl text-white font-medium text-sm"
+          style={{ backgroundColor: "#1d9e75" }}
+        >
+          Share it on Google ★
+        </a>
       </div>
     </div>
   );
@@ -71,8 +81,13 @@ export default async function FeedbackPage({ params }: Props) {
     .eq("booking_id", bookingId)
     .maybeSingle();
 
+  // Tracked Google link for the "Share it on Google" button. Minted here too,
+  // for bookings whose completion text predates review tracking. Falls back to
+  // the plain Google URL when the review_token column doesn't exist yet.
+  const googleReviewUrl = reviewUrlFor(await ensureReviewToken(bookingId));
+
   if (existing) {
-    return <AlreadyReceived />;
+    return <AlreadyReceived googleReviewUrl={googleReviewUrl} />;
   }
 
   return (
@@ -81,6 +96,7 @@ export default async function FeedbackPage({ params }: Props) {
       cleanerFirstName={cleanerFirstName}
       serviceDate={booking.service_date}
       serviceSummary={booking.service_summary}
+      googleReviewUrl={googleReviewUrl}
     />
   );
 }

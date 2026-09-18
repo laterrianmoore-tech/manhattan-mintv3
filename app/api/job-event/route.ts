@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase";
 import { sendSms } from "@/lib/openphone";
 import { chargeCustomer } from "@/lib/stripe-charge";
+import { ensureReviewToken, stampReview } from "@/lib/review-tracking";
 
 const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 const ORDINALS = ["1st", "2nd", "3rd", "4th"];
@@ -282,8 +283,15 @@ export async function POST(req: Request) {
         eventType: "completed",
       });
     } else {
+      // Review tracking (2026-09-18): mint this booking's review_token now so
+      // the feedback page's "Share it on Google" button — and the day-3 nudge
+      // in /api/reminders — can use the tracked /api/r/<token>/ link. Returns
+      // null (and logs) if the columns don't exist yet; nothing below depends
+      // on it, so Complete keeps working before the migration has run.
+      await ensureReviewToken(bookingId);
+
       // Sent as two texts — a single message with every ask buries the review link.
-      await sendSms({
+      const reviewText = await sendSms({
         to: customer.phone,
         body: `Hi ${customer.first_name} — your Manhattan Mint clean is complete! 💚 How did we do? It takes 30 seconds and means the world to our team: ${siteUrl}/feedback/${bookingId}`,
         cleanerId: cleaner?.id ?? null,
@@ -291,6 +299,9 @@ export async function POST(req: Request) {
         recipientType: "customer",
         eventType: "completed",
       });
+      if (reviewText.ok) {
+        await stampReview(bookingId, { review_link_sent_at: now });
+      }
       await sendSms({
         to: customer.phone,
         body: `Loved the clean? Lock it in — reply WEEKLY, BIWEEKLY, or MONTHLY and save up to 30% on every clean. Same great cleaner, zero rebooking. Plus: refer a friend and you BOTH get $25 off your next clean. — Manhattan Mint NYC`,

@@ -78,6 +78,13 @@ create table if not exists bookings (
   stripe_charge_id            text,
   calendar_event_id           text,
   reminder_email_sent_at      timestamptz,
+  -- Review-link tracking, added 2026-09-18; see
+  -- migrations/2026-09-18-review-tracking.sql for an existing database.
+  review_token                text,
+  review_link_sent_at         timestamptz,
+  review_link_clicked_at      timestamptz,
+  review_nudge_sent_at        timestamptz,
+  review_received_at          timestamptz,
   created_at                  timestamptz not null default now(),
   updated_at                  timestamptz not null default now()
 );
@@ -96,6 +103,8 @@ create index if not exists bookings_service_date_idx on bookings(service_date);
 create index if not exists bookings_status_idx on bookings(status);
 create index if not exists bookings_assigned_cleaner_idx on bookings(assigned_cleaner_id);
 create index if not exists bookings_second_cleaner_idx on bookings(second_cleaner_id);
+create unique index if not exists bookings_review_token_key on bookings(review_token) where review_token is not null;
+create index if not exists bookings_review_link_sent_idx on bookings(review_link_sent_at) where review_link_sent_at is not null;
 
 -- ============================================================
 -- EMAIL SUBSCRIBERS
