@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { sendSms } from "@/lib/openphone";
 import { chargeCustomer } from "@/lib/stripe-charge";
 import { ensureReviewToken, stampReview } from "@/lib/review-tracking";
+import { referralCodeFor, referralLink, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT } from "@/lib/referral";
 
 const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 const ORDINALS = ["1st", "2nd", "3rd", "4th"];
@@ -272,11 +273,15 @@ export async function POST(req: Request) {
       isRepeatCustomer = (count ?? 0) > 0;
     }
     const skipReviewAndUpsell = isRecurringPlan || isRepeatCustomer;
+    // Referral ask goes to everyone at the moment of the win (2026-09-22):
+    // the friend code is minted from the customer id, nothing to store.
+    const friendCode = referralCodeFor(booking.customer_id);
+    const friendLink = referralLink(friendCode, siteUrl);
 
     if (skipReviewAndUpsell) {
       await sendSms({
         to: customer.phone,
-        body: `Hi ${customer.first_name} — your Manhattan Mint clean is complete! 💚 Thank you for having us back. See you next time. — Manhattan Mint NYC`,
+        body: `Hi ${customer.first_name} — your Manhattan Mint clean is complete! 💚 Thank you for having us back. Know a neighbor who needs us? Your friend code ${friendCode} gets them $${REFERRAL_FRIEND_DISCOUNT} off their first clean and you $${REFERRAL_REFERRER_CREDIT} off your next: ${friendLink} — Manhattan Mint NYC`,
         cleanerId: cleaner?.id ?? null,
         bookingId,
         recipientType: "customer",
@@ -304,7 +309,7 @@ export async function POST(req: Request) {
       }
       await sendSms({
         to: customer.phone,
-        body: `Loved the clean? Lock it in — reply WEEKLY, BIWEEKLY, or MONTHLY and save up to 30% on every clean. Same great cleaner, zero rebooking. Plus: refer a friend and you BOTH get $25 off your next clean. — Manhattan Mint NYC`,
+        body: `Loved the clean? Reply WEEKLY, BIWEEKLY, or MONTHLY to keep the same cleaner and save up to 30% on every visit. And your friend code is ${friendCode}: a neighbor who books with it gets $${REFERRAL_FRIEND_DISCOUNT} off their first clean, and you get $${REFERRAL_REFERRER_CREDIT} off your next one once theirs is done. ${friendLink} — Manhattan Mint NYC`,
         cleanerId: cleaner?.id ?? null,
         bookingId,
         recipientType: "customer",

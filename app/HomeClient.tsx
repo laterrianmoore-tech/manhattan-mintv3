@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import CleanChecklist from "./components/CleanChecklist";
 import EmailCaptureModal from "./components/EmailCaptureModal";
 import EmailCaptureSection from "./components/EmailCaptureSection";
 import { caseStudies } from "./case-studies/data";
@@ -380,6 +381,9 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 					</div>
 				</div>
 			</section>
+
+			{/* WHAT EACH CLEAN INCLUDES — room-by-room checklist per service level */}
+			<CleanChecklist />
 
 			{/* HOW IT WORKS */}
 			<section className="section section-white" id="how-it-works">

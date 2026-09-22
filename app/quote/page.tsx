@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Sparkles, Truck, Boxes, PanelsTopLeft, Refrigerator, FolderKanban, Shirt, ShieldCheck } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import { CardElement, Elements, useElements, useStripe } from "@stripe/react-stripe-js";
+import { isReferralCode, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT } from "@/lib/referral";
 
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
@@ -94,6 +95,14 @@ function couponDiscount(couponCode: string, subtotalAfterFrequency: number) {
   const normalized = couponCode.trim().toUpperCase();
   const flat = FLAT_PRICE_COUPONS[normalized];
   if (flat !== undefined) return Math.max(0, subtotalAfterFrequency - flat);
+  // Friend codes (MINT + 6 hex, minted per customer): $50 off a first clean.
+  // The server confirms the code belongs to a real customer and that the
+  // booker is new; here we only show the discount.
+  if (isReferralCode(normalized)) return Math.min(REFERRAL_FRIEND_DISCOUNT, subtotalAfterFrequency);
+  // Channel codes for Alexia's Facebook / LinkedIn posts (first clean only, server-enforced).
+  if (normalized === "FB25" || normalized === "LI25") return 25;
+  // Fall promo: $50 off a first clean booked by Oct 31, 2026 (server-enforced).
+  if (normalized === "FALL50") return Math.min(50, subtotalAfterFrequency);
   if (normalized === "MINT20") return Math.round(subtotalAfterFrequency * 0.2);
   if (normalized === "MINT25") return 25;
   if (normalized === "WELCOME15") return 15;
@@ -194,6 +203,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
   const [cardAttempts, setCardAttempts] = useState(0);
   const [sourceSelection, setSourceSelection] = useState("");
   const [hourlySelection, setHourlySelection] = useState<{ hours: number; cleaners: number } | null>(null);
+  const [referralBanner, setReferralBanner] = useState("");
   const minServiceDate = useMemo(() => getMinServiceDate(), []);
 
   useEffect(() => {
@@ -211,6 +221,10 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
     setSourceSelection(parsedHourly ? storedService : storedSize);
     setHourlySelection(parsedHourly);
 
+    // A friend's referral link lands here as /quote/?code=MINTxxxxxx.
+    const urlCode = (new URLSearchParams(window.location.search).get("code") || "").trim().toUpperCase();
+    if (urlCode && (isReferralCode(urlCode) || urlCode === "FALL50")) setReferralBanner(urlCode);
+
     setForm((prev) => ({
       ...prev,
       firstName: prev.firstName || firstName || "",
@@ -219,6 +233,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
       phone: prev.phone || phone,
       address: prev.address || address,
       bedrooms: parsedBedrooms ?? prev.bedrooms,
+      couponCode: prev.couponCode || urlCode,
       extras: {
         ...prev.extras,
         deepCleaning: storedService.includes("Deep clean"),
@@ -439,6 +454,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
                 Recurring frequency pricing starts on your next clean after the first visit.
               </p>
 
+
               {sourceSelection ? (
                 <div style={{ marginTop: ".9rem", border: "1px solid rgba(29,158,117,.18)", background: "var(--mint-light)", color: "var(--mint-dark)", borderRadius: 10, padding: ".75rem .9rem", fontSize: ".84rem" }}>
                   Carrying over from home page: {sourceSelection}
@@ -475,7 +491,9 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
               )}
 
               <div style={{ marginTop: "1rem" }}>
-                <p style={{ fontSize: ".8rem", color: "#666", marginBottom: ".5rem" }}>Extras</p>
+                <p style={{ fontSize: ".8rem", color: "#666", marginBottom: ".5rem" }}>
+                  Extras · <Link href="/#checklist" style={{ color: "var(--mint-dark)" }}>see what each clean includes</Link>
+                </p>
                 <div style={{ display: "grid", gap: ".6rem", gridTemplateColumns: "repeat(2,minmax(0,1fr))" }} className="md:grid-cols-3">
                   {extrasCatalog.map((extra) => (
                     <button
@@ -604,8 +622,16 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
             <div>
               <h2 style={{ fontSize: "1.15rem", marginBottom: ".85rem" }}>Section 3 - Payment</h2>
 
+              {referralBanner ? (
+                <div style={{ marginBottom: ".75rem", border: "1px solid rgba(29,158,117,.25)", background: "var(--mint-light)", color: "var(--mint-dark)", borderRadius: 10, padding: ".8rem .9rem", fontSize: ".85rem" }}>
+                  {referralBanner === "FALL50"
+                    ? "Fall promo applied: $50 off your first clean with code FALL50. Book by October 31."
+                    : `A friend sent you $${REFERRAL_FRIEND_DISCOUNT} off your first clean. Code ${referralBanner} is applied below, and they get $${REFERRAL_REFERRER_CREDIT} off their next clean once yours is done.`}
+                </div>
+              ) : null}
               <label style={{ display: "grid", gap: ".3rem", marginBottom: ".75rem" }}>
-                <span style={{ fontSize: ".75rem", color: "#666" }}>Coupon Code</span>
+                <span style={{ fontSize: ".75rem", color: "#666" }}>Coupon or friend code</span>
+
                 <input value={form.couponCode} onChange={(e) => setField("couponCode", e.target.value)} placeholder="MINT20" style={{ border: "1px solid rgba(0,0,0,.15)", borderRadius: 8, padding: ".6rem" }} />
               </label>
 

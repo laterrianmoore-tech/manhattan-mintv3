@@ -4,6 +4,7 @@ import { google } from "googleapis";
 import Stripe from "stripe";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { sendSms } from "@/lib/openphone";
+import { isReferralCode, referralCodeFor, referralLink, publicSiteUrl, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT } from "@/lib/referral";
 
 export const maxDuration = 30;
 
@@ -118,7 +119,9 @@ export async function POST(req: Request) {
     // already has a real booking (confirmed, in progress, or completed), reject
     // so the discount can't be reused on repeat cleans. MINTFREE makes the
     // whole first clean $0, so it especially must not be reusable.
-    const FIRST_CLEAN_COUPONS = ["MINT25", "WELCOME15", "MINTFREE"];
+    const FIRST_CLEAN_COUPONS = ["MINT25", "WELCOME15", "MINTFREE", "FB25", "LI25", "FALL50"];
+    // Fall promo: $50 off a first clean, bookings placed through Oct 31, 2026.
+    const FALL_PROMO_END = "2026-10-31";
     const couponNormalized = (body.couponCode || "").trim().toUpperCase();
 
     // ── Make-good coupon guard ───────────────────────────────────────────────
@@ -149,7 +152,37 @@ export async function POST(req: Request) {
       }
     }
 
-    if (FIRST_CLEAN_COUPONS.includes(couponNormalized)) {
+    if (couponNormalized === "FALL50" && new Date().toISOString().slice(0, 10) > FALL_PROMO_END) {
+      return NextResponse.json(
+        { error: "Code FALL50 expired on October 31. Remove it to book at the regular price, or ask us about recurring plans that save up to 30% on every clean." },
+        { status: 400 },
+      );
+    }
+
+    // ── Friend (referral) code guard ────────────────────────────────────────
+    // MINT + 6 hex is a customer's personal code (see src/lib/referral.ts). It
+    // must belong to a real customer, can't be used by that customer on
+    // themselves, and like the other first-clean codes only works for a new
+    // booker. The referrer's $50 credit is applied after the friend's clean
+    // completes (scripts/apply-referral-credits.mjs).
+    if (isReferralCode(couponNormalized)) {
+      const { data: allCustomers } = await supabaseAdmin.from("customers").select("id, email");
+      const referrer = (allCustomers ?? []).find((c) => referralCodeFor(c.id) === couponNormalized);
+      if (!referrer) {
+        return NextResponse.json(
+          { error: `Code ${couponNormalized} isn't a friend code we recognize. Double-check it with whoever sent it, or remove it to book at the regular price.` },
+          { status: 400 },
+        );
+      }
+      if ((referrer.email || "").toLowerCase() === body.email.trim().toLowerCase()) {
+        return NextResponse.json(
+          { error: `${couponNormalized} is your own friend code. It's for neighbors and friends: remove it to book, and you'll get $${REFERRAL_REFERRER_CREDIT} off your next clean when someone books with it.` },
+          { status: 400 },
+        );
+      }
+    }
+
+    if (FIRST_CLEAN_COUPONS.includes(couponNormalized) || isReferralCode(couponNormalized)) {
       const { data: priorCustomer } = await supabaseAdmin
         .from("customers")
         .select("id")
@@ -175,7 +208,7 @@ export async function POST(req: Request) {
     const sendgridApiKey = process.env.SENDGRID_API_KEY;
     const sendgridFrom = process.env.SENDGRID_FROM_EMAIL;
     const calendarId = process.env.GOOGLE_CALENDAR_ID;
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://manhattanmintnyc.com";
+    const siteUrl = publicSiteUrl(process.env.NEXT_PUBLIC_SITE_URL);
     const { email: googleServiceEmail, privateKey: googlePrivateKey } = getGoogleCredentials();
 
     const integrations = {
@@ -328,6 +361,7 @@ export async function POST(req: Request) {
 
     // ── Supabase: upsert customer + insert booking ──────────────────────────
     let supabaseBookingId: string | undefined;
+    let supabaseCustomerId: string | undefined;
     try {
       // Upsert customer by email — if they've booked before, update their latest info
       const { data: customer, error: customerError } = await supabaseAdmin
@@ -353,6 +387,7 @@ export async function POST(req: Request) {
       if (customerError || !customer) {
         console.error("Supabase customer upsert failed:", customerError);
       } else {
+        supabaseCustomerId = customer.id;
         // Insert booking linked to this customer
         const { data: booking, error: bookingError } = await supabaseAdmin
           .from("bookings")
@@ -437,6 +472,23 @@ export async function POST(req: Request) {
       ? `<p style="margin:0 0 6px;color:#555;font-size:14px;">💳 <strong>Payment:</strong> Your card is on file and will be charged after your appointment is complete.</p>`
       : `<p style="margin:0 0 6px;color:#555;font-size:14px;">💳 <strong>Payment:</strong> We couldn't save a card during booking. Please add one securely here: <a href="${cardSetupUrl || `${siteUrl}/quote`}" style="color:#2d6a4f;">Add card</a>. Your card is only charged after your appointment.</p>`;
 
+    // Every customer gets a personal friend code in the confirmation: $50 off
+    // a neighbor's first clean, $50 off the customer's next one when it's done.
+    const friendCode = supabaseCustomerId ? referralCodeFor(supabaseCustomerId) : null;
+    const friendLink = friendCode ? referralLink(friendCode, siteUrl) : null;
+    const referralHtml = friendCode
+      ? `<table width="100%" cellpadding="0" cellspacing="0" style="background:#f7f7f5;border-radius:8px;padding:18px 24px;margin-bottom:24px;">
+            <tr><td>
+              <p style="margin:0 0 8px;color:#0f0f0f;font-size:14px;font-weight:600;">🏢 Know a neighbor who needs a cleaner?</p>
+              <p style="margin:0 0 6px;color:#555;font-size:13px;">Your friend code is <strong style="color:#2d6a4f;letter-spacing:0.04em;">${friendCode}</strong>. Anyone who books with it gets <strong>$${REFERRAL_FRIEND_DISCOUNT} off their first clean</strong>, and you get <strong>$${REFERRAL_REFERRER_CREDIT} off your next one</strong> once theirs is done.</p>
+              <p style="margin:0;color:#555;font-size:13px;">Same building, same day is our favorite kind of booking. Share this link: <a href="${friendLink}" style="color:#2d6a4f;">${friendLink}</a></p>
+            </td></tr>
+          </table>`
+      : "";
+    const referralSms = friendCode
+      ? ` Know a neighbor who needs a cleaner? Your friend code ${friendCode} gets them $${REFERRAL_FRIEND_DISCOUNT} off their first clean and you $${REFERRAL_REFERRER_CREDIT} off your next: ${friendLink}`
+      : "";
+
     const notificationResults = await Promise.allSettled([
       // 1. Owner alert email — FIRST priority
       integrations.emailConfigured && internalRecipients.length
@@ -501,6 +553,7 @@ export async function POST(req: Request) {
           ${paymentLineHtml}
           ${body.frequency !== "One-Time" ? `<p style="margin:0 0 24px;color:#555;font-size:14px;">🔁 <strong>Recurring rate:</strong> $${body.pricing.nextCleanTotal ?? body.pricing.total} per clean starting with your second visit.</p>` : `<p style="margin:0 0 24px;"></p>`}
 
+          ${referralHtml}
           <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f7f4;border-radius:8px;padding:18px 24px;margin-bottom:24px;">
             <tr><td>
               <p style="margin:0 0 10px;color:#0f0f0f;font-size:14px;font-weight:600;">✨ How to prep for your clean</p>
@@ -528,7 +581,7 @@ export async function POST(req: Request) {
         ? sendSms({
             to: body.phone,
             body: hasCardOnFile
-              ? `Thanks for booking Manhattan Mint, ${body.firstName}. If you need to cancel or reschedule, please give us at least 24 hours notice. — Manhattan Mint NYC`
+              ? `Thanks for booking Manhattan Mint, ${body.firstName}. If you need to cancel or reschedule, please give us at least 24 hours notice.${referralSms} — Manhattan Mint NYC`
               : `Thanks for booking Manhattan Mint, ${body.firstName}! One last step — add your card securely here (charged only after your clean): ${cardSetupUrl || siteUrl} — Manhattan Mint NYC`,
             bookingId: supabaseBookingId ?? null,
             cleanerId: null,

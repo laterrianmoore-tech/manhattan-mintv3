@@ -43,26 +43,35 @@ export async function POST(req: Request) {
   const siteUrl = process.env.SITE_URL || "https://manhattanmintnyc.com";
   const cleanEmail = email.toLowerCase().trim();
 
-  // The popup promises the $25 code "straight to your inbox" — deliver it.
+  // The popup promises the code "straight to your inbox" — deliver it. While
+  // the fall promo runs (through 2026-10-31, same date as the popup and the
+  // booking route) the code is FALL50 for $50; afterwards it's MINT25 for $25.
+  const fallPromo = new Date().toISOString().slice(0, 10) <= "2026-10-31";
+  const code = fallPromo ? "FALL50" : "MINT25";
+  const amount = fallPromo ? 50 : 25;
+  const offerName = fallPromo ? "Fall reset offer" : "Welcome offer";
+  const fromPrice = 175 - amount;
   try {
     await sgMail.send({
       to: cleanEmail,
       from,
-      subject: "Your $25 off is here — Manhattan Mint",
+      subject: `Your $${amount} off is here — Manhattan Mint`,
       html: renderCampaignEmail({
-        preheader: "Use code MINT25 for $25 off your first clean — studios from $150.",
+        preheader: `Use code ${code} for $${amount} off your first clean — studios from $${fromPrice}.`,
         bodyHtml: `
           ${hero(
-            "Welcome offer",
-            `Welcome${name ? `, ${name.trim().split(" ")[0]}` : ""} — your $25 off is here`,
-            "As promised, straight to your inbox. Use this on your first clean — it works on any apartment size and any service type.",
+            offerName,
+            `Welcome${name ? `, ${name.trim().split(" ")[0]}` : ""} — your $${amount} off is here`,
+            fallPromo
+              ? "As promised, straight to your inbox. Use it on your first clean, any apartment size, any service type. Book by October 31."
+              : "As promised, straight to your inbox. Use this on your first clean — it works on any apartment size and any service type.",
           )}
-          ${offerBlock("MINT25", "Your code", "$25 off your first clean · studios & 1BRs from $150")}
-          ${featureRow("Book online in about a minute.", "Flat-rate pricing shown upfront — no phone calls, no estimates. Enter MINT25 in the coupon field and the price updates instantly.")}
+          ${offerBlock(code, "Your code", `$${amount} off your first clean · studios & 1BRs from $${fromPrice}`)}
+          ${featureRow("Book online in about a minute.", `Flat-rate pricing shown upfront — no phone calls, no estimates. Enter ${code} in the coupon field and the price updates instantly.`)}
           ${featureRow("A professional you can trust.", "Every cleaner is background-checked, insured, and trained to our standard. We work exclusively in Manhattan.")}
           ${featureRow("Charged only after the clean.", "Your card is saved at booking and charged when the work is done — with a photo summary in your inbox and a 100% satisfaction guarantee behind it.")}
           ${para("We usually have availability within 24 hours, and same-week is almost always doable.")}
-          ${ctaBlock(`${siteUrl}/quote/`, "Book with $25 off", "60-second booking · same-week availability")}`,
+          ${ctaBlock(`${siteUrl}/quote/?code=${code}`, `Book with $${amount} off`, "60-second booking · same-week availability")}`,
         unsubscribeUrl: unsubscribeUrl(cleanEmail, siteUrl),
         siteUrl,
       }),

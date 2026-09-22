@@ -132,6 +132,9 @@ function Footer() {
                 <Link href="/#pricing">Pricing</Link>
               </li>
               <li>
+                <Link href="/#checklist">What&apos;s included</Link>
+              </li>
+              <li>
                 <Link href="/quote">Get a Quote</Link>
               </li>
             </ul>
@@ -145,6 +148,9 @@ function Footer() {
               </li>
               <li>
                 <Link href="/case-studies">Case Studies</Link>
+              </li>
+              <li>
+                <Link href="/brokers">For Brokers &amp; Agents</Link>
               </li>
               <li>
                 <Link href="/blog">Blog</Link>
