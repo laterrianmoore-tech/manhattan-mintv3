@@ -227,3 +227,22 @@ h2 em{font-style:italic;color:var(--mint);}
 .ck-fine{font-size:.78rem;color:var(--gray);font-weight:300;}
 @media (max-width:900px){.ck-grid{grid-template-columns:1fr;gap:1.4rem;}}
 @media (max-width:640px){.ck-tabs{grid-template-columns:1fr;}}
+
+/* ── "What it feels like": text thread mockup ── */
+.story-col{display:flex;flex-direction:column;gap:1.6rem;}
+.mm-phone{background:#0F0F0F;border-radius:26px;padding:.9rem .9rem 1.1rem;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.18),inset 0 0 0 1px rgba(255,255,255,.06);}
+.mm-phone-top{display:flex;flex-direction:column;align-items:center;gap:.1rem;padding:.4rem 0 .8rem;border-bottom:.5px solid rgba(255,255,255,.08);}
+.mm-phone-name{color:#fff;font-size:.82rem;font-weight:500;}
+.mm-phone-num{color:rgba(255,255,255,.4);font-size:.66rem;}
+.mm-thread{display:flex;flex-direction:column;gap:.45rem;padding-top:.8rem;}
+.mm-time{text-align:center;color:rgba(255,255,255,.35);font-size:.62rem;margin:.3rem 0 .1rem;}
+.mm-bubble{align-self:flex-start;max-width:86%;background:#262626;color:#fff;font-size:.8rem;line-height:1.45;padding:.6rem .8rem;border-radius:16px 16px 16px 5px;font-weight:300;}
+.mm-bubble-out{align-self:flex-end;background:var(--mint);border-radius:16px 16px 5px 16px;margin-top:.3rem;}
+.mm-photos{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;max-width:86%;}
+.mm-photo{aspect-ratio:1/1;border-radius:10px;display:flex;align-items:flex-end;padding:.4rem .5rem;font-size:.6rem;color:rgba(255,255,255,.85);letter-spacing:.04em;background:linear-gradient(160deg,#3a4a44 0%,#1f2a26 60%,#141917 100%);position:relative;overflow:hidden;}
+.mm-photo::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 50% at 30% 25%,rgba(255,255,255,.18),transparent 70%);}
+.story-points{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.9rem;}
+.story-points li{position:relative;padding-left:1.4rem;font-size:.9rem;line-height:1.55;font-weight:300;color:var(--dark);}
+.story-points li::before{content:"";position:absolute;left:0;top:.5rem;width:8px;height:8px;border-radius:50%;background:var(--mint);}
+.story-points strong{font-weight:500;}
+@media (max-width:900px){.mm-phone{max-width:100%;}}

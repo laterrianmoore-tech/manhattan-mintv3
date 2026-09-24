@@ -279,25 +279,31 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 
 			{/* WHAT'S INCLUDED + PRICING */}
 			<section className="section included-bg" id="pricing">
-				<div className="sect-eye">What&apos;s included</div>
-				<h2>Everything clean,<br /><em>nothing hidden.</em></h2>
-				<p className="sect-sub">One flat rate covers all of this — no à la carte surprises on the invoice.</p>
+				<div className="sect-eye">What it feels like</div>
+				<h2>You always know<br /><em>where your clean stands.</em></h2>
+				<p className="sect-sub">Three automatic texts with every visit, then a photo summary the owner reviews before the job is closed. No wondering, no chasing.</p>
 				<div className="included-grid">
-					<div className="included-list">
-						<div className="inc-item"><div className="inc-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div><div className="inc-text">All bedrooms vacuumed &amp; dusted</div></div>
-						<div className="inc-item"><div className="inc-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div><div className="inc-text">Kitchen surfaces wiped &amp; degreased</div></div>
-						<div className="inc-item"><div className="inc-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div><div className="inc-text">Stovetop scrubbed</div></div>
-						<div className="inc-item"><div className="inc-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div><div className="inc-text">Bathroom(s) sanitized top to bottom</div></div>
-						<div className="inc-item"><div className="inc-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div><div className="inc-text">Floors mopped throughout</div></div>
-						<div className="inc-item"><div className="inc-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div><div className="inc-text">All mirrors &amp; glass surfaces cleaned</div></div>
-						<div className="inc-item"><div className="inc-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div><div className="inc-text">Trash emptied in every room</div></div>
-						<div className="inc-item"><div className="inc-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div><div className="inc-text">Baseboards dusted</div></div>
-						<div className="inc-item"><div className="inc-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div><div className="inc-text">Countertops cleared &amp; wiped</div></div>
-						<div className="inc-item"><div className="inc-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div><div className="inc-text">Light fixtures &amp; switches wiped</div></div>
-						<div className="inc-item"><div className="inc-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div><div className="inc-text">Inside microwave cleaned</div></div>
-						<div className="inc-item"><div className="inc-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div><div className="inc-text">Radiators dusted</div></div>
-						<div className="inc-item"><div className="inc-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div><div className="inc-text">Entryway &amp; hallway cleaned</div></div>
-						<div className="inc-item"><div className="inc-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div><div className="inc-text">Photo summary sent after every visit</div></div>
+					<div className="story-col">
+						<div className="mm-phone" aria-label="Example of the texts a client receives during a clean">
+							<div className="mm-phone-top"><span className="mm-phone-name">Manhattan Mint</span><span className="mm-phone-num">(914) 863-7902</span></div>
+							<div className="mm-thread">
+								<div className="mm-time">Thursday 8:52 AM</div>
+								<div className="mm-bubble">Hi Sarah — your Manhattan Mint cleaner is on the way.</div>
+								<div className="mm-time">9:28 AM</div>
+								<div className="mm-bubble">Your cleaner has arrived. We&apos;ll text again when the clean is complete.</div>
+								<div className="mm-time">12:41 PM</div>
+								<div className="mm-bubble">Your Manhattan Mint clean is complete! 💚 Here&apos;s your photo summary.</div>
+								<div className="mm-photos" aria-hidden="true">
+									<span className="mm-photo">Kitchen</span><span className="mm-photo">Bathroom</span><span className="mm-photo">Bedroom</span>
+								</div>
+								<div className="mm-bubble mm-bubble-out">Looks amazing, thank you!</div>
+							</div>
+						</div>
+						<ul className="story-points">
+							<li><strong>On the way, arrived, done.</strong> Sent automatically the moment your cleaner taps each step. You never have to ask.</li>
+							<li><strong>Photos before the job closes.</strong> The owner checks every photo summary. If something isn&apos;t right, we come back and fix it at no charge.</li>
+							<li><strong>Same cleaner every visit.</strong> Go recurring and the person who learned your apartment is the one who comes back.</li>
+						</ul>
 					</div>
 					<div className="included-aside">
 						<div className="price-card-big">
