@@ -79,6 +79,7 @@ function discountRateForFrequency(frequency: Frequency) {
 // extras add up to. A code never raises the price — if the quote is already
 // under the flat amount, it discounts nothing.
 const FLAT_PRICE_COUPONS: Record<string, number> = {
+  MINT125: 125,
   MINT150: 150,
   MINT200: 200,
   MINT250: 250,
