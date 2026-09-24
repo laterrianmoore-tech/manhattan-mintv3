@@ -35,7 +35,6 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 	const [pricingServiceType, setPricingServiceType] = useState("Standard clean");
 	const [hourlyHours, setHourlyHours] = useState(3);
 	const [hourlyCleaners, setHourlyCleaners] = useState(2);
-	const [weeklyBookings, setWeeklyBookings] = useState(27);
 	const [form, setForm] = useState({
 		fullName: "",
 		phone: "",
@@ -58,19 +57,6 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 
 	const effectiveHourlyPrice = `$${hourlyHours * hourlyCleaners * hourlyRates.ratePerCleaner}`;
 
-	useEffect(() => {
-		const intervalId = window.setInterval(() => {
-			setWeeklyBookings((prev) => {
-				const delta = Math.random() > 0.5 ? 1 : -1;
-				const next = prev + delta;
-				if (next < 23) return 24;
-				if (next > 34) return 33;
-				return next;
-			});
-		}, 4000);
-
-		return () => window.clearInterval(intervalId);
-	}, []);
 
 	const scrollToSection = (id: string) => {
 		const element = document.getElementById(id);
@@ -226,7 +212,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 						<div className="form-trust">
 							<span className="ftrust">Same-day response</span>
 							<span className="ftrust">COI available</span>
-							<span className="ftrust"><span className="booking-count">{weeklyBookings}</span> bookings this week</span>
+							<span className="ftrust">Photo summary after every clean</span>
 						</div>
 					</div>
 				</div>
@@ -234,7 +220,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 
 			{/* STATS BAND */}
 			<div className="stats-band">
-				<div className="stat-item"><div className="stat-n">500+</div><div className="stat-d">Manhattan apartments cleaned</div></div>
+				<div className="stat-item"><div className="stat-n">Owner-run</div><div className="stat-d">Every job&apos;s photos reviewed by the owner</div></div>
 				{googleRating ? (
 					<div className="stat-item">
 						<div className="stat-n">{googleRating.rating.toFixed(1)}★</div>
@@ -242,7 +228,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 					</div>
 				) : (
 					// Live rating unavailable — never show a stale or made-up number.
-					<div className="stat-item"><div className="stat-n">Google</div><div className="stat-d">Rated by Manhattan clients on Google</div></div>
+					<div className="stat-item"><div className="stat-n">5.0★</div><div className="stat-d">Every Google review, five stars</div></div>
 				)}
 				<div className="stat-item"><div className="stat-n">24hr</div><div className="stat-d">Earliest available booking</div></div>
 				<div className="stat-item"><div className="stat-n">100%</div><div className="stat-d">Satisfaction guarantee</div></div>
@@ -279,33 +265,18 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 
 			{/* WHAT'S INCLUDED + PRICING */}
 			<section className="section included-bg" id="pricing">
-				<div className="sect-eye">What it feels like</div>
-				<h2>You always know<br /><em>where your clean stands.</em></h2>
-				<p className="sect-sub">Three automatic texts with every visit, then a photo summary the owner reviews before the job is closed. No wondering, no chasing.</p>
-				<div className="included-grid story-grid">
-					<div className="story-col">
-						<div className="mm-phone" aria-label="Example of the texts a client receives during a clean">
-							<div className="mm-phone-top"><span className="mm-phone-name">Manhattan Mint</span><span className="mm-phone-num">(914) 863-7902</span></div>
-							<div className="mm-thread">
-								<div className="mm-time">Thursday 8:52 AM</div>
-								<div className="mm-bubble">Hi Sarah — your Manhattan Mint cleaner is on the way.</div>
-								<div className="mm-time">9:28 AM</div>
-								<div className="mm-bubble">Your cleaner has arrived. We&apos;ll text again when the clean is complete.</div>
-								<div className="mm-time">12:41 PM</div>
-								<div className="mm-bubble">Your Manhattan Mint clean is complete! 💚 Here&apos;s your photo summary.</div>
-								<div className="mm-photos" aria-hidden="true">
-									<span className="mm-photo">Kitchen</span><span className="mm-photo">Bathroom</span><span className="mm-photo">Bedroom</span>
-								</div>
-								<div className="mm-bubble mm-bubble-out">Looks amazing, thank you!</div>
-							</div>
-						</div>
-					</div>
-					<div className="included-aside">
-						<ul className="story-points">
+				<div className="sect-eye">Pricing</div>
+				<h2>One flat rate.<br /><em>Everything included.</em></h2>
+				<p className="sect-sub">Supplies, a photo summary after every visit, and the same cleaner each time if you go recurring. Your card is charged only after the clean.</p>
+				<div className="included-grid pricing-grid">
+					<div className="pricing-points">
+						<ul className="story-points pricing-list">
 							<li><strong>On the way, arrived, done.</strong> Sent automatically the moment your cleaner taps each step. You never have to ask.</li>
 							<li><strong>Photos before the job closes.</strong> The owner checks every photo summary. If something isn&apos;t right, we come back and fix it at no charge.</li>
 							<li><strong>Same cleaner every visit.</strong> Go recurring and the person who learned your apartment is the one who comes back.</li>
 						</ul>
+					</div>
+					<div className="included-aside">
 						<div className="price-card-big">
 							<div className="pcb-eye">Pricing</div>
 							<div className="pcb-mode-toggle">

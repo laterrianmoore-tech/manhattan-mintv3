@@ -259,3 +259,9 @@ h2 em{font-style:italic;color:var(--mint);}
 .story-grid .story-points li{font-size:.88rem;}
 .story-grid .price-card-big{margin-top:auto;}
 @media (max-width:900px){.story-grid{grid-template-columns:1fr;}.story-grid .mm-phone{height:auto;}}
+
+/* ── pricing section: points left, price card right ── */
+.pricing-grid{grid-template-columns:minmax(0,1fr) minmax(0,460px);gap:2.5rem;align-items:center;}
+.pricing-points .story-points{gap:1.1rem;}
+.pricing-points .story-points li{font-size:.98rem;line-height:1.6;}
+@media (max-width:900px){.pricing-grid{grid-template-columns:1fr;gap:1.6rem;}}

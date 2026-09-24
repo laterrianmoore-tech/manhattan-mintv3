@@ -188,6 +188,17 @@ function Footer() {
 
       <div className="footer-bottom">
         <p>© {new Date().getFullYear()} Manhattan Mint NYC LLC. All rights reserved.</p>
+        <div className="footer-social" aria-label="Manhattan Mint on social media">
+          <a href="https://www.facebook.com/profile.php?id=61592530890151" target="_blank" rel="noopener noreferrer" aria-label="Manhattan Mint on Facebook" title="Facebook">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 22v-8.2h2.8l.4-3.3h-3.2V8.4c0-.9.3-1.6 1.6-1.6h1.7V3.9c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.4H7.3v3.3h2.8V22h3.4z" /></svg>
+          </a>
+          <a href="https://www.linkedin.com/company/manhattan-mint/" target="_blank" rel="noopener noreferrer" aria-label="Manhattan Mint on LinkedIn" title="LinkedIn">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 21H2.7V8.6h3.7V21zM4.5 6.9a2.2 2.2 0 1 1 0-4.4 2.2 2.2 0 0 1 0 4.4zM21.3 21h-3.7v-6c0-1.4 0-3.3-2-3.3s-2.3 1.6-2.3 3.2V21H9.6V8.6h3.5v1.7h.1c.5-.9 1.7-1.9 3.5-1.9 3.7 0 4.4 2.5 4.4 5.6V21z" /></svg>
+          </a>
+          <a href="https://nextdoor.com/page/manhattan-mint/" target="_blank" rel="noopener noreferrer" aria-label="Manhattan Mint on Nextdoor" title="Nextdoor">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 3 9.6V21h6.2v-5.6a2.8 2.8 0 0 1 5.6 0V21H21V9.6L12 2.5zm0 2.6 6.9 5.4V19h-2.1v-3.6a4.8 4.8 0 0 0-9.6 0V19H5.1V10.5L12 5.1z" /></svg>
+          </a>
+        </div>
         <a href="tel:+19148637902">(914) 863-7902</a>
       </div>
     </footer>
@@ -479,6 +490,32 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             font-size: 0.88rem;
           }
 
+          .footer-social {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+          }
+          .footer-social a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            color: rgba(255, 255, 255, 0.75);
+            transition: border-color 0.2s, color 0.2s, background 0.2s;
+          }
+          .footer-social a:hover {
+            color: #fff;
+            border-color: var(--mint);
+            background: rgba(29, 158, 117, 0.18);
+          }
+          .footer-social svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+          }
           .footer-bottom a {
             color: #d6d6d6;
             text-decoration: none;
