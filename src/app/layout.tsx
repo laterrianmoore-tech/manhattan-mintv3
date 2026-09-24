@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import SEOJsonLd from "./seo-jsonld";
 import ChatWidget from "@/components/ChatWidget";
+import PromoBar from "../../app/components/PromoBar";
 
 export const metadata: Metadata = {
   title: {
@@ -74,6 +75,7 @@ function Nav() {
 
   return (
     <header className="site-header">
+      <PromoBar />
       <TrustTicker />
       <nav className="site-nav" aria-label="Main navigation">
         <div className="site-nav-inner">
@@ -133,6 +135,9 @@ function Footer() {
               </li>
               <li>
                 <Link href="/#checklist">What&apos;s included</Link>
+              </li>
+              <li>
+                <Link href="/second-clean">Second Clean on Us</Link>
               </li>
               <li>
                 <Link href="/quote">Get a Quote</Link>
@@ -253,6 +258,34 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             top: 0;
             z-index: 100;
           }
+
+          .promo-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.9rem;
+            flex-wrap: wrap;
+            padding: 0.6rem 1rem;
+            background: #0F0F0F;
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.86rem;
+            line-height: 1.3;
+          }
+          .promo-bar:hover .promo-bar-cta { text-decoration: underline; }
+          .promo-bar-tag {
+            font-size: 0.64rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #f0a24a;
+            border: 1px solid rgba(240,162,74,.45);
+            border-radius: 999px;
+            padding: 0.15rem 0.55rem;
+          }
+          .promo-bar-text { color: rgba(255,255,255,.85); }
+          .promo-bar-text strong { color: #fff; font-weight: 600; }
+          .promo-bar-cta { color: #7ed9b8; font-weight: 500; white-space: nowrap; }
+          @media (max-width: 640px) { .promo-bar-tag { display: none; } .promo-bar { font-size: 0.8rem; gap: 0.5rem; } }
 
           .trust-ticker {
             background: var(--mint-dark);
