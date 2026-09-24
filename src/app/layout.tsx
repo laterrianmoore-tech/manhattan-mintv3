@@ -158,6 +158,9 @@ function Footer() {
                 <Link href="/brokers">For Brokers &amp; Agents</Link>
               </li>
               <li>
+                <Link href="/careers">Come work with us</Link>
+              </li>
+              <li>
                 <Link href="/blog">Blog</Link>
               </li>
               <li>

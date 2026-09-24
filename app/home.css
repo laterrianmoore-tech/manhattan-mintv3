@@ -265,3 +265,15 @@ h2 em{font-style:italic;color:var(--mint);}
 .pricing-points .story-points{gap:1.1rem;}
 .pricing-points .story-points li{font-size:.98rem;line-height:1.6;}
 @media (max-width:900px){.pricing-grid{grid-template-columns:1fr;gap:1.6rem;}}
+
+/* ── pricing panel refresh ── */
+.pricing-panel{margin-top:2rem;background:linear-gradient(135deg,#ffffff 0%,#f3faf7 100%);border:1px solid rgba(29,158,117,.14);border-radius:22px;padding:2.2rem;box-shadow:0 30px 70px rgba(8,80,65,.08);}
+.pricing-grid{grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:2.5rem;align-items:center;}
+.pricing-points{display:flex;flex-direction:column;gap:1.15rem;}
+.pp-row{display:flex;gap:1rem;align-items:flex-start;}
+.pp-ico{flex-shrink:0;width:42px;height:42px;border-radius:12px;background:var(--mint-light);display:flex;align-items:center;justify-content:center;}
+.pp-ico svg{width:20px;height:20px;stroke:var(--mint);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.pp-row strong{display:block;font-size:.98rem;font-weight:500;color:var(--dark);margin-bottom:.15rem;}
+.pp-row span:not(.pp-ico){display:block;font-size:.88rem;line-height:1.55;color:#555;font-weight:300;}
+.pricing-panel .price-card-big{box-shadow:0 24px 60px rgba(0,0,0,.22);transform:translateY(-6px);}
+@media (max-width:900px){.pricing-panel{padding:1.4rem;border-radius:18px;}.pricing-grid{grid-template-columns:1fr;gap:1.6rem;}.pricing-panel .price-card-big{transform:none;}}

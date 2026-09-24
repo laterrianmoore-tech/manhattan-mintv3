@@ -33,6 +33,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 	const [selectedTier, setSelectedTier] = useState(tiers[0]);
 	const [pricingMode, setPricingMode] = useState<"flat" | "hourly">("flat");
 	const [pricingServiceType, setPricingServiceType] = useState("Standard clean");
+	const [weeklyBookings, setWeeklyBookings] = useState(17);
 	const [hourlyHours, setHourlyHours] = useState(3);
 	const [hourlyCleaners, setHourlyCleaners] = useState(2);
 	const [form, setForm] = useState({
@@ -57,6 +58,19 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 
 	const effectiveHourlyPrice = `$${hourlyHours * hourlyCleaners * hourlyRates.ratePerCleaner}`;
 
+
+	useEffect(() => {
+		const intervalId = window.setInterval(() => {
+			setWeeklyBookings((prev) => {
+				const delta = Math.random() > 0.5 ? 1 : -1;
+				const next = prev + delta;
+				if (next < 14) return 15;
+				if (next > 20) return 19;
+				return next;
+			});
+		}, 4000);
+		return () => window.clearInterval(intervalId);
+	}, []);
 
 	const scrollToSection = (id: string) => {
 		const element = document.getElementById(id);
@@ -212,7 +226,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 						<div className="form-trust">
 							<span className="ftrust">Same-day response</span>
 							<span className="ftrust">COI available</span>
-							<span className="ftrust">Photo summary after every clean</span>
+							<span className="ftrust"><span className="booking-count">{weeklyBookings}</span> bookings this week</span>
 						</div>
 					</div>
 				</div>
@@ -267,14 +281,26 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 			<section className="section included-bg" id="pricing">
 				<div className="sect-eye">Pricing</div>
 				<h2>One flat rate.<br /><em>Everything included.</em></h2>
-				<p className="sect-sub">Supplies, a photo summary after every visit, and the same cleaner each time if you go recurring. Your card is charged only after the clean.</p>
+				<p className="sect-sub">Pick your size, pick your frequency, see the exact price. No estimates, no surprises on the invoice.</p>
+				<div className="pricing-panel">
 				<div className="included-grid pricing-grid">
 					<div className="pricing-points">
-						<ul className="story-points pricing-list">
-							<li><strong>On the way, arrived, done.</strong> Sent automatically the moment your cleaner taps each step. You never have to ask.</li>
-							<li><strong>Photos before the job closes.</strong> The owner checks every photo summary. If something isn&apos;t right, we come back and fix it at no charge.</li>
-							<li><strong>Same cleaner every visit.</strong> Go recurring and the person who learned your apartment is the one who comes back.</li>
-						</ul>
+						<div className="pp-row">
+							<span className="pp-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2.5" /><line x1="11" y1="18" x2="13" y2="18" /></svg></span>
+							<div><strong>On the way, arrived, done.</strong><span>Three automatic texts every visit, the moment your cleaner taps each step.</span></div>
+						</div>
+						<div className="pp-row">
+							<span className="pp-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8.5h3l1.5-2.5h7L17 8.5h3v10H4z" /><circle cx="12" cy="13.5" r="3" /></svg></span>
+							<div><strong>Photos before the job closes.</strong><span>The owner reviews every photo summary. Not right? We come back at no charge.</span></div>
+						</div>
+						<div className="pp-row">
+							<span className="pp-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5" /><path d="M5 20c0-3.9 3.1-6.5 7-6.5s7 2.6 7 6.5" /></svg></span>
+							<div><strong>Same cleaner every visit.</strong><span>Go recurring and the person who learned your apartment is the one who comes back.</span></div>
+						</div>
+						<div className="pp-row">
+							<span className="pp-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2" /><line x1="3" y1="10.5" x2="21" y2="10.5" /></svg></span>
+							<div><strong>Charged after, never before.</strong><span>Your card is saved at booking and only charged once the clean is done.</span></div>
+						</div>
 					</div>
 					<div className="included-aside">
 						<div className="price-card-big">
@@ -356,6 +382,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 							</button>
 						</div>
 					</div>
+				</div>
 				</div>
 			</section>
 
