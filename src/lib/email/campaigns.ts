@@ -232,6 +232,104 @@ export const PROSPECT_TRACK: CampaignEmail[] = [
       ${para("Card charged only after the work is finished, as always, and the guarantee stands: anything not right and we come back to fix it.")}
       ${ctaBlock(`${siteUrl}/quote/`, "Use MINT20", "Enter it in the coupon field — the price updates instantly")}`,
   },
+// ── Second set (added 2026-09-24). Plainer voice, real details, no invented numbers. ──
+  {
+    key: "p13-radiator-test",
+    subject: "the radiator test",
+    preheader: "Put your hand near the radiator this week.",
+    body: (siteUrl) => `
+      ${hero("Quick one", "Put your hand near the radiator this week.")}
+      ${para("If it comes back dusty, that dust goes airborne the day the heat comes on, which in most Manhattan buildings is October 1. It settles on everything you own for the next six months.")}
+      ${para("This week we did a tidy up on a 3-bedroom on East 56th after the client had 35 people over. One cleaner, a couple of hours, because we had already been in that apartment twice and knew where everything goes. That is the whole point of a regular clean: the second and third visits are faster and better than the first.")}
+      ${para("If you want a clean before the heat comes on, FALL50 takes $50 off through October 31. Or reply with your apartment size and we will tell you the price. No form.")}
+      ${ctaBlock(`${siteUrl}/quote/?code=FALL50`, "Book with FALL50", "$50 off a first clean through Oct 31")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  {
+    key: "p14-what-happens",
+    subject: "what actually happens on the day",
+    preheader: "Three texts, a photo summary, and a person who checks the photos.",
+    body: (siteUrl) => `
+      ${hero("How it works", "Here is the whole day, start to finish.")}
+      ${para("You get a text when the cleaner is on the way, another when they arrive, and a third when they are done. That last one comes with photos of every room.")}
+      ${para("The owner looks at those photos before the job is closed out. If something is not right, we come back and fix it at no charge. That is the policy, in writing, on the site.")}
+      ${para("Your card is saved at booking and only charged after the clean. Cleaners are background checked and insured, and they bring everything.")}
+      ${para("That is it. No estimate visit, no phone tag. The booking form takes about a minute.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "See the price for your place", "Studio and 1BR from $175, all in")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  {
+    key: "p15-same-cleaner",
+    subject: "why we send the same person",
+    preheader: "The third visit is the good one.",
+    body: (siteUrl) => `
+      ${hero("The small thing that matters", "Why we send the same cleaner every time.")}
+      ${para("A first clean is the slowest one. The cleaner is learning where the vacuum lives, which cabinet sticks, what you care about most. By the third visit that is all known, so the same two hours go further.")}
+      ${para("That is why recurring clients get the same cleaner every visit. It is also why our recurring clients rarely leave. Weekly saves 30%, biweekly 25%, monthly 15%, and you can pause or cancel by replying to any email.")}
+      ${para("If you would rather try one clean first, that works too. Every recurring client we have started that way.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "Book a first clean", "Pick a frequency at checkout, or leave it at one-time")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  {
+    key: "p16-prices-straight",
+    subject: "our prices, without the form",
+    preheader: "Studio/1BR $175, 2BR $225, 3BR $275. Everything else is here too.",
+    body: (siteUrl) => `
+      ${hero("Straight answer", "What a clean costs, in one email.")}
+      ${para("Standard clean: studio or 1 bedroom $175, 2 bedroom $225, 3 bedroom $275. Extra bathrooms add $25 each. Supplies included, card charged after the clean.")}
+      ${para("Deep clean adds $75 and covers baseboards, door frames, grout, the hood vent, the things a regular clean is not priced for. Move-in or move-out adds $100 and includes inside the fridge, oven, cabinets and closets.")}
+      ${para("Recurring plans take 15% to 30% off every clean after the first. The full room-by-room checklist for each level is on the site if you want to see exactly what is included.")}
+      ${ctaBlock(`${siteUrl}/#checklist`, "See what each clean includes", "Standard, Deep, Move Out, side by side")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  {
+    key: "p17-doorman-buildings",
+    subject: "if your building has a doorman",
+    preheader: "COIs, service elevators, and getting a cleaner upstairs without a phone call.",
+    body: (siteUrl) => `
+      ${hero("Manhattan buildings", "We already know how your building works.")}
+      ${para("A lot of Manhattan cleaners quietly avoid doorman and co-op buildings because of the paperwork. We work only in Manhattan, so it is most of what we do.")}
+      ${para("If your management needs a certificate of insurance naming the building, we send it. If the service elevator has to be reserved, we book it. If the front desk needs your say-so, we text you before the cleaner arrives so you can tell them.")}
+      ${para("Reply with your building name and we will tell you if we have been there before and what it needs. Many of them are already on file.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "Book a clean", "Add your access notes on the form and we handle the rest")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  {
+    key: "p18-moving-season",
+    subject: "moving before the new year?",
+    preheader: "The move-out clean is how deposits come back.",
+    body: (siteUrl) => `
+      ${hero("If you are moving", "Do not clean your old place yourself.")}
+      ${para("The last thing anyone has energy for on moving day is scrubbing an empty oven. It is also the thing landlords look at when they decide how much deposit to return.")}
+      ${para("Our move-out clean is built for empty apartments: inside the fridge, oven, cabinets and drawers, closets, window sills, baseboards, door frames. You get photos of every room when it is done, which is useful if there is ever a dispute.")}
+      ${para("Same thing in reverse if you are moving in and want the place clean before the boxes arrive. Tell us the date and whether it is a move in or a move out.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "Book a move-in or move-out clean", "1BR from $275 all in, empty apartments only")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  {
+    key: "p19-ask-a-friend",
+    subject: "if you know someone who uses us",
+    preheader: "Ask them for their friend code. It is worth $50.",
+    body: (siteUrl) => `
+      ${hero("A better deal than ours", "Ask a friend for their code.")}
+      ${para("Every Manhattan Mint client has a personal friend code. If someone you know already uses us, their code takes $50 off your first clean, and they get $50 off their next one once yours is done.")}
+      ${para("It is a better deal than anything we can send you directly, so if you have a neighbor or a friend with a clean apartment and a Manhattan Mint text on their phone, ask them.")}
+      ${para("If you do not, FALL50 is $50 off through October 31 and needs no one.")}
+      ${ctaBlock(`${siteUrl}/quote/?code=FALL50`, "Book with FALL50", "Through October 31")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  {
+    key: "p20-going-quiet",
+    subject: "last regular email from us",
+    preheader: "We will check in once a season from here.",
+    body: (siteUrl) => `
+      ${hero("Honest note", "We are going to stop emailing you every week.")}
+      ${para("You have had a lot of email from us and have not booked, which is fine. Timing is most of it. From here we will check in once a season, when there is something worth saying: heat coming on, spring windows, that kind of thing.")}
+      ${para("If you ever do want a clean, the site has the prices and the booking takes a minute. If you would rather just ask a question, reply to this and a person answers.")}
+      ${para("And if you would prefer no email at all, the unsubscribe link below works on the first click.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "Prices and booking", "Studio and 1BR from $175")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
 ];
 
 // ------------------------------------------------------------
@@ -429,5 +527,97 @@ export const CUSTOMER_TRACK: CampaignEmail[] = [
       ${featureRow("Anyone mid-move.", "Our move-in/move-out clean is built for empty apartments and is the reason deposits come back intact.")}
       ${featureRow("The chronically overbooked.", "A recurring plan is the version of this gift that keeps working — and runs 15 to 30% cheaper per clean.")}
       ${ctaBlock(`${siteUrl}/quote/`, "Or book your own next clean", "Same-week availability, as always")}`,
+  },
+  // ── Second set (added 2026-09-24). Plainer voice, real details, no invented numbers. ──
+  {
+    key: "c13-your-friend-code",
+    subject: "you have a friend code now",
+    preheader: "$50 for a neighbor, $50 for you.",
+    body: (siteUrl) => `
+      ${hero("New this month", "You have a personal friend code.")}
+      ${para("It is in the text you got after your last clean, and in every booking confirmation from now on. It starts with MINT.")}
+      ${para("Anyone who books with it gets $50 off their first clean. Once their clean is done, you get $50 off your next one. Same building, same day is our favorite kind of booking, so a neighbor across the hall is the easiest referral there is.")}
+      ${para("Cannot find your code? Reply to this and we will send it.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "Book your next clean", "Or forward this to someone who needs one")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  {
+    key: "c14-after-the-heat",
+    subject: "the week after the heat comes on",
+    preheader: "Radiator dust lands on everything. Here is what we do about it.",
+    body: (siteUrl) => `
+      ${hero("Heat season", "The first week of heat is the dustiest week of the year.")}
+      ${para("Radiators bake whatever settled on them over the summer and send it into the air. You will see it on dark surfaces within days.")}
+      ${para("If your next clean lands in early October, we will dust and wipe the radiators as part of it. If you want the full reset, the deep clean add-on is $75 and covers baseboards, door frames, light fixtures and the top of everything.")}
+      ${para("Reply with the word DEEP and we will add it to your next visit. No new booking needed.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "Or book a separate deep clean", "Deep clean adds $75 to any size")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  {
+    key: "c15-request-cleaner",
+    subject: "you can ask for the same cleaner",
+    preheader: "Tell us who, and they are yours.",
+    body: (siteUrl) => `
+      ${hero("Good to know", "If you liked your cleaner, say so.")}
+      ${para("Recurring clients get the same cleaner every visit by default. If you book one clean at a time, you can still ask. Reply with the cleaner's first name and we will put them on your account, so the next booking goes to them first.")}
+      ${para("It makes a difference. A cleaner who knows your apartment does not spend the first twenty minutes finding things.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "Book your next clean", "Pick a frequency at checkout to lock in the same cleaner")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  {
+    key: "c16-why-photos",
+    subject: "why we send you photos",
+    preheader: "They are for you, and they are for us.",
+    body: (siteUrl) => `
+      ${hero("Behind the scenes", "What the photo summary is actually for.")}
+      ${para("After every clean you get photos of each room. They are for you, so you know what you are walking into. They are also how the owner checks every job before it is closed out.")}
+      ${para("If you ever look at those photos and something is off, reply to the text or to this email. We come back and fix it at no charge. That is not a marketing line, it is how the company runs, and it only works if you tell us.")}
+      ${para("The flip side is true too. If a clean was great, a Google review is the single most useful thing a client can do for a small company.")}
+      ${ctaBlock("https://g.page/r/CeslAughOLhZEBM/review", "Leave a Google review", "Takes about a minute")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  {
+    key: "c17-hosting-season",
+    subject: "hosting in November?",
+    preheader: "Thanksgiving week fills first. Pick your day now.",
+    body: (siteUrl) => `
+      ${hero("Planning ahead", "If people are coming over in November, book the clean now.")}
+      ${para("The two days before Thanksgiving and the week after are the first to fill every year. If you want a clean the day before guests arrive, or the morning after they leave, reply with the date and we will hold it.")}
+      ${para("A tip from the East 56th client who hosted 35 people this month: book the clean for the day after, not the day before. The place looks fine going in. It is the morning after that needs the help.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "Pick a November date", "Same cleaner if you are on a plan")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  {
+    key: "c18-something-lighter",
+    subject: "something lighter between cleans",
+    preheader: "Not everything needs the full checklist.",
+    body: (siteUrl) => `
+      ${hero("Between visits", "Sometimes you just need the place put back together.")}
+      ${para("A few clients have asked for something shorter between their regular cleans: surfaces, floors, kitchen and bathroom refreshed, beds made, trash out. About two hours, not the full checklist.")}
+      ${para("We do not list it on the site because it only makes sense for apartments we already know. If you are an existing client and want one, reply with the date and we will price it for your place.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "Or book a full clean", "Standard, deep, or move-out")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  {
+    key: "c19-tell-us-what-we-missed",
+    subject: "tell us what we missed",
+    preheader: "One reply fixes more than a hundred reviews.",
+    body: (siteUrl) => `
+      ${hero("A real question", "What did we miss last time?")}
+      ${para("Not a survey. One reply. The thing you noticed after the cleaner left and did not bother to mention. The corner, the shelf, the way the towels were folded.")}
+      ${para("Every one of those goes into the notes for your apartment so the next visit gets it right without you asking again. If it was big enough to bother you, we come back and fix it at no charge.")}
+      ${para("Hit reply. It comes straight to the owner.")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  {
+    key: "c20-december",
+    subject: "December fills up",
+    preheader: "Lock your recurring slot before the holidays.",
+    body: (siteUrl) => `
+      ${hero("Heads up", "December is the one month we turn people away.")}
+      ${para("Between holiday hosting and end-of-year move-outs, the last three weeks of the year fill faster than anything else on the calendar.")}
+      ${para("Recurring clients keep their day and their cleaner no matter what. If you have been booking one clean at a time and want a December slot, the simplest way to hold it is to go biweekly or monthly now. Biweekly saves 25%, monthly 15%, and you can pause after the holidays if you want.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "Set up a recurring plan", "Pick the frequency at checkout, cancel any time by replying")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
   },
 ];

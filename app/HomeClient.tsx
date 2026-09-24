@@ -282,7 +282,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 				<div className="sect-eye">What it feels like</div>
 				<h2>You always know<br /><em>where your clean stands.</em></h2>
 				<p className="sect-sub">Three automatic texts with every visit, then a photo summary the owner reviews before the job is closed. No wondering, no chasing.</p>
-				<div className="included-grid">
+				<div className="included-grid story-grid">
 					<div className="story-col">
 						<div className="mm-phone" aria-label="Example of the texts a client receives during a clean">
 							<div className="mm-phone-top"><span className="mm-phone-name">Manhattan Mint</span><span className="mm-phone-num">(914) 863-7902</span></div>
@@ -299,13 +299,13 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 								<div className="mm-bubble mm-bubble-out">Looks amazing, thank you!</div>
 							</div>
 						</div>
+					</div>
+					<div className="included-aside">
 						<ul className="story-points">
 							<li><strong>On the way, arrived, done.</strong> Sent automatically the moment your cleaner taps each step. You never have to ask.</li>
 							<li><strong>Photos before the job closes.</strong> The owner checks every photo summary. If something isn&apos;t right, we come back and fix it at no charge.</li>
 							<li><strong>Same cleaner every visit.</strong> Go recurring and the person who learned your apartment is the one who comes back.</li>
 						</ul>
-					</div>
-					<div className="included-aside">
 						<div className="price-card-big">
 							<div className="pcb-eye">Pricing</div>
 							<div className="pcb-mode-toggle">

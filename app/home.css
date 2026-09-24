@@ -246,3 +246,16 @@ h2 em{font-style:italic;color:var(--mint);}
 .story-points li::before{content:"";position:absolute;left:0;top:.5rem;width:8px;height:8px;border-radius:50%;background:var(--mint);}
 .story-points strong{font-weight:500;}
 @media (max-width:900px){.mm-phone{max-width:100%;}}
+
+/* ── story + pricing composed as one unit ── */
+.story-grid{grid-template-columns:minmax(0,440px) minmax(0,1fr);gap:2.25rem;align-items:stretch;}
+.story-grid .story-col{gap:0;}
+.story-grid .mm-phone{max-width:none;height:100%;display:flex;flex-direction:column;padding:1.1rem 1.1rem 1.3rem;}
+.story-grid .mm-thread{flex:1;justify-content:center;gap:.55rem;}
+.story-grid .mm-bubble{font-size:.86rem;padding:.7rem .9rem;}
+.story-grid .mm-photo{padding:.5rem .6rem;font-size:.66rem;}
+.story-grid .included-aside{display:flex;flex-direction:column;gap:1.4rem;}
+.story-grid .story-points{gap:.75rem;padding:.2rem 0 .2rem;}
+.story-grid .story-points li{font-size:.88rem;}
+.story-grid .price-card-big{margin-top:auto;}
+@media (max-width:900px){.story-grid{grid-template-columns:1fr;}.story-grid .mm-phone{height:auto;}}

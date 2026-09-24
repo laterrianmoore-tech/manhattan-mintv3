@@ -23,7 +23,6 @@ export default function EmailCaptureModal() {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [status, setStatus] = useState<Status>("idle");
-  const [showEmailForm, setShowEmailForm] = useState(false);
   const [copied, setCopied] = useState(false);
   const promo = fallPromoActive();
   const daysLeft = Math.max(0, Math.ceil((new Date(`${FALL_PROMO_END}T23:59:59`).getTime() - Date.now()) / 86400000));
@@ -275,6 +274,13 @@ export default function EmailCaptureModal() {
         .fp-ticket-copy{grid-column:2;grid-row:1/3;color:#f0a24a;font-size:.72rem;white-space:nowrap;}
         .fp-cta{display:flex;align-items:center;justify-content:center;gap:.6rem;width:100%;margin-top:.7rem;padding:.95rem 1rem;background:linear-gradient(180deg,#f0a24a,#d97f2b);color:#1a1208;border-radius:10px;font-weight:600;font-size:.92rem;text-decoration:none;box-shadow:0 8px 24px rgba(240,162,74,.28);transition:transform .15s,box-shadow .15s;}
         .fp-cta:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(240,162,74,.36);}
+        .fp-form{display:flex;flex-direction:column;gap:.55rem;}
+        .fp-input{padding:.85rem 1rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:10px;color:#fff;font-size:.9rem;font-family:inherit;outline:none;width:100%;}
+        .fp-input::placeholder{color:rgba(255,255,255,.4);}
+        .fp-input:focus{border-color:#f0a24a;background:rgba(240,162,74,.06);}
+        .fp-cta-btn{border:none;cursor:pointer;font-family:inherit;margin-top:.25rem;}
+        .fp-cta-btn:disabled{opacity:.7;cursor:wait;transform:none;}
+        .fp-under{color:rgba(255,255,255,.45);font-size:.74rem;line-height:1.5;margin:.7rem 0 0;}
         .fp-link{display:block;margin:.85rem auto 0;background:none;border:none;color:rgba(255,255,255,.5);font-size:.78rem;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-family:inherit;padding:0;}
         .fp-link:hover{color:rgba(255,255,255,.8);}
         .fp-fine{color:rgba(255,255,255,.28);font-size:.64rem;line-height:1.6;margin:1rem 0 0;text-align:center;}
@@ -286,12 +292,24 @@ export default function EmailCaptureModal() {
       <div style={s.modal} className={promo ? "mm-modal-promo" : undefined}>
         <button style={s.dismiss} onClick={dismiss} aria-label="Close">✕</button>
 
-        {status === "success" ? (
+        {status === "success" && promo ? (
+          <div className="fp">
+            <div className="fp-kicker"><span className="fp-kicker-dot" />You&apos;re in</div>
+            <h2 className="fp-title">Here&apos;s your code.<br /><em>It&apos;s in your inbox too.</em></h2>
+            <p className="fp-sub">Use it on the booking page before October 31. Card is only charged after the clean.</p>
+            <button type="button" className="fp-ticket" onClick={copyCode} aria-label="Copy code FALL50">
+              <span className="fp-ticket-label">Your code</span>
+              <span className="fp-ticket-code">{FALL_CODE}</span>
+              <span className="fp-ticket-copy">{copied ? "Copied ✓" : "Tap to copy"}</span>
+            </button>
+            <a href={`/quote/?code=${FALL_CODE}`} className="fp-cta">Book my fall clean<span aria-hidden="true">→</span></a>
+          </div>
+        ) : status === "success" ? (
           <div style={{ textAlign: "center", padding: "1.5rem 0" }}>
             <div style={{ fontSize: "2rem", color: "#1D9E75", marginBottom: "1rem" }}>✓</div>
             <div style={{ ...s.badgeTxt, display: "block", marginBottom: "1rem" }}>You&apos;re in</div>
             <div style={s.headline}>Check your inbox.</div>
-            <div style={s.sub}>Your ${promo ? FALL_AMOUNT : 25} discount code is on its way.</div>
+            <div style={s.sub}>Your $25 discount code is on its way.</div>
           </div>
         ) : promo ? (
           <div className="fp">
@@ -316,24 +334,15 @@ export default function EmailCaptureModal() {
               if you go recurring, photo summary when we&apos;re done. Ends October 31.
             </p>
 
-            {!showEmailForm ? (
-              <>
-                <button type="button" className="fp-ticket" onClick={copyCode} aria-label="Copy code FALL50">
-                  <span className="fp-ticket-label">Your code</span>
-                  <span className="fp-ticket-code">{FALL_CODE}</span>
-                  <span className="fp-ticket-copy">{copied ? "Copied ✓" : "Tap to copy"}</span>
-                </button>
-                <a href={`/quote/?code=${FALL_CODE}`} className="fp-cta">
-                  Book my fall clean
-                  <span aria-hidden="true">→</span>
-                </a>
-                <button type="button" className="fp-link" onClick={() => setShowEmailForm(true)}>
-                  Not ready today? Email me the code
-                </button>
-              </>
-            ) : (
-              emailForm
-            )}
+            <form onSubmit={submit} className="fp-form">
+              <input type="text" placeholder="First name (optional)" value={name} onChange={(e) => setName(e.target.value)} className="fp-input" />
+              <input type="email" placeholder="Your email" required value={email} onChange={(e) => setEmail(e.target.value)} className="fp-input" />
+              <button type="submit" disabled={status === "loading"} className="fp-cta fp-cta-btn">
+                {status === "loading" ? "One second..." : `Send me my $${FALL_AMOUNT} code`}
+                {status === "loading" ? null : <span aria-hidden="true">→</span>}
+              </button>
+            </form>
+            <p className="fp-under">The code lands in your inbox and on this screen. No spam, just the occasional note from a small Manhattan company.</p>
 
             {status === "error" && (
               <div style={{ color: "#ff8f7a", fontSize: "0.75rem", marginTop: "0.75rem", textAlign: "center" }}>
@@ -342,8 +351,7 @@ export default function EmailCaptureModal() {
             )}
 
             <p className="fp-fine">
-              First clean only · Manhattan apartments · book by Oct 31, 2026
-              {showEmailForm ? " · By subscribing you agree to occasional emails from Manhattan Mint NYC LLC. Unsubscribe any time." : ""}
+              First clean only · Manhattan apartments · book by Oct 31, 2026 · By subscribing you agree to occasional emails from Manhattan Mint NYC LLC. Unsubscribe any time.
             </p>
           </div>
         ) : (
