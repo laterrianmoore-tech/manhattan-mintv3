@@ -66,13 +66,13 @@ export const PROSPECT_TRACK: CampaignEmail[] = [
   },
   {
     key: "p03-social-proof",
-    subject: "Why 500+ Manhattan apartments trust us",
+    subject: "Every one of our Google reviews is five stars. Here's why.",
     preheader: "Every Google review five stars — here's what's behind that.",
     body: (siteUrl) => `
       ${hero(
         "Why Manhattan Mint",
         "Five stars isn't an accident. It's a checklist.",
-        "Anyone can promise a great clean. We built a company around making it repeatable — five hundred apartments in, our Google rating is still a perfect 5.0. This is the system behind it.",
+        "Anyone can promise a great clean. We built a small, owner-run company around making it repeatable, and every Google review we have is five stars. This is the system behind it.",
       )}
       ${featureRow("Vetted before they ever see your door.", "Every cleaner is background-checked, insured, and trained to our standard before their first booking. We work exclusively in Manhattan, so our team knows co-op rules, doormen, service elevators, and tight pre-war layouts cold.")}
       ${featureRow("A COI for your building, handled.", "If your building requires a certificate of insurance, we provide it — most managements have ours on file already. No back-and-forth between you, us, and your super.")}
