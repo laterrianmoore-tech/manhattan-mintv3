@@ -80,6 +80,7 @@ function discountRateForFrequency(frequency: Frequency) {
 // under the flat amount, it discounts nothing.
 const FLAT_PRICE_COUPONS: Record<string, number> = {
   MINT150: 150,
+  MINT200: 200,
   MINT250: 250,
   MINT350: 350,
   // Free clean — total drops to $0 for the first visit. The card is still
