@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Sparkles, Truck, Boxes, PanelsTopLeft, Refrigerator, FolderKanban, Shirt, ShieldCheck } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import { CardElement, Elements, useElements, useStripe } from "@stripe/react-stripe-js";
-import { isReferralCode, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT } from "@/lib/referral";
+import { isReferralCode, isSecondCleanCode, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT, SECOND_PROMO_CODE } from "@/lib/referral";
 
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
@@ -93,8 +93,14 @@ const FLAT_PRICE_COUPONS: Record<string, number> = {
   LIAMFREE: 0,
 };
 
-function couponDiscount(couponCode: string, subtotalAfterFrequency: number) {
+function couponDiscount(couponCode: string, subtotalAfterFrequency: number, standardPortion: number = subtotalAfterFrequency) {
   const normalized = couponCode.trim().toUpperCase();
+  // SECOND: the first clean is full price; the reward is the free second clean
+  // (texted as a personal FREE code when this one completes).
+  if (normalized === SECOND_PROMO_CODE) return 0;
+  // FREExxxxxx: the second clean itself. The standard clean (base + bathrooms)
+  // is free; extras stay full price. Server verifies eligibility.
+  if (isSecondCleanCode(normalized)) return Math.min(standardPortion, subtotalAfterFrequency);
   const flat = FLAT_PRICE_COUPONS[normalized];
   if (flat !== undefined) return Math.max(0, subtotalAfterFrequency - flat);
   // Friend codes (MINT + 6 hex, minted per customer): $50 off a first clean.
@@ -225,7 +231,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
 
     // A friend's referral link lands here as /quote/?code=MINTxxxxxx.
     const urlCode = (new URLSearchParams(window.location.search).get("code") || "").trim().toUpperCase();
-    if (urlCode && (isReferralCode(urlCode) || urlCode === "FALL50")) setReferralBanner(urlCode);
+    if (urlCode && (isReferralCode(urlCode) || isSecondCleanCode(urlCode) || urlCode === "FALL50" || urlCode === SECOND_PROMO_CODE)) setReferralBanner(urlCode);
 
     setForm((prev) => ({
       ...prev,
@@ -269,7 +275,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
     const extrasTotal = extrasCatalog.reduce((sum, item) => sum + (form.extras[item.key] ? item.price : 0), 0);
     const subtotal = Math.max(0, base + bathsAdd + extrasTotal);
     const frequencyDiscount = Math.round(subtotal * discountRateForFrequency(form.frequency));
-    const coupon = couponDiscount(form.couponCode, subtotal);
+    const coupon = couponDiscount(form.couponCode, subtotal, hourlySelection ? 0 : base + bathsAdd);
     const total = Math.max(0, subtotal - coupon);
     const nextCleanTotal = Math.max(0, subtotal - frequencyDiscount);
 
@@ -628,6 +634,10 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
                 <div style={{ marginBottom: ".75rem", border: "1px solid rgba(29,158,117,.25)", background: "var(--mint-light)", color: "var(--mint-dark)", borderRadius: 10, padding: ".8rem .9rem", fontSize: ".85rem" }}>
                   {referralBanner === "FALL50"
                     ? "Fall promo applied: $50 off your first clean with code FALL50. Book by October 31."
+                    : referralBanner === SECOND_PROMO_CODE
+                    ? "Second Clean on Us is applied. Book this first clean at the regular price; when it's done we'll text you a code for a free standard clean of the same apartment, good for 60 days."
+                    : isSecondCleanCode(referralBanner)
+                    ? `Your free second clean: code ${referralBanner} takes the standard clean off this booking. Any extras you add are priced normally.`
                     : `A friend sent you $${REFERRAL_FRIEND_DISCOUNT} off your first clean. Code ${referralBanner} is applied below, and they get $${REFERRAL_REFERRER_CREDIT} off their next clean once yours is done.`}
                 </div>
               ) : null}

@@ -50,10 +50,11 @@ export interface Database {
           stripe_customer_id: string | null;
           assigned_cleaner_id: string | null;
           calendar_event_id: string | null;
+          completed_at: string | null;
           created_at: string;
           updated_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["bookings"]["Row"], "id" | "created_at" | "updated_at" | "assigned_cleaner_id" | "calendar_event_id"> & {
+        Insert: Omit<Database["public"]["Tables"]["bookings"]["Row"], "id" | "created_at" | "updated_at" | "assigned_cleaner_id" | "calendar_event_id" | "completed_at"> & {
           id?: string;
           assigned_cleaner_id?: string | null;
           calendar_event_id?: string | null;

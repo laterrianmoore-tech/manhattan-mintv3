@@ -4,7 +4,7 @@ import { google } from "googleapis";
 import Stripe from "stripe";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { sendSms } from "@/lib/openphone";
-import { isReferralCode, referralCodeFor, referralLink, publicSiteUrl, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT } from "@/lib/referral";
+import { isReferralCode, referralCodeFor, referralLink, publicSiteUrl, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT, isSecondCleanCode, secondCleanCodeFor, SECOND_PROMO_CODE, SECOND_PROMO_END, SECOND_WINDOW_DAYS } from "@/lib/referral";
 
 export const maxDuration = 30;
 
@@ -119,7 +119,7 @@ export async function POST(req: Request) {
     // already has a real booking (confirmed, in progress, or completed), reject
     // so the discount can't be reused on repeat cleans. MINTFREE makes the
     // whole first clean $0, so it especially must not be reusable.
-    const FIRST_CLEAN_COUPONS = ["MINT25", "WELCOME15", "MINTFREE", "FB25", "LI25", "FALL50"];
+    const FIRST_CLEAN_COUPONS = ["MINT25", "WELCOME15", "MINTFREE", "FB25", "LI25", "FALL50", SECOND_PROMO_CODE];
     // Fall promo: $50 off a first clean, bookings placed through Oct 31, 2026.
     const FALL_PROMO_END = "2026-10-31";
     const couponNormalized = (body.couponCode || "").trim().toUpperCase();
@@ -157,6 +157,35 @@ export async function POST(req: Request) {
         { error: "Code FALL50 expired on October 31. Remove it to book at the regular price, or ask us about recurring plans that save up to 30% on every clean." },
         { status: 400 },
       );
+    }
+
+    if (couponNormalized === SECOND_PROMO_CODE && new Date().toISOString().slice(0, 10) > SECOND_PROMO_END) {
+      return NextResponse.json(
+        { error: "Second Clean on Us ended on October 31. Remove the code to book at the regular price." },
+        { status: 400 },
+      );
+    }
+
+    // ── Free second clean (FREExxxxxx) guard ───────────────────────────────
+    // Issued by text when a SECOND booking completes. Valid only for that
+    // customer, at the same address, within SECOND_WINDOW_DAYS of that clean,
+    // and once. The discount covers the standard clean; extras are paid.
+    if (isSecondCleanCode(couponNormalized)) {
+      const { data: allCustomers } = await supabaseAdmin.from("customers").select("id, email, address, apt_no");
+      const owner = (allCustomers ?? []).find((c) => secondCleanCodeFor(c.id) === couponNormalized);
+      const fail = (msg: string) => NextResponse.json({ error: msg }, { status: 400 });
+      if (!owner) return fail(`Code ${couponNormalized} isn't one we recognize. Use the code from your Manhattan Mint text, or remove it to book at the regular price.`);
+      if ((owner.email || "").toLowerCase() !== body.email.trim().toLowerCase()) return fail(`Code ${couponNormalized} belongs to a different account. Book with the same email you used for your first clean.`);
+      const norm = (v: string | null | undefined) => (v || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (norm(owner.address).slice(0, 12) !== norm(body.address).slice(0, 12)) return fail("Your free second clean is for the same apartment as your first. Use the same address, or remove the code to book a different place at the regular price.");
+      const { data: firsts } = await supabaseAdmin.from("bookings").select("id, completed_at, service_date").eq("customer_id", owner.id).eq("coupon_code", SECOND_PROMO_CODE).eq("status", "completed").order("completed_at", { ascending: false }).limit(1);
+      const first = firsts?.[0];
+      if (!first) return fail("Your free second clean unlocks once your first clean is complete. Check back after it's done, or remove the code to book now at the regular price.");
+      const doneAt = new Date(first.completed_at || `${first.service_date}T12:00:00`);
+      const deadline = new Date(doneAt.getTime() + SECOND_WINDOW_DAYS * 86400000);
+      if (new Date(`${body.serviceDate}T12:00:00`) > deadline) return fail(`Your free second clean had to be booked for a date by ${deadline.toISOString().slice(0, 10)}, within ${SECOND_WINDOW_DAYS} days of your first. Remove the code to book at the regular price, or text us and we'll see what we can do.`);
+      const { data: used } = await supabaseAdmin.from("bookings").select("id").eq("coupon_code", couponNormalized).neq("status", "cancelled").limit(1);
+      if (used?.length) return fail(`Code ${couponNormalized} has already been used for your free second clean.`);
     }
 
     // ── Friend (referral) code guard ────────────────────────────────────────
