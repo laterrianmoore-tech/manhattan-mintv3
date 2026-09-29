@@ -57,6 +57,36 @@
 	background: #fff;
 }
 
+.cs-index-card.has-img {
+	padding-top: 0;
+	overflow: hidden;
+}
+
+.cs-card-img {
+	display: block;
+	position: relative;
+	aspect-ratio: 16 / 9;
+	margin: 0 -2.5rem 1.75rem;
+	background: var(--mint-light, #e1f5ee);
+}
+
+.cs-card-img img {
+	object-fit: cover;
+}
+
+.cs-hero-img {
+	position: relative;
+	aspect-ratio: 16 / 9;
+	margin: 0 0 3rem;
+	border-radius: 3px;
+	overflow: hidden;
+	background: var(--mint-light, #e1f5ee);
+}
+
+.cs-hero-img img {
+	object-fit: cover;
+}
+
 .cs-index-card:hover {
 	border-color: var(--mint-mid, #5dcaa5);
 	transform: translateY(-2px);

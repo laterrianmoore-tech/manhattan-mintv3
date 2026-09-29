@@ -28,11 +28,18 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 		"Standard clean": 0,
 		"Deep clean (+$75)": 75,
 		"Move-in / Move-out (+$100)": 100,
-		"Recurring - save 30%": -0.3,
+	};
+	// Same tiers the quote page applies (discountRateForFrequency in app/quote/page.tsx).
+	const frequencyDiscounts: Record<string, { rate: number; quoteValue: string }> = {
+		"One-time": { rate: 0, quoteValue: "One-Time" },
+		"Weekly — save 30%": { rate: 0.3, quoteValue: "Weekly" },
+		"Bi-weekly — save 25%": { rate: 0.25, quoteValue: "Bi-Weekly" },
+		"Monthly — save 15%": { rate: 0.15, quoteValue: "Monthly" },
 	};
 	const [selectedTier, setSelectedTier] = useState(tiers[0]);
 	const [pricingMode, setPricingMode] = useState<"flat" | "hourly">("flat");
 	const [pricingServiceType, setPricingServiceType] = useState("Standard clean");
+	const [pricingFrequency, setPricingFrequency] = useState("One-time");
 	const [weeklyBookings, setWeeklyBookings] = useState(17);
 	const [hourlyHours, setHourlyHours] = useState(3);
 	const [hourlyCleaners, setHourlyCleaners] = useState(2);
@@ -48,12 +55,10 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 
 	const effectiveFlatPrice = (() => {
 		if (selectedTier.amount === null) return "Custom";
-		if (pricingServiceType === "Recurring - save 30%") {
-			return `$${Math.round(selectedTier.amount * 0.85)}`;
-		}
 		const adjustment = serviceAdjustments[pricingServiceType];
-		const total = selectedTier.amount + (typeof adjustment === "number" ? adjustment : 0);
-		return `$${total}`;
+		const base = selectedTier.amount + (typeof adjustment === "number" ? adjustment : 0);
+		const discount = frequencyDiscounts[pricingFrequency]?.rate ?? 0;
+		return `$${Math.round(base * (1 - discount))}`;
 	})();
 
 	const effectiveHourlyPrice = `$${hourlyHours * hourlyCleaners * hourlyRates.ratePerCleaner}`;
@@ -99,6 +104,8 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 				apartmentSize: `${selectedTier.name} — ${selectedTier.price}`,
 				serviceType: pricingServiceType,
 			}));
+			// The quote page picks this up so the frequency they priced is the one they book.
+			localStorage.setItem("mm_frequency", frequencyDiscounts[pricingFrequency]?.quoteValue ?? "One-Time");
 			return;
 		}
 
@@ -319,7 +326,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 					</div>
 					<div className="included-aside">
 						<div className="price-card-big">
-							<div className="pcb-eye">Pricing</div>
+							<div className="pcb-eye">Your exact price — no details needed</div>
 							<div className="pcb-mode-toggle">
 								<button
 									type="button"
@@ -358,7 +365,16 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 										<option>Standard clean</option>
 										<option>Deep clean (+$75)</option>
 										<option>Move-in / Move-out (+$100)</option>
-										<option>Recurring - save 30%</option>
+									</select>
+									<select
+										className="pcb-select"
+										value={pricingFrequency}
+										onChange={(e) => setPricingFrequency(e.target.value)}
+										aria-label="How often"
+									>
+										{Object.keys(frequencyDiscounts).map((f) => (
+											<option key={f}>{f}</option>
+										))}
 									</select>
 								</div>
 							) : (
@@ -376,11 +392,11 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 									</select>
 								</div>
 							)}
-							<div className="pcb-from">Starting from</div>
+							<div className="pcb-from">{pricingMode === "flat" && effectiveFlatPrice !== "Custom" ? (pricingFrequency === "One-time" ? "Your flat rate" : "Your flat rate, per visit") : "Starting from"}</div>
 							<div className="pcb-price">
 								{(pricingMode === "flat" ? effectiveFlatPrice : effectiveHourlyPrice).replace("$", "")}
 							</div>
-							<div className="pcb-note">All supplies included · No hidden fees</div>
+							<div className="pcb-note">All supplies included · No hidden fees · No card needed to see a price</div>
 							<div className="pcb-detail">
 								{pricingMode === "flat"
 									? "Deep clean +$75 · Move-in/out +$100 · Recurring saves up to 30%"
@@ -583,6 +599,36 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 					<div className="faq-item"><div className="faq-q">How do I cancel or reschedule?</div><div className="faq-a">Text or email us any time. No cancellation fees, no contracts. We only ask for 24 hours notice when possible.</div></div>
 					<div className="faq-item"><div className="faq-q">Do you offer same-day cleaning in NYC?</div><div className="faq-a">Online booking guarantees next-day at the earliest, but same-day cleans are often possible when a cleaner has an opening — call or text <a href="tel:9148637902">(914) 863-7902</a> and we&apos;ll tell you straight away if we can fit you in today.</div></div>
 					<div className="faq-item"><div className="faq-q">Are your products safe for kids and pets?</div><div className="faq-a">Yes — we use eco-friendly, non-toxic cleaning products by default on every visit, at no extra charge. If you prefer a specific product for certain surfaces, leave it out and a note, and we&apos;ll use yours.</div></div>
+				</div>
+			</section>
+
+			{/* NOT FOR EVERYONE */}
+			<section className="section notfor-bg" id="not-for-everyone">
+				<div className="notfor-inner">
+					<div className="sect-eye">A straight answer</div>
+					<h2>We&apos;re not for everyone.<br /><em>And that&apos;s on purpose.</em></h2>
+					<p className="notfor-lede">We are not the cheapest cleaners in Manhattan, and we don&apos;t try to be. Here&apos;s how to tell in ten seconds whether we&apos;re the right call.</p>
+					<div className="notfor-grid">
+						<div className="notfor-col notfor-no">
+							<div className="notfor-head">Probably not us if you want…</div>
+							<ul>
+								<li>The lowest price on an app, whoever shows up</li>
+								<li>A cash job with no insurance behind it</li>
+								<li>A different stranger in your home each time</li>
+								<li>To bring your own supplies and hope for the best</li>
+							</ul>
+						</div>
+						<div className="notfor-col notfor-yes">
+							<div className="notfor-head">Exactly us if you want…</div>
+							<ul>
+								<li>The same background-checked cleaner every visit</li>
+								<li>A bonded, insured company your doorman already knows</li>
+								<li>One flat rate, eco-friendly supplies included</li>
+								<li>Photos after every clean, and a free re-clean if it&apos;s not right</li>
+							</ul>
+						</div>
+					</div>
+					<button className="btn-primary" onClick={() => scrollToSection("booking")}>Sounds like me — book a clean →</button>
 				</div>
 			</section>
 

@@ -225,6 +225,9 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
     const storedService = localStorage.getItem("mm_service") || "";
     const parsedBedrooms = parseBedroomsFromStoredSize(storedSize);
     const parsedHourly = parseHourlySelection(storedService);
+    // Frequency chosen on the home-page price card — keep the price they saw.
+    const storedFrequency = localStorage.getItem("mm_frequency") || "";
+    const parsedFrequency = (frequencies as readonly string[]).includes(storedFrequency) ? (storedFrequency as Frequency) : null;
 
     setSourceSelection(parsedHourly ? storedService : storedSize);
     setHourlySelection(parsedHourly);
@@ -241,6 +244,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
       phone: prev.phone || phone,
       address: prev.address || address,
       bedrooms: parsedBedrooms ?? prev.bedrooms,
+      frequency: parsedFrequency ?? prev.frequency,
       couponCode: prev.couponCode || urlCode,
       extras: {
         ...prev.extras,

@@ -31,6 +31,27 @@ export const reviews: Review[] = [
 		source: "Google",
 	},
 	{
+		author: "Lucas McNamara",
+		rating: 5,
+		text: "Manhattan Mint completely exceeded my expectations. I've used a few cleaning services in the city and this was by far the most thorough and professional. Every corner was spotless, they were on time, and the communication leading up to the appointment was seamless. My apartment hasn't felt this fresh in months. Highly recommend if you want a premium, reliable clean without the hassle",
+		date: "July 2026",
+		source: "Google",
+	},
+	{
+		author: "Josef Szende",
+		rating: 5,
+		text: "Cleaned exactly as we asked for! Spotless!",
+		date: "August 2026",
+		source: "Google",
+	},
+	{
+		author: "Lauren Elia",
+		rating: 5,
+		text: "The best in the business. Excellent work cannot recommend more",
+		date: "July 2026",
+		source: "Google",
+	},
+	{
 		author: "Ethan Kaplan",
 		rating: 5,
 		text: "Found my new cleaning service. They came on time and did a great job. Definitely recommend if you live in the city.",

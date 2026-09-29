@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { blogPosts } from "./data";
 import "../case-studies/case-studies.css";
@@ -49,7 +50,12 @@ export default function BlogIndexPage() {
 
 			<div className="cs-index-grid">
 				{blogPosts.map((post) => (
-					<Link key={post.slug} href={`/blog/${post.slug}`} className="cs-index-card">
+					<Link key={post.slug} href={`/blog/${post.slug}`} className={`cs-index-card${post.image ? " has-img" : ""}`}>
+						{post.image && (
+							<span className="cs-card-img">
+								<Image src={post.image.src} alt={post.image.alt} fill sizes="(max-width: 760px) 100vw, 400px" />
+							</span>
+						)}
 						<span className="cs-meta">
 							{post.tag} ·{" "}
 							{new Date(`${post.publishedAt}T12:00:00Z`).toLocaleDateString("en-US", {

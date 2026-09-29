@@ -7,6 +7,9 @@ export type BlogPost = {
 	publishedAt: string; // ISO date
 	updatedAt?: string; // ISO date — set when a post is substantially revised
 	excerpt: string;
+	// Optional hero photo. Put the file in /public/blog/ and reference it as "/blog/<file>".
+	// Shown at the top of the article and as the thumbnail on the blog index.
+	image?: { src: string; alt: string };
 	intro: string[];
 	sections: {
 		heading: string;
@@ -22,6 +25,77 @@ export type BlogPost = {
 };
 
 export const blogPosts: BlogPost[] = [
+	{
+		slug: "fall-cleaning-checklist-manhattan-apartment",
+		metaTitle: "Fall Cleaning Checklist for a Manhattan Apartment",
+		title: "The fall reset: what to clean in a Manhattan apartment before the heat comes on",
+		metaDescription:
+			"Radiators switch on October 1, windows close, and the holidays are eight weeks out. A room-by-room fall cleaning checklist for Manhattan apartments — what to do now, what to skip, and when to book the deep clean.",
+		tag: "Seasonal upkeep",
+		publishedAt: "2026-09-29",
+		excerpt:
+			"Heat season starts October 1. The weeks before it are the best window all year to reset a Manhattan apartment — radiators, windows, closets, and the kitchen before the holidays.",
+		intro: [
+			"There is a two-week stretch every fall when a Manhattan apartment is easiest to get truly clean. The summer humidity has broken, the windows can still be open, and the radiators haven't switched on yet. Once they do — October 1, by city law — every speck of dust left in the apartment starts moving, and whatever is sitting on the radiator fins gets baked on for the next eight months.",
+			"This is the checklist we work through for our recurring clients in late September and early October. It builds on our [season-by-season guide](/blog/how-nyc-weather-affects-apartment-cleanliness) — that article explains why Manhattan dirt runs on a calendar; this one is the fall to-do list, room by room, in the order that actually matters.",
+		],
+		sections: [
+			{
+				heading: "1. Radiators first, before October 1",
+				paragraphs: [
+					"If you do one thing on this list, do this. Steam radiators spend the summer collecting a fine layer of dust between the fins. The first week the heat runs, that dust cooks — that's the faint burnt smell in early October — and the convection currents off the radiator carry the rest around the room. Clean them cold and the whole heating season starts from zero.",
+					"Work with the radiator off and fully cool. Vacuum the fins with a brush attachment, then run a long, thin radiator brush (or a microfiber cloth wrapped around a ruler) between each section. Finish with a damp cloth on the top and the floor underneath — the strip of floor under a radiator is usually the dustiest six inches in the apartment. In a pre-war building, the technique section of our [pre-war cleaning guide](/blog/how-to-clean-pre-war-apartments) covers cast-iron units in more detail.",
+				],
+			},
+			{
+				heading: "2. Windows: one last open-window clean",
+				paragraphs: [
+					"Fall is the only season you can clean windows properly with them open and not pay for it in pollen or humidity. Wash the glass inside, pull the screens and rinse them in the tub, and wipe the tracks and sills — summer's grit collects in the lower track and is the reason windows stick in November.",
+					"Then check the seal. Run a hand along the frame on a breezy day; if you feel air, a strip of rope caulk or a foam gasket now saves a drafty winter and keeps the radiator from working overtime. In avenue-facing apartments this is also when the black street grime on the outside of the sill is softest — a damp cloth in September does what a scraper does in January.",
+				],
+			},
+			{
+				heading: "3. The closet swap, done in the right order",
+				paragraphs: [
+					"Swapping summer clothes for winter ones is the messiest fall job, and most people do it backwards. Clear the closet first, vacuum the floor and wipe the shelves while they're empty, then bring the winter clothes in. Doing it in that order takes fifteen extra minutes and means you're not storing sweaters on a summer's worth of dust.",
+					"Two Manhattan-specific notes. Storage bins that lived under the bed or on a high shelf all summer have a film on them — wipe the lids before you open them or the dust ends up on the clothes. And if anything wool is going into storage, it goes in clean; moths are drawn to skin oils and food traces, not to the wool itself.",
+				],
+			},
+			{
+				heading: "4. Allergens: what fall actually brings in",
+				paragraphs: [
+					"Spring gets the blame, but for a lot of New Yorkers fall is the worse allergy season. Ragweed pollen runs from August into October, and once leaves start coming down, leaf mold spores hang in the air along every tree-lined block. Both come in through open windows and settle on soft surfaces.",
+					"The fix is fabric, not hard surfaces: wash the curtains or at least run a lint roller over them, vacuum upholstered furniture including under the cushions, and wash bedding on hot the week the windows close for good. If anyone in the apartment wakes up congested in October, this section is why.",
+				],
+			},
+			{
+				heading: "5. Kitchen: the pre-holiday deep clean",
+				paragraphs: [
+					"Thanksgiving is roughly eight weeks after the heat comes on, and the oven you'll rely on for it has a summer of use behind it. Fall is when we schedule inside-the-oven and inside-the-fridge cleans for our recurring clients — early enough that the kitchen is reset before the entertaining season, late enough that it stays that way through it.",
+					"Beyond the oven: pull out whatever slides out (the toaster, the stand mixer, the knife block) and clean the counter behind it; wipe the tops of the upper cabinets, which collect a sticky film of cooking vapor and dust; and run a cycle with a dishwasher cleaner. None of this is glamorous, and all of it is what people notice when they come over in November.",
+				],
+			},
+			{
+				heading: "The fall schedule we run for recurring clients",
+				paragraphs: [
+					"For clients on a weekly or bi-weekly plan, fall isn't a separate project — it's spread across the regular visits so nothing turns into a weekend. Roughly, it looks like this:",
+				],
+				list: [
+					"Last two weeks of September: radiators, window tracks and screens, the strip of floor along the exterior walls.",
+					"First week of October: curtains, upholstery, bedding on hot — the windows-closing clean.",
+					"Mid-October: closet swap support and the high shelves that only get done when a closet is empty.",
+					"Late October to early November: the kitchen deep clean — oven, fridge, cabinet tops — before the first holiday guests.",
+					"Week before Thanksgiving: a standard clean timed for the day before company arrives.",
+				],
+			},
+		],
+		cta: {
+			heading: "Want the fall reset done for you?|We schedule it.",
+			body: "Book a deep clean before the heat comes on, or start a recurring plan and we'll spread the fall list across your regular visits — same cleaner every time, flat rates from $175, up to 30% off recurring. See how the schedule works in a real home in our",
+			caseStudySlug: "three-bedroom-family-reset-west-village",
+			caseStudyLabel: "West Village family reset case study",
+		},
+	},
 	{
 		slug: "how-nyc-weather-affects-apartment-cleanliness",
 		metaTitle: "How NYC Weather Affects Apartment Cleanliness",

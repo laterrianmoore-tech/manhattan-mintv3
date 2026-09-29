@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { blogPosts } from "../data";
@@ -99,6 +100,12 @@ export default async function BlogPostPage({ params }: Props) {
 					<span>{formatDate(post.publishedAt)}</span>
 					{post.updatedAt && <span>Updated {formatDate(post.updatedAt)}</span>}
 				</div>
+
+				{post.image && (
+					<figure className="cs-hero-img">
+						<Image src={post.image.src} alt={post.image.alt} fill sizes="(max-width: 760px) 100vw, 720px" priority />
+					</figure>
+				)}
 
 				{post.intro.map((paragraph, index) => (
 					<p key={index}>{renderInline(paragraph)}</p>
