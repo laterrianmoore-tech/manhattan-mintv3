@@ -280,8 +280,18 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
     const subtotal = Math.max(0, base + bathsAdd + extrasTotal);
     const frequencyDiscount = Math.round(subtotal * discountRateForFrequency(form.frequency));
     const coupon = couponDiscount(form.couponCode, subtotal, hourlySelection ? 0 : base + bathsAdd);
-    const total = Math.max(0, subtotal - coupon);
-    const nextCleanTotal = Math.max(0, subtotal - frequencyDiscount);
+    // Deep-clean starter: start a weekly or bi-weekly plan and the +$75 deep
+    // clean on the first visit is free. Recurring visits after that are
+    // standard cleans at the recurring rate, so the extra never carries over.
+    const deepIntro =
+      !hourlySelection && form.extras.deepCleaning && (form.frequency === "Weekly" || form.frequency === "Bi-Weekly")
+        ? Math.min(75, Math.max(0, subtotal - coupon))
+        : 0;
+    const total = Math.max(0, subtotal - coupon - deepIntro);
+    // Visits after the first are standard cleans, so the starter deep clean
+    // never rolls into the recurring price.
+    const recurringSubtotal = deepIntro ? Math.max(0, subtotal - 75) : subtotal;
+    const nextCleanTotal = Math.max(0, recurringSubtotal - Math.round(recurringSubtotal * discountRateForFrequency(form.frequency)));
 
     return {
       base,
@@ -290,6 +300,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
       subtotal,
       frequencyDiscount,
       coupon,
+      deepIntro,
       total,
       nextCleanTotal,
     };
@@ -529,6 +540,15 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
                     </button>
                   ))}
                 </div>
+                {!hourlySelection && (
+                  <p style={{ marginTop: ".75rem", fontSize: ".78rem", lineHeight: 1.5, color: pricing.deepIntro ? "var(--mint-dark)" : "#666", background: "var(--mint-light)", borderRadius: 8, padding: ".55rem .75rem" }}>
+                    {pricing.deepIntro
+                      ? "First deep clean is on us: the +$75 comes off this visit. From visit two, standard cleans at your recurring rate."
+                      : form.frequency === "Weekly" || form.frequency === "Bi-Weekly"
+                        ? "Add Deep Cleaning and it's free on this first visit — start your plan from a proper reset."
+                        : "Start weekly or bi-weekly and the deep clean on your first visit (+$75) is free."}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -763,6 +783,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
                 {!!pricing.bathsAdd && <div style={{ display: "flex", justifyContent: "space-between" }}><span>Bathrooms</span><span>+${pricing.bathsAdd}</span></div>}
                 {!!pricing.extrasTotal && <div style={{ display: "flex", justifyContent: "space-between" }}><span>Extras</span><span>+${pricing.extrasTotal}</span></div>}
                 {!!pricing.coupon && <div style={{ display: "flex", justifyContent: "space-between" }}><span>Coupon</span><span>-${pricing.coupon}</span></div>}
+                {!!pricing.deepIntro && <div style={{ display: "flex", justifyContent: "space-between", color: "var(--mint-dark)" }}><span>First deep clean free (recurring plan)</span><span>-${pricing.deepIntro}</span></div>}
               </div>
 
               {selectedExtras.length > 0 && (

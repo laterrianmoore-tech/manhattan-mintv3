@@ -19,7 +19,7 @@ export default function ServicesIndexPage() {
 				<em>One checklist.</em>
 			</h1>
 			<p className="cs-lede">
-				Everything we do runs on the 59-point Mint Mark checklist; the service you pick decides how far
+				Everything we do runs on the 59 details of the Mint Mark checklist; the service you pick decides how far
 				down it we go. Flat rates, supplies included, and your card is charged only after the clean.
 			</p>
 

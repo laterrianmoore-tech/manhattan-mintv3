@@ -322,6 +322,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 								<div className="tier"><div className="tier-pct">25%</div><div className="tier-name">Bi-weekly</div></div>
 								<div className="tier"><div className="tier-pct">15%</div><div className="tier-name">Monthly</div></div>
 							</div>
+							<p className="tier-bonus"><strong>Start weekly or bi-weekly</strong> and the deep clean on your first visit (+$75) is on us.</p>
 						</div>
 					</div>
 					<div className="included-aside">
@@ -507,7 +508,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 					<div className="sect-eye">The Manhattan Mint Guarantee</div>
 					<h2>Spot something we missed?<br /><em>We come back and fix it. Free.</em></h2>
 					<p className="guarantee-body">
-						Every clean is checked against the 59-point Mint Mark checklist, and the founder reviews the photo summary before the job is closed out. If anything still isn&apos;t right, tell us within 48 hours and we&apos;ll send a cleaner back to re-do it at no charge. No forms, no arguing, no hoops.
+						Every clean is checked against all 59 details on the Mint Mark checklist, and the founder reviews the photo summary before the job is closed out. If anything still isn&apos;t right, tell us within 48 hours and we&apos;ll send a cleaner back to re-do it at no charge. No forms, no arguing, no hoops.
 					</p>
 					<div className="guarantee-steps">
 						<div className="g-step"><span className="g-n">1</span><div><strong>Send a photo</strong><span>Text us within 48 hours of your clean.</span></div></div>

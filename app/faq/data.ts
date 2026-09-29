@@ -36,7 +36,7 @@ export const faqGroups: FaqGroup[] = [
 			},
 			{
 				q: "Do you offer discounts for recurring cleans?",
-				a: "Yes: 30% off weekly, 25% off bi-weekly, 15% off monthly, on every visit. Recurring clients also get the same cleaner each time and priority on their preferred day.",
+				a: "Yes: 30% off weekly, 25% off bi-weekly, 15% off monthly, on every visit from your second clean. Start a weekly or bi-weekly plan and the deep clean on your first visit (normally +$75) is free, so you begin from a proper reset. Recurring clients also get the same cleaner each time and priority on their preferred day.",
 			},
 			{
 				q: "Is there a first-time offer?",

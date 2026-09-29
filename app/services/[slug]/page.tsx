@@ -99,7 +99,7 @@ export default async function ServicePage({ params }: Props) {
 					<div className="sv-price-n">{page.price.from}</div>
 					<div className="sv-price-note">{page.price.note}</div>
 					<div className="sv-price-pts">
-						<strong>{points}-point</strong> Mint Mark checklist
+						<strong>{points} details</strong> on the Mint Mark checklist
 					</div>
 					<Link href="/#pricing" className="sv-price-btn">Price my apartment →</Link>
 				</aside>
@@ -115,7 +115,7 @@ export default async function ServicePage({ params }: Props) {
 			</section>
 
 			<section className="sv-section">
-				<h2 className="cs-section-head">What&apos;s included: all {points} points</h2>
+				<h2 className="cs-section-head">What&apos;s included: all {points} details</h2>
 				<p className="sv-sub">{tier.blurb} Every item below is checked off on every {page.name.toLowerCase()} visit.</p>
 				<div className="sv-rooms">
 					{rooms.map((r) => (

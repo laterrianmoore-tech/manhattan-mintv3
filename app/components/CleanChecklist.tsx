@@ -31,7 +31,7 @@ export default function CleanChecklist() {
 		<section className="section section-white" id="checklist">
 			<div className="sect-eye">The Mint Mark checklist</div>
 			<h2>Every clean earns<br /><em>the Mint Mark.</em></h2>
-			<p className="sect-sub">A mint mark is the small stamp that proves where a coin was made. Ours is the {counts["Move Out"]}-point checklist every cleaner works through, room by room &mdash; {counts.Standard} points on a Standard clean, {counts["Deep Clean"]} on a Deep Clean, all {counts["Move Out"]} on a Move Out. Pick a level to see exactly what&apos;s covered; anything greyed out is included in the higher level.</p>
+			<p className="sect-sub">A mint mark is the small stamp that proves where a coin was made. Ours is the checklist of {counts["Move Out"]} details every cleaner works through, room by room &mdash; {counts.Standard} on a Standard clean, {counts["Deep Clean"]} on a Deep Clean, all {counts["Move Out"]} on a Move Out. Pick a level to see exactly what&apos;s covered; anything greyed out is included in the higher level.</p>
 
 			<div className="ck-tabs" role="tablist" aria-label="Service level">
 				{TIERS.map((t) => (
@@ -44,7 +44,7 @@ export default function CleanChecklist() {
 						onClick={() => setTier(t.key)}
 					>
 						<span className="ck-tab-label">{t.label}</span>
-						<span className="ck-tab-price">{counts[t.key]}-point · {t.price}</span>
+						<span className="ck-tab-price">{counts[t.key]} details · {t.price}</span>
 					</button>
 				))}
 			</div>

@@ -36,7 +36,7 @@ export const servicePages: ServicePage[] = [
 		eyebrow: "Apartment cleaning · Manhattan",
 		h1: ["Apartment cleaning,", "done the Manhattan way."],
 		lede:
-			"A 35-point clean of every room, every visit, by a cleaner who's background-checked, insured and trained on our Mint Mark checklist. Supplies included, flat rate, and your card is only charged once the job's done.",
+			"Thirty-five details in every room, every visit, by a cleaner who's background-checked, insured and trained on our Mint Mark checklist. Supplies included, flat rate, and your card is only charged once the job's done.",
 		price: { from: "$175", note: "Studio / 1BR · $225 2BR · $275 3BR · custom for 4+" },
 		bestFor: [
 			"Weekly or bi-weekly upkeep so the apartment never gets away from you",
@@ -63,16 +63,16 @@ export const servicePages: ServicePage[] = [
 		slug: "deep-cleaning",
 		tier: "Deep Clean",
 		name: "Deep cleaning",
-		metaTitle: "Deep Cleaning NYC — 46-Point Reset for Manhattan Apartments",
+		metaTitle: "Deep Cleaning NYC — 46-Detail Reset for Manhattan Apartments",
 		metaDescription:
-			"Manhattan deep cleaning: a 46-point reset covering baseboards, grout, door frames, inside the microwave and everything a weekly clean skips. Standard price + $75, supplies included, re-clean guarantee.",
+			"Manhattan deep cleaning: a 46-detail reset covering baseboards, grout, door frames, inside the microwave and everything a weekly clean skips. Standard price + $75, supplies included, re-clean guarantee.",
 		eyebrow: "Deep cleaning · Manhattan",
 		h1: ["The reset your apartment", "actually needs."],
 		lede:
-			"Everything in a standard clean plus the 11 places a weekly clean doesn't reach: baseboards, door frames, grout, light switches, behind and under what moves, inside the microwave. It's the clean we recommend for a first visit, or whenever it's been a while.",
-		price: { from: "+$75", note: "On top of your flat rate · e.g. 1BR deep clean $250" },
+			"Everything in a standard clean plus the 11 details a weekly clean doesn't reach: baseboards, door frames, grout, light switches, behind and under what moves, inside the microwave. It's the clean we recommend for a first visit, or whenever it's been a while.",
+		price: { from: "+$75", note: "On top of your flat rate · e.g. 1BR deep clean $250 · Free on your first visit when you start a weekly or bi-weekly plan" },
 		bestFor: [
-			"A first visit, so recurring cleans start from a clean baseline",
+			"A first visit, so recurring cleans start from a clean baseline (and it's free when you start a weekly or bi-weekly plan)",
 			"Seasonal resets: before the heat comes on in October, or after winter",
 			"After a renovation, a long trip, or a stretch where cleaning slipped",
 			"Pre-war apartments, where radiators, mouldings and old tile hold dirt",
@@ -80,7 +80,7 @@ export const servicePages: ServicePage[] = [
 		howItWorks: [
 			{ title: "Pick 'Deep clean' when you price it", body: "Add it to any apartment size. The price updates instantly, and you can add inside-fridge or inside-cabinets if you want the full reset." },
 			{ title: "We allow the extra time", body: "A deep clean takes roughly half again as long as a standard clean. For larger homes we send two cleaners so it finishes in one visit." },
-			{ title: "Photos, then the charge", body: "Your cleaner works room by room through the 46 points. You get a photo summary at the end and the card is charged only after." },
+			{ title: "Photos, then the charge", body: "Your cleaner works room by room through all 46 details. You get a photo summary at the end and the card is charged only after." },
 		],
 		notIncluded: "A deep clean doesn't include inside the oven, fridge, cabinets or closets; those are extras or part of a move-out clean. Exterior windows, mold and post-construction dust are not something we take on.",
 		caseStudy: { slug: "pre-war-walk-up-deep-clean-upper-west-side", label: "Pre-war walk-up deep clean, Upper West Side" },
@@ -92,7 +92,7 @@ export const servicePages: ServicePage[] = [
 			"Do you clean walk-ups and pre-war apartments?",
 			"What if I'm not happy with the clean?",
 		],
-		cta: { heading: ["Book the reset,", "then keep it that way."], body: "Most clients follow a deep clean with a recurring plan at up to 30% off. Price yours on the home page." },
+		cta: { heading: ["Start with the reset,", "and we'll cover it."], body: "Book a weekly or bi-weekly plan and the deep clean on your first visit is on us: the full 46 details, $75 off, then standard cleans at up to 30% off from visit two. Price yours on the home page." },
 	},
 	{
 		slug: "move-in-move-out-cleaning",
@@ -100,11 +100,11 @@ export const servicePages: ServicePage[] = [
 		name: "Move in / move out",
 		metaTitle: "Move Out Cleaning NYC — Deposit-Ready in 48 Hours",
 		metaDescription:
-			"Manhattan move-in and move-out cleaning: all 59 Mint Mark points including inside the oven, fridge, cabinets and closets. Deposit-ready, 48-hour turnaround, COI for your building. Standard price + $100.",
+			"Manhattan move-in and move-out cleaning: all 59 Mint Mark details including inside the oven, fridge, cabinets and closets. Deposit-ready, 48-hour turnaround, COI for your building. Standard price + $100.",
 		eyebrow: "Move in / move out · Manhattan",
 		h1: ["Hand back the keys", "and get the deposit back."],
 		lede:
-			"All 59 points of the Mint Mark checklist: a deep clean plus inside the oven, fridge, cabinets and closets, ready for a landlord's walkthrough or your first night in a new place. Empty apartments preferred; we can work around boxes.",
+			"All 59 details on the Mint Mark checklist: a deep clean plus inside the oven, fridge, cabinets and closets, ready for a landlord's walkthrough or your first night in a new place. Empty apartments preferred; we can work around boxes.",
 		price: { from: "+$100", note: "On top of your flat rate · e.g. 1BR move-out $275" },
 		bestFor: [
 			"Move-outs where the deposit depends on the walkthrough",

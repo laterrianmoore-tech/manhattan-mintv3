@@ -229,6 +229,14 @@ export async function POST(req: Request) {
         recurringLine = `Next recurring visit already booked (${future[0].service_date}).`;
       } else {
         const nextTotal = booking.pricing_next_clean_total ?? booking.pricing_total;
+        // Deep-clean starter (quote page): on weekly / bi-weekly plans the first
+        // visit's deep clean is free and later visits are standard cleans, so
+        // the extra must not roll into the auto-created booking. Monthly keeps
+        // whatever extras were booked.
+        const starterPlan = booking.frequency === "Weekly" || booking.frequency === "Bi-Weekly";
+        const nextExtras = starterPlan
+          ? (booking.selected_extras ?? []).filter((x: { label?: string }) => x?.label !== "Deep Cleaning")
+          : booking.selected_extras ?? [];
         const { error: createErr } = await supabaseAdmin.from("bookings").insert({
           customer_id: booking.customer_id,
           status: "pending",
@@ -238,7 +246,7 @@ export async function POST(req: Request) {
           service_summary: booking.service_summary,
           service_date: nextDate,
           preferred_time_ranges: booking.preferred_time_ranges ?? [],
-          selected_extras: booking.selected_extras ?? [],
+          selected_extras: nextExtras,
           cleaning_notes: booking.cleaning_notes,
           pricing_total: nextTotal,
           pricing_subtotal: booking.pricing_subtotal,
