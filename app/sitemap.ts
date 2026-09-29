@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { caseStudies } from "./case-studies/data";
 import { blogPosts } from "./blog/data";
+import { servicePages } from "./services/data";
 
 const BASE_URL = "https://manhattanmintnyc.com";
 
@@ -49,6 +50,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
 			priority: 0.6,
 		},
 		{
+			url: `${BASE_URL}/services/`,
+			lastModified: new Date(),
+			changeFrequency: "monthly",
+			priority: 0.8,
+		},
+		{
 			url: `${BASE_URL}/faq/`,
 			lastModified: new Date(),
 			changeFrequency: "monthly",
@@ -61,6 +68,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
 			priority: 0.3,
 		},
 	];
+
+	const servicePagesMap: MetadataRoute.Sitemap = servicePages.map((s) => ({
+		url: `${BASE_URL}/services/${s.slug}/`,
+		lastModified: new Date(),
+		changeFrequency: "monthly" as const,
+		priority: 0.8,
+	}));
 
 	const caseStudyPages: MetadataRoute.Sitemap = caseStudies.map((study) => ({
 		url: `${BASE_URL}/case-studies/${study.slug}/`,
@@ -76,5 +90,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
 		priority: 0.6,
 	}));
 
-	return [...staticPages, ...caseStudyPages, ...blogPages];
+	return [...staticPages, ...servicePagesMap, ...caseStudyPages, ...blogPages];
 }
