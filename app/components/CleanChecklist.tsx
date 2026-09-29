@@ -14,6 +14,9 @@ const TIERS: { key: Tier; label: string; price: string; blurb: string; homeServi
 ];
 const RANK: Record<Tier, number> = { Standard: 0, "Deep Clean": 1, "Move Out": 2 };
 
+// Points per level = every item at that level or below (Deep Clean includes
+// Standard, Move Out includes both). Computed from ROOMS so it never drifts.
+
 type Item = { text: string; tier: Tier };
 const ROOMS: { room: string; items: Item[] }[] = [
 	{
@@ -92,6 +95,11 @@ const ROOMS: { room: string; items: Item[] }[] = [
 	},
 ];
 
+const counts = (Object.keys(RANK) as Tier[]).reduce((acc, level) => {
+	acc[level] = ROOMS.flatMap((r) => r.items).filter((i) => RANK[i.tier] <= RANK[level]).length;
+	return acc;
+}, {} as Record<Tier, number>);
+
 export default function CleanChecklist() {
 	const router = useRouter();
 	const [tier, setTier] = useState<Tier>("Standard");
@@ -108,9 +116,9 @@ export default function CleanChecklist() {
 
 	return (
 		<section className="section section-white" id="checklist">
-			<div className="sect-eye">What each clean includes</div>
-			<h2>Standard, Deep, or Move Out.<br /><em>Here&apos;s the difference.</em></h2>
-			<p className="sect-sub">Pick a level to see exactly what your cleaner works through, room by room. Anything greyed out is included in the higher level.</p>
+			<div className="sect-eye">The Mint Mark checklist</div>
+			<h2>Every clean earns<br /><em>the Mint Mark.</em></h2>
+			<p className="sect-sub">A mint mark is the small stamp that proves where a coin was made. Ours is the {counts["Move Out"]}-point checklist every cleaner works through, room by room &mdash; {counts.Standard} points on a Standard clean, {counts["Deep Clean"]} on a Deep Clean, all {counts["Move Out"]} on a Move Out. Pick a level to see exactly what&apos;s covered; anything greyed out is included in the higher level.</p>
 
 			<div className="ck-tabs" role="tablist" aria-label="Service level">
 				{TIERS.map((t) => (
@@ -123,7 +131,7 @@ export default function CleanChecklist() {
 						onClick={() => setTier(t.key)}
 					>
 						<span className="ck-tab-label">{t.label}</span>
-						<span className="ck-tab-price">{t.price}</span>
+						<span className="ck-tab-price">{counts[t.key]}-point · {t.price}</span>
 					</button>
 				))}
 			</div>

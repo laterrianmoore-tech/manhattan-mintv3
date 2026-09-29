@@ -439,7 +439,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 				<p className="sect-sub">Trust isn&apos;t a tagline — it&apos;s paperwork, screening, and a founder who reviews every job.</p>
 				<div className="cred-grid">
 					<div className="cred-copy">
-						<p>Manhattan Mint is an owner-operated NYC company, not a lead-generation marketplace. Every cleaner on our team is interviewed in person, background-checked before their first booking, and trained on our checklist — the same one behind every clean in our <Link href="/case-studies">case studies</Link>.</p>
+						<p>Manhattan Mint is an owner-operated NYC company, not a lead-generation marketplace. Every cleaner on our team is interviewed in person, background-checked before their first booking, and trained on the Mint Mark checklist — the same one behind every clean in our <Link href="/case-studies">case studies</Link>.</p>
 						<p>We work exclusively in Manhattan buildings, which means COIs, service-elevator reservations, doorman check-ins, and <Link href="/blog/cleaning-services-for-co-ops">co-op house rules</Link> are part of our normal workflow — not a surprise.</p>
 						<div className="founder-card">
 							<div className="founder-avatar">mm</div>
@@ -507,7 +507,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 					<div className="sect-eye">The Manhattan Mint Guarantee</div>
 					<h2>Spot something we missed?<br /><em>We come back and fix it. Free.</em></h2>
 					<p className="guarantee-body">
-						Every clean is checked against our checklist, and the founder reviews the photo summary before the job is closed out. If anything still isn&apos;t right, tell us within 24 hours and we&apos;ll send a cleaner back to re-do it at no charge. No forms, no arguing, no hoops.
+						Every clean is checked against the 59-point Mint Mark checklist, and the founder reviews the photo summary before the job is closed out. If anything still isn&apos;t right, tell us within 24 hours and we&apos;ll send a cleaner back to re-do it at no charge. No forms, no arguing, no hoops.
 					</p>
 					<div className="guarantee-steps">
 						<div className="g-step"><span className="g-n">1</span><div><strong>Send a photo</strong><span>Text us within 24 hours of your clean.</span></div></div>
