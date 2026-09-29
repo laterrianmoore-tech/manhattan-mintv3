@@ -126,7 +126,7 @@ export const faqGroups: FaqGroup[] = [
 			},
 			{
 				q: "Should I tip my cleaner?",
-				a: "Tips are never expected and never included in the price. If you'd like to leave one, you can hand it to your cleaner or text us and we'll add it to their pay. 100% of it goes to them.",
+				a: "Tips are always welcome and always appreciated. They're not included in the price, so if your cleaner did a great job you can hand it to them directly or text us and we'll add it to their pay. 100% of it goes to your cleaner.",
 			},
 		],
 	},
@@ -144,7 +144,7 @@ export const faqGroups: FaqGroup[] = [
 			},
 			{
 				q: "What if I'm not happy with the clean?",
-				a: "Tell us within 48 hours and we'll send a cleaner back to re-do the missed spots at no charge. It's our [Mint Mark guarantee](/#guarantee), written into our [terms](/terms). The guarantee is fulfilled by re-cleaning; we don't offer cash refunds.",
+				a: "Tell us within 48 hours and we'll send a cleaner back to re-do the missed spots at no charge. It's our [Mint Mark guarantee](/#guarantee), written into our [terms](/terms): no forms, no arguing, no hoops.",
 			},
 			{
 				q: "What happens if something is damaged?",

@@ -26,9 +26,13 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/opengraph-image",
+        // Static file in /public. The dynamic src/app/opengraph-image.tsx is
+        // dead code (Next serves root app/), so that route 404s on the live site
+        // and text-message link previews showed no image.
+        url: "/og-image.jpg",
         width: 1200,
-        height: 630,
+        height: 600,
+        alt: "Manhattan Mint Cleaning",
       },
     ],
   },
@@ -37,7 +41,7 @@ export const metadata: Metadata = {
     title: "Luxury Home Cleaning NYC | Manhattan Mint",
     description:
       "Luxury, eco-friendly apartment cleaning across Manhattan. Flat rates from $175, background-checked cleaners, next-day availability — same-day cleans by phone when the schedule allows.",
-    images: ["/opengraph-image"],
+    images: ["/og-image.jpg"],
   },
 };
 

@@ -36,13 +36,13 @@ export default function FaqPage() {
 			<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 			<div className="cs-eye">FAQ</div>
 			<h1 className="cs-h1">
-				{total} questions,<br />
-				<em>straight answers.</em>
+				The questions we get<br />
+				<em>before every booking.</em>
 			</h1>
 			<p className="cs-lede">
-				Everything people ask before they book: prices, what&apos;s included, building rules, payment, and
-				what happens if something isn&apos;t right. Can&apos;t find it? Text{" "}
-				<a href="tel:9148637902">(914) 863-7902</a> and we&apos;ll answer straight away.
+				These are the {total} things clients actually text us before they book: prices, what&apos;s included,
+				building rules, payment, and what happens if something isn&apos;t right. If yours isn&apos;t here, text{" "}
+				<a href="tel:9148637902">(914) 863-7902</a> and a person will answer.
 			</p>
 
 			<nav className="faq-nav" aria-label="FAQ sections">

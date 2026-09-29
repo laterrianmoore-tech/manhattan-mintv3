@@ -527,6 +527,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 					{googleRating ? `Rated ${googleRating.rating.toFixed(1)} on Google across ${googleRating.count} reviews. ` : ""}
 					Word of mouth built this business — these are the New Yorkers who trusted us first.
 				</p>
+				<div className="reviews-scroll">
 				<div className="reviews-grid">
 					{reviews.map((review) => (
 						<div className="review" key={`${review.author}-${review.date}`}>
@@ -556,6 +557,8 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 							</div>
 						</div>
 					))}
+				</div>
+				<div className="reviews-fade" aria-hidden="true" />
 				</div>
 				{GOOGLE_REVIEWS_URL && (
 					<a className="rev-all" href={GOOGLE_REVIEWS_URL} target="_blank" rel="noopener noreferrer">
@@ -600,7 +603,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 					<div className="faq-item"><div className="faq-q">Do you offer same-day cleaning in NYC?</div><div className="faq-a">Online booking guarantees next-day at the earliest, but same-day cleans are often possible when a cleaner has an opening — call or text <a href="tel:9148637902">(914) 863-7902</a> and we&apos;ll tell you straight away if we can fit you in today.</div></div>
 					<div className="faq-item"><div className="faq-q">Are your products safe for kids and pets?</div><div className="faq-a">Yes — we use eco-friendly, non-toxic cleaning products by default on every visit, at no extra charge. If you prefer a specific product for certain surfaces, leave it out and a note, and we&apos;ll use yours.</div></div>
 				</div>
-				<p className="faq-all"><Link href="/faq">See all 30 questions →</Link></p>
+				<p className="faq-all"><Link href="/faq">See every question we get asked →</Link></p>
 			</section>
 
 			{/* NOT FOR EVERYONE */}

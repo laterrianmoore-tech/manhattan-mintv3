@@ -112,7 +112,7 @@ export default function TermsPage() {
           <h2>Guarantee</h2>
           <p>
             We offer a re-clean guarantee. If anything was missed during your cleaning, tell us and we will send a cleaner back to
-            re-clean those spots at no charge. The guarantee is fulfilled by re-cleaning; we do not offer cash refunds.
+            re-clean those spots at no charge.
           </p>
           <p>
             This guarantee does not necessarily apply if:
