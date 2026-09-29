@@ -507,10 +507,10 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 					<div className="sect-eye">The Manhattan Mint Guarantee</div>
 					<h2>Spot something we missed?<br /><em>We come back and fix it. Free.</em></h2>
 					<p className="guarantee-body">
-						Every clean is checked against the 59-point Mint Mark checklist, and the founder reviews the photo summary before the job is closed out. If anything still isn&apos;t right, tell us within 24 hours and we&apos;ll send a cleaner back to re-do it at no charge. No forms, no arguing, no hoops.
+						Every clean is checked against the 59-point Mint Mark checklist, and the founder reviews the photo summary before the job is closed out. If anything still isn&apos;t right, tell us within 48 hours and we&apos;ll send a cleaner back to re-do it at no charge. No forms, no arguing, no hoops.
 					</p>
 					<div className="guarantee-steps">
-						<div className="g-step"><span className="g-n">1</span><div><strong>Send a photo</strong><span>Text us within 24 hours of your clean.</span></div></div>
+						<div className="g-step"><span className="g-n">1</span><div><strong>Send a photo</strong><span>Text us within 48 hours of your clean.</span></div></div>
 						<div className="g-step"><span className="g-n">2</span><div><strong>We rebook it</strong><span>A re-clean, usually within 48 hours, at a time that suits you.</span></div></div>
 						<div className="g-step"><span className="g-n">3</span><div><strong>Zero charge</strong><span>The re-clean is on us. Every time.</span></div></div>
 					</div>
@@ -600,6 +600,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 					<div className="faq-item"><div className="faq-q">Do you offer same-day cleaning in NYC?</div><div className="faq-a">Online booking guarantees next-day at the earliest, but same-day cleans are often possible when a cleaner has an opening — call or text <a href="tel:9148637902">(914) 863-7902</a> and we&apos;ll tell you straight away if we can fit you in today.</div></div>
 					<div className="faq-item"><div className="faq-q">Are your products safe for kids and pets?</div><div className="faq-a">Yes — we use eco-friendly, non-toxic cleaning products by default on every visit, at no extra charge. If you prefer a specific product for certain surfaces, leave it out and a note, and we&apos;ll use yours.</div></div>
 				</div>
+				<p className="faq-all"><Link href="/faq">See all 30 questions →</Link></p>
 			</section>
 
 			{/* NOT FOR EVERYONE */}

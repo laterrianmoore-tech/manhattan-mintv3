@@ -175,6 +175,9 @@ h2 em{font-style:italic;color:var(--mint);}
 .faq-q{font-size:.9rem;font-weight:500;margin-bottom:.65rem;}
 .faq-a{font-size:.8rem;color:var(--gray);line-height:1.68;font-weight:300;}
 .faq-a a{color:var(--mint-dark);}
+.faq-all{margin:2rem 0 0;font-size:.85rem;}
+.faq-all a{color:var(--mint-dark);text-decoration:none;font-weight:500;}
+.faq-all a:hover{text-decoration:underline;}
 
 /* CTA BAND */
 .guarantee-bg{background:var(--mint-light);}

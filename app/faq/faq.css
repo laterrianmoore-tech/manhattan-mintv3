@@ -1,0 +1,127 @@
+.faq-page {
+	max-width: 860px;
+}
+
+.faq-nav {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin: -1.5rem 0 3.5rem;
+}
+
+.faq-nav a {
+	font-size: 0.72rem;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--mint-dark, #085041);
+	background: var(--mint-light, #e1f5ee);
+	padding: 0.55rem 0.95rem;
+	border-radius: 999px;
+	text-decoration: none;
+	transition: background 0.2s, color 0.2s;
+}
+
+.faq-nav a:hover {
+	background: var(--mint, #1d9e75);
+	color: #fff;
+}
+
+.faq-group {
+	margin-bottom: 3.5rem;
+	scroll-margin-top: 7rem;
+}
+
+.faq-group-title {
+	font-family: "DM Serif Display", serif;
+	font-weight: 400;
+	font-size: 1.6rem;
+	margin: 0 0 1.25rem;
+	color: var(--dark, #0f0f0f);
+}
+
+.faq-list {
+	border-top: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+}
+
+.faq-d {
+	border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+}
+
+.faq-d summary {
+	list-style: none;
+	cursor: pointer;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 1.5rem;
+	padding: 1.2rem 0;
+	font-size: 1rem;
+	font-weight: 500;
+	color: var(--dark, #0f0f0f);
+}
+
+.faq-d summary::-webkit-details-marker {
+	display: none;
+}
+
+.faq-d summary:hover {
+	color: var(--mint-dark, #085041);
+}
+
+.faq-plus {
+	flex: none;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: var(--mint-light, #e1f5ee);
+	position: relative;
+	transition: background 0.2s, transform 0.2s;
+}
+
+.faq-plus::before,
+.faq-plus::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 10px;
+	height: 1.5px;
+	background: var(--mint, #1d9e75);
+	transform: translate(-50%, -50%);
+}
+
+.faq-plus::after {
+	transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.faq-d[open] .faq-plus {
+	background: var(--mint, #1d9e75);
+	transform: rotate(45deg);
+}
+
+.faq-d[open] .faq-plus::before,
+.faq-d[open] .faq-plus::after {
+	background: #fff;
+}
+
+.faq-d p {
+	margin: 0 0 1.4rem;
+	padding-right: 3rem;
+	font-size: 0.95rem;
+	line-height: 1.75;
+	color: #555;
+	font-weight: 300;
+}
+
+.faq-d p a {
+	color: var(--mint-dark, #085041);
+}
+
+@media (max-width: 640px) {
+	.faq-nav {
+		margin-top: -0.5rem;
+	}
+	.faq-d p {
+		padding-right: 0;
+	}
+}
