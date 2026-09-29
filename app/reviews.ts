@@ -24,6 +24,13 @@ export type Review = {
 
 export const reviews: Review[] = [
 	{
+		author: "Nate Joseph",
+		rating: 5,
+		text: "I cannot praise the results of Manhattan Mint's great deep cleaning job enough! I've hired cleaners before, but this is the first time I can absolutely say that I was absolutely floored by the quality and attention to detail this service provided. Veronica did a phenomenal job cleaning our apartment and I will be having Manhattan Mint clean my apartment every time from now on. I cannot recommend them enough!",
+		date: "September 2026",
+		source: "Google",
+	},
+	{
 		author: "Ethan Kaplan",
 		rating: 5,
 		text: "Found my new cleaning service. They came on time and did a great job. Definitely recommend if you live in the city.",

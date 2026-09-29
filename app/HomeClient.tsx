@@ -130,7 +130,13 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 				<div className="hero-l">
 					<div className="eyebrow">Manhattan apartment cleaning</div>
 					<h1>Your apartment,<br /><em>immaculate.</em><br />Your time, yours.</h1>
-					<p className="hero-body">Luxury home cleaning built for Manhattan professionals. Background-checked cleaners, eco-friendly supplies, next-day and same-week availability — and results that are guaranteed, every single time.</p>
+					<p className="hero-body">Luxury home cleaning built for Manhattan professionals. Book in 60 seconds, and your card is only charged once the clean is done.</p>
+					<ul className="hero-proof">
+						<li>Background-checked &amp; insured</li>
+						<li>Eco-friendly supplies included</li>
+						<li>Flat rate, no hidden fees</li>
+						<li>Free re-clean guarantee</li>
+					</ul>
 					<div className="hero-btns">
 						<button className="btn-primary" onClick={() => scrollToSection("booking")}>Book your first clean</button>
 						<button className="btn-secondary" onClick={() => scrollToSection("pricing")}>View pricing</button>
@@ -224,6 +230,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 						</div>
 						<button className="btn-form" onClick={handleRequestBooking}>Request booking confirmation →</button>
 						<div className="form-trust">
+							<span className="ftrust">Charged only after your clean</span>
 							<span className="ftrust">Same-day response</span>
 							<span className="ftrust">COI available</span>
 							<span className="ftrust"><span className="booking-count">{weeklyBookings}</span> bookings this week</span>
@@ -301,6 +308,14 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 							<span className="pp-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2" /><line x1="3" y1="10.5" x2="21" y2="10.5" /></svg></span>
 							<div><strong>Charged after, never before.</strong><span>Your card is saved at booking and only charged once the clean is done.</span></div>
 						</div>
+						<div className="tier-block">
+							<div className="tier-head">Go recurring and save on every visit</div>
+							<div className="tier-grid">
+								<div className="tier"><div className="tier-pct">30%</div><div className="tier-name">Weekly</div></div>
+								<div className="tier"><div className="tier-pct">25%</div><div className="tier-name">Bi-weekly</div></div>
+								<div className="tier"><div className="tier-pct">15%</div><div className="tier-name">Monthly</div></div>
+							</div>
+						</div>
 					</div>
 					<div className="included-aside">
 						<div className="price-card-big">
@@ -368,7 +383,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 							<div className="pcb-note">All supplies included · No hidden fees</div>
 							<div className="pcb-detail">
 								{pricingMode === "flat"
-									? "Deep clean +$75 · Move-in/out +$100 · Recurring saves 30%"
+									? "Deep clean +$75 · Move-in/out +$100 · Recurring saves up to 30%"
 									: `$${hourlyRates.ratePerCleaner}/hr per cleaner · same supplies included`}
 							</div>
 							<button
@@ -466,6 +481,25 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 					<div className="hood">Kips Bay</div><div className="hood">Sutton Place</div><div className="hood">Carnegie Hill</div>
 					<div className="hood">Morningside Heights</div><div className="hood">Inwood</div><div className="hood">Hudson Yards</div>
 					<div className="hood">Yorkville</div>
+				</div>
+			</section>
+
+			{/* GUARANTEE */}
+			<section className="section guarantee-bg" id="guarantee">
+				<div className="guarantee-inner">
+					<div className="g-seal" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z" /><polyline points="9 12 11 14 15 10" /></svg></div>
+					<div className="sect-eye">The Manhattan Mint Guarantee</div>
+					<h2>Spot something we missed?<br /><em>We come back and fix it. Free.</em></h2>
+					<p className="guarantee-body">
+						Every clean is checked against our checklist, and the founder reviews the photo summary before the job is closed out. If anything still isn&apos;t right, tell us within 24 hours and we&apos;ll send a cleaner back to re-do it at no charge. No forms, no arguing, no hoops.
+					</p>
+					<div className="guarantee-steps">
+						<div className="g-step"><span className="g-n">1</span><div><strong>Send a photo</strong><span>Text us within 24 hours of your clean.</span></div></div>
+						<div className="g-step"><span className="g-n">2</span><div><strong>We rebook it</strong><span>A re-clean, usually within 48 hours, at a time that suits you.</span></div></div>
+						<div className="g-step"><span className="g-n">3</span><div><strong>Zero charge</strong><span>The re-clean is on us. Every time.</span></div></div>
+					</div>
+					<p className="guarantee-fine">Our standard policy, in writing in our <Link href="/terms">terms</Link>.</p>
+					<button className="btn-primary" onClick={() => scrollToSection("booking")}>Book your first clean →</button>
 				</div>
 			</section>
 

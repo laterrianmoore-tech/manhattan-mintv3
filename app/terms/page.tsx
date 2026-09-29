@@ -111,8 +111,8 @@ export default function TermsPage() {
 
           <h2>Guarantee</h2>
           <p>
-            We offer a full service guarantee. This includes a free re-clean of the spots that were missed during your initial cleaning.
-            If you are not satisfied with the re-clean you are entitled to a full refund.
+            We offer a re-clean guarantee. If anything was missed during your cleaning, tell us and we will send a cleaner back to
+            re-clean those spots at no charge. The guarantee is fulfilled by re-cleaning; we do not offer cash refunds.
           </p>
           <p>
             This guarantee does not necessarily apply if:
