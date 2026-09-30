@@ -487,13 +487,13 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 			<section className="section hoods-bg" id="areas">
 				<div className="sect-eye">Service areas</div>
 				<h2>All of Manhattan.<br /><em>Your neighborhood, covered.</em></h2>
-				<p className="sect-sub">We operate across all Manhattan neighborhoods, plus select parts of Brooklyn and Queens on request.</p>
+				<p className="sect-sub">We operate across all Manhattan neighborhoods, plus select parts of Brooklyn and Queens on request. Tap a neighborhood to see what we clean there.</p>
 				<div className="hoods-grid">
-					<div className="hood">Tribeca</div><div className="hood">SoHo</div><div className="hood">West Village</div>
-					<div className="hood">Greenwich Village</div><div className="hood">Chelsea</div><div className="hood">Flatiron</div>
-					<div className="hood">Gramercy</div><div className="hood">Murray Hill</div><div className="hood">Midtown</div>
-					<div className="hood">Hell&apos;s Kitchen</div><div className="hood">Upper East Side</div><div className="hood">Upper West Side</div>
-					<div className="hood">Harlem</div><div className="hood">Washington Heights</div><div className="hood">FiDi</div>
+					<Link href="/neighborhoods/tribeca" className="hood hood-link">Tribeca</Link><Link href="/neighborhoods/soho" className="hood hood-link">SoHo</Link><Link href="/neighborhoods/east-village" className="hood hood-link">East Village</Link><Link href="/neighborhoods/west-village" className="hood hood-link">West Village</Link>
+					<div className="hood">Greenwich Village</div><Link href="/neighborhoods/chelsea" className="hood hood-link">Chelsea</Link><Link href="/neighborhoods/flatiron" className="hood hood-link">Flatiron</Link>
+					<div className="hood">Gramercy</div><Link href="/neighborhoods/murray-hill" className="hood hood-link">Murray Hill</Link><div className="hood">Midtown</div>
+					<div className="hood">Hell&apos;s Kitchen</div><Link href="/neighborhoods/upper-east-side" className="hood hood-link">Upper East Side</Link><Link href="/neighborhoods/upper-west-side" className="hood hood-link">Upper West Side</Link>
+					<div className="hood">Harlem</div><div className="hood">Washington Heights</div><Link href="/neighborhoods/financial-district" className="hood hood-link">FiDi</Link>
 					<div className="hood">Battery Park</div><div className="hood">Nolita</div><div className="hood">Lower East Side</div>
 					<div className="hood">Kips Bay</div><div className="hood">Sutton Place</div><div className="hood">Carnegie Hill</div>
 					<div className="hood">Morningside Heights</div><div className="hood">Inwood</div><div className="hood">Hudson Yards</div>

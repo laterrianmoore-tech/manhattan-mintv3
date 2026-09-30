@@ -139,6 +139,7 @@ h2 em{font-style:italic;color:var(--mint);}
 .hoods-grid{display:flex;flex-wrap:wrap;gap:.5rem;}
 .hood{background:rgba(255,255,255,.05);border:.5px solid rgba(255,255,255,.08);padding:.5rem 1.1rem;border-radius:2px;font-size:.78rem;color:rgba(255,255,255,.5);cursor:pointer;transition:all .2s;}
 .hood:hover{background:rgba(29,158,117,.15);border-color:rgba(29,158,117,.3);color:var(--mint-mid);}
+.hood-link{text-decoration:none;color:var(--mint-mid);border-color:rgba(93,202,165,.3);}
 
 /* REVIEWS */
 .reviews-scroll{position:relative;max-height:620px;overflow-y:auto;margin-bottom:2.5rem;padding:2px 2px 0;scrollbar-width:thin;scrollbar-color:var(--mint-mid) transparent;}

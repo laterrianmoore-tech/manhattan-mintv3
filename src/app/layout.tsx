@@ -72,7 +72,7 @@ function Nav() {
     { href: "/services", label: "Services" },
     { href: "/#pricing", label: "Pricing" },
     { href: "/#how-it-works", label: "How it works" },
-    { href: "/#areas", label: "Areas" },
+    { href: "/neighborhoods", label: "Areas" },
     { href: "/case-studies", label: "Case studies" },
     { href: "/#reviews", label: "Reviews" },
   ];
@@ -157,6 +157,9 @@ function Footer() {
               </li>
               <li>
                 <Link href="/services">Services</Link>
+              </li>
+              <li>
+                <Link href="/neighborhoods">Neighborhoods</Link>
               </li>
               <li>
                 <Link href="/case-studies">Case Studies</Link>
