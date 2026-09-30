@@ -427,10 +427,26 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             background: var(--mint-dark);
           }
 
+          /* Same Manhattan skyline as the home-page dark bands, so every page
+             ends on it. Pinned to the viewport on desktop; scrolls on touch. */
           .site-footer {
-            background: var(--dark);
+            position: relative;
+            isolation: isolate;
+            background: var(--dark) url("/home/skyline.jpg") center 30% / cover no-repeat;
+            background-attachment: fixed;
             color: #f2f2f2;
             margin-top: 4rem;
+          }
+          .site-footer::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(10, 12, 11, 0.8) 0%, rgba(10, 12, 11, 0.72) 60%, rgba(10, 12, 11, 0.86) 100%);
+            z-index: -1;
+            pointer-events: none;
+          }
+          @media (hover: none), (max-width: 960px) {
+            .site-footer { background-attachment: scroll; }
           }
 
           .footer-content {
