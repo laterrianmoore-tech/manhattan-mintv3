@@ -35,7 +35,9 @@ export default function EmailCaptureSection() {
   return (
     <>
       <style>{`
-        .ec-wrap{background:#1A1A1A;padding:5rem 4rem;}
+        .ec-wrap{position:relative;isolation:isolate;background:#1A1A1A url("/home/skyline.jpg") center 30%/cover no-repeat;background-attachment:fixed;padding:5rem 4rem;}
+        .ec-wrap::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,12,11,.8) 0%,rgba(10,12,11,.7) 50%,rgba(10,12,11,.82) 100%);z-index:-1;pointer-events:none;}
+        @media(hover:none),(max-width:960px){.ec-wrap{background-attachment:scroll;}}
         .ec-inner{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;max-width:1040px;margin:0 auto;}
         .ec-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(29,158,117,.15);border:.5px solid rgba(29,158,117,.35);border-radius:2px;padding:.3rem .75rem;margin-bottom:1.35rem;}
         .ec-badge-dot{width:6px;height:6px;background:#1D9E75;border-radius:50%;}
@@ -48,7 +50,7 @@ export default function EmailCaptureSection() {
         .ec-stat-txt{color:rgba(255,255,255,.35);font-size:.72rem;letter-spacing:.04em;}
         .ec-form{display:flex;flex-direction:column;gap:.65rem;}
         .ec-row{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;}
-        .ec-input{padding:.8rem 1rem;background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.12);border-radius:2px;color:#fff;font-size:.82rem;font-family:'DM Sans',sans-serif;outline:none;transition:border .2s;width:100%;}
+        .ec-input{padding:.8rem 1rem;background:rgba(15,15,15,.55);border:.5px solid rgba(255,255,255,.18);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:2px;color:#fff;font-size:.82rem;font-family:'DM Sans',sans-serif;outline:none;transition:border .2s;width:100%;}
         .ec-input:focus{border-color:#1D9E75;}
         .ec-input::placeholder{color:rgba(255,255,255,.28);}
         .ec-btn{padding:.88rem;background:#1D9E75;border:none;border-radius:2px;color:#fff;font-size:.85rem;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .2s;width:100%;}
