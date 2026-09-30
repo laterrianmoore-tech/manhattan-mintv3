@@ -48,7 +48,6 @@ export async function GET() {
           <span style={{ fontSize: 150, fontWeight: 500, color: "#1a1a1a", letterSpacing: "-5px" }}>manhattan</span>
           <span style={{ fontSize: 190, fontFamily: "DM Serif Display, serif", fontStyle: "italic", color: "#1d9e75", marginTop: -10 }}>mint</span>
         </div>
-        <div style={{ fontSize: 34, color: "#555", letterSpacing: "1px", marginTop: 40 }}>Luxury Home Cleaning · NYC</div>
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 8, background: "#085041", display: "flex" }} />
       </div>
     ),

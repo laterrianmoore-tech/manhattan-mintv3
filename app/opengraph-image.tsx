@@ -54,24 +54,9 @@ export default async function Image() {
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 10, background: "#1d9e75", display: "flex" }} />
 
         {/* Wordmark — matches .brand / .brand-mint in the nav */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 26 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 0 }}>
           <span style={{ fontSize: 110, fontWeight: 500, color: "#1a1a1a", letterSpacing: "-3px" }}>manhattan</span>
           <span style={{ fontSize: 110, fontFamily: "DM Serif Display, serif", fontStyle: "italic", color: "#1d9e75" }}>mint</span>
-        </div>
-
-        <div style={{ fontSize: 30, color: "#555", letterSpacing: "0.5px", marginBottom: 44 }}>
-          Luxury Home Cleaning · New York City
-        </div>
-
-        <div style={{ display: "flex", gap: 20 }}>
-          {["5.0 on Google", "Flat rates from $175", "Same cleaner every visit"].map((badge) => (
-            <div
-              key={badge}
-              style={{ background: "#e1f5ee", color: "#085041", padding: "10px 24px", borderRadius: 999, fontSize: 22, display: "flex" }}
-            >
-              {badge}
-            </div>
-          ))}
         </div>
 
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 6, background: "#085041", display: "flex" }} />

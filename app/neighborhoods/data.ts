@@ -33,6 +33,7 @@ export const neighborhoods: Neighborhood[] = [
 		h1: ["Upper West Side cleaning,", "pre-war dust included."],
 		lede:
 			"Half our Upper West Side clients live in buildings older than their grandparents: brownstone walk-ups on the side streets, big pre-war co-ops on the avenues. Both collect dirt in ways a new building never will, and both are what we're built for.",
+		image: { src: "/neighborhoods/upper-west-side.jpg", alt: "Tree-lined Upper West Side street with brownstone stoops", credit: "Pexels" },
 		buildings: [
 			{ title: "Brownstone and townhouse walk-ups", body: "Side-street floor-throughs and studios, three to five flights up. Original hardwood, plaster walls, a radiator under every window." },
 			{ title: "Pre-war co-ops on the avenues", body: "Central Park West, West End, Riverside. Doorman buildings with boards, service elevators and COI requirements, and apartments with moldings that hold a decade of dust." },
@@ -67,6 +68,7 @@ export const neighborhoods: Neighborhood[] = [
 		h1: ["Upper East Side cleaning", "your board will approve of."],
 		lede:
 			"On the Upper East Side the building is half the job. Co-op boards want a Certificate of Insurance on file, doormen want to know who's coming, and the service elevator has hours. We handle all of it before your cleaner rings the bell.",
+		image: { src: "/neighborhoods/upper-east-side.jpg", alt: "Art Deco apartment building on the Upper East Side", credit: "Pexels" },
 		buildings: [
 			{ title: "Doorman co-ops and condos", body: "Park, Fifth, Madison and Lexington. Boards with rules, front desks that log every visitor, and apartments with more square footage than most of Manhattan." },
 			{ title: "Yorkville high-rises", body: "East of Third, newer rental and condo towers with package rooms, in-unit laundry and the kind of white kitchen that shows every fingerprint." },
@@ -101,6 +103,7 @@ export const neighborhoods: Neighborhood[] = [
 		h1: ["Chelsea cleaning,", "from walk-up to glass tower."],
 		lede:
 			"Chelsea has three neighborhoods stacked on top of each other: 1900s tenements and townhouses in the historic district, converted industrial lofts near the galleries, and the glass condos that went up along the High Line. Each one gets dirty differently, and we've cleaned all three this month.",
+		image: { src: "/neighborhoods/chelsea.jpg", alt: "Old brick and new glass buildings side by side in Chelsea", credit: "Pexels" },
 		buildings: [
 			{ title: "Historic-district townhouses and walk-ups", body: "The 20s between Eighth and Tenth: brick row houses, small floor-throughs, steep stairs, radiators and original floors." },
 			{ title: "High Line and West Chelsea condos", body: "Floor-to-ceiling glass, open kitchens, pale stone counters. Beautiful, and they show every streak and crumb." },
@@ -135,6 +138,7 @@ export const neighborhoods: Neighborhood[] = [
 		h1: ["West Village cleaning", "for apartments with character."],
 		lede:
 			"Nothing in the West Village is square. Stairs turn twice, kitchens were closets, closets were nothing, and the window faces a tree instead of a wall. It's the most pleasant place in Manhattan to clean and the hardest to clean quickly, which is why our cleaners here know the apartments they come back to.",
+		image: { src: "/neighborhoods/west-village.jpg", alt: "Sunny West Village street with historic townhouses", credit: "Pexels" },
 		buildings: [
 			{ title: "Townhouse floor-throughs", body: "One apartment per floor in a 19th-century house: fireplaces that collect soot, plank floors, a garden-level unit with its own damp." },
 			{ title: "Small walk-ups", body: "Studios and one-bedrooms on Bedford, Barrow, Grove. Every surface does double duty, so nothing is easy to reach." },
@@ -169,6 +173,7 @@ export const neighborhoods: Neighborhood[] = [
 		h1: ["Tribeca cleaning", "at loft scale."],
 		lede:
 			"A Tribeca loft is a small apartment's worth of surfaces spread across a big one: forty feet of windows, a kitchen island you could land a plane on, and ceilings that put the dust out of reach. We clean them with the right ladder, the right team size, and a checklist that doesn't stop at eye level.",
+		image: { src: "/neighborhoods/tribeca.jpg", alt: "The Staple Street skybridge between two Tribeca buildings", credit: "Pexels" },
 		buildings: [
 			{ title: "Converted industrial lofts", body: "Cast-iron and brick warehouses turned into open-plan homes. Columns, exposed ducts and pipes, and very few interior walls to break the dust up." },
 			{ title: "New full-service condos", body: "Along Greenwich and West Street: doormen, gyms, stone bathrooms and glass everywhere, with COI requirements to match." },
@@ -203,6 +208,7 @@ export const neighborhoods: Neighborhood[] = [
 		h1: ["FiDi cleaning", "that fits a high-rise schedule."],
 		lede:
 			"The Financial District turned office towers into apartments faster than anywhere in the city, and it shows in the floor plans: efficient, tall, glassy, and usually occupied by someone who works long hours and wants to come home to done. We work around doormen, package rooms and your calendar.",
+		image: { src: "/neighborhoods/financial-district.jpg", alt: "Sunlit street between Financial District skyscrapers", credit: "Pexels" },
 		buildings: [
 			{ title: "Office-to-residential conversions", body: "Wall Street, Water Street, Broad Street: 1920s and 1960s towers with deep floor plates, interior rooms and big lobby operations." },
 			{ title: "New high-rise rentals and condos", body: "Full-service buildings with concierge desks, amenity floors, in-unit laundry and floor-to-ceiling glass facing the harbor." },
@@ -237,6 +243,7 @@ export const neighborhoods: Neighborhood[] = [
 		h1: ["SoHo cleaning", "for lofts that face the street."],
 		lede:
 			"SoHo's cast-iron buildings were factories with enormous windows to let the light in. Now they let the Broadway soot in too. Cleaning here is about glass, floors that have seen a century of feet, and the fine black dust that settles on everything within a block of Canal Street.",
+		image: { src: "/neighborhoods/soho.jpg", alt: "Cast-iron buildings and street life in SoHo", credit: "Pexels" },
 		buildings: [
 			{ title: "Cast-iron lofts", body: "Broadway, Greene, Mercer, Wooster: tall ceilings, columns, wide-plank or refinished floors, and the biggest windows in Manhattan." },
 			{ title: "Walk-up lofts", body: "Plenty of SoHo lofts are still five flights with no elevator. We plan the visit and the supplies around the stairs." },
@@ -271,6 +278,7 @@ export const neighborhoods: Neighborhood[] = [
 		h1: ["Murray Hill cleaning", "for people who are never home."],
 		lede:
 			"Murray Hill is the neighborhood of first apartments: post-war doorman buildings, roommates splitting a converted two-bedroom, and schedules that run from the office to the gym to dinner. Nobody here has time to clean, and nobody should have to think about it either.",
+		image: { src: "/neighborhoods/murray-hill.jpg", alt: "Brick apartment buildings on a Murray Hill side street", credit: "Pexels" },
 		buildings: [
 			{ title: "Post-war doorman rentals", body: "The white-brick buildings of the 1960s and 70s on Third and Second: compact layouts, parquet floors, small galley kitchens, through-wall AC units." },
 			{ title: "Roommate shares", body: "Flex walls and converted living rooms. Shared bathrooms and kitchens get used by three people, which changes what needs attention." },
@@ -305,6 +313,7 @@ export const neighborhoods: Neighborhood[] = [
 		h1: ["East Village cleaning", "for real New York apartments."],
 		lede:
 			"The East Village is tenement country: five-story walk-ups, railroad apartments where you walk through one room to reach the next, bathrooms the size of a phone booth and a radiator that clanks at 6am. We love these apartments. They also need a cleaner who knows what they're doing.",
+		image: { src: "/neighborhoods/east-village.jpg", alt: "Tree-arched East Village street with walk-up buildings", credit: "Pexels" },
 		buildings: [
 			{ title: "Tenement walk-ups", body: "Avenue A to D and the side streets: 1900s buildings, four or five flights, small rooms, tin ceilings if you're lucky." },
 			{ title: "Railroad apartments", body: "Rooms in a line with no hallway. Every room is a walkway, so floors take more traffic than the square footage suggests." },
@@ -339,6 +348,7 @@ export const neighborhoods: Neighborhood[] = [
 		h1: ["Flatiron cleaning,", "scheduled around your workday."],
 		lede:
 			"Flatiron and NoMad apartments sit above the busiest retail blocks in the city and, more than anywhere else we work, double as offices. That means cleaning around a desk that's in use, windows that face Broadway, and a schedule that has to fit between calls.",
+		image: { src: "/neighborhoods/flatiron.jpg", alt: "The Flatiron Building from the street", credit: "Pexels" },
 		buildings: [
 			{ title: "Lofts above retail", body: "Broadway, Fifth and the 20s: former showrooms and manufacturing floors with high ceilings, big windows and elevators that open into the apartment." },
 			{ title: "New condos and conversions", body: "Madison Square Park and NoMad towers with concierge desks, stone bathrooms and floor-to-ceiling glass." },
