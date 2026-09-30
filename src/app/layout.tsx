@@ -126,13 +126,13 @@ function Footer() {
             <p className="footer-heading">Services</p>
             <ul>
               <li>
-                <Link href="/#services">Home Cleaning</Link>
+                <Link href="/services/apartment-cleaning">Apartment Cleaning</Link>
               </li>
               <li>
-                <Link href="/#services">Deep Cleaning</Link>
+                <Link href="/services/deep-cleaning">Deep Cleaning</Link>
               </li>
               <li>
-                <Link href="/#services">Move In/Out</Link>
+                <Link href="/services/move-in-move-out-cleaning">Move In / Move Out</Link>
               </li>
               <li>
                 <Link href="/#pricing">Pricing</Link>

@@ -31,7 +31,7 @@ export const caseStudies: CaseStudy[] = [
 		publishedAt: "2026-05-12",
 		excerpt:
 			"450 square feet, a fourth-floor walk-up, and a century of radiator dust. Small spaces are harder to clean well — here's how we do it.",
-		image: { src: "/case-studies/pre-war-walk-up-deep-clean-upper-west-side.jpg", alt: "Sunlit pre-war room with tall windows and a cast-iron radiator", credit: "Pexels" },
+		image: { src: "/case-studies/pre-war-walk-up-deep-clean-upper-west-side.jpg", alt: "Pre-war room with tall windows, ornate mouldings and an armchair in the light", credit: "Pexels" },
 		challenge: [
 			"Pre-war buildings are beautiful, but they collect grime in ways modern apartments don't. This Upper West Side studio — roughly 450 square feet on the fourth floor of a walk-up — had cast-iron radiators that hadn't been cleaned behind in years, original moldings holding decades of dust, and window sills facing a busy avenue that turned black within a week of wiping.",
 			"Small spaces add their own problem: when every inch is used for storage, there's no such thing as an easy-to-reach surface. Under-bed storage, over-cabinet baskets, and a loft shelf all needed to be worked around without disturbing the client's system.",
@@ -119,7 +119,7 @@ export const caseStudies: CaseStudy[] = [
 		publishedAt: "2026-06-09",
 		excerpt:
 			"Two working parents, two kids, a dog, and 1,600 square feet that never stayed clean longer than a weekend. The fix wasn't one heroic clean — it was a system.",
-		image: { src: "/case-studies/three-bedroom-family-reset-west-village.jpg", alt: "Bright family living room with hardwood floors and a dining area", credit: "Pexels" },
+		image: { src: "/case-studies/three-bedroom-family-reset-west-village.jpg", alt: "Bright family living room with large windows and greenery outside", credit: "Pexels" },
 		challenge: [
 			"A three-bedroom in Manhattan works harder than a three-bedroom anywhere else: it's the office, the playroom, the gym, and the dog's territory all at once. This West Village family had tried four services and kept hitting the same wall — each clean looked fine on day one and had unravelled by day four.",
 			"The real problem wasn't dirt, it was accumulation: toy rotation, school paperwork, pet hair in upholstery, and kitchen grease that one-off cleans never fully reversed.",

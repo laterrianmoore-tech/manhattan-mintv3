@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import CleanChecklist from "./components/CleanChecklist";
 import EmailCaptureModal from "./components/EmailCaptureModal";
@@ -247,7 +248,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 			</div>
 
 			{/* STATS BAND */}
-			<div className="stats-band">
+			<div className="stats-band sky-bg">
 				<div className="stat-item"><div className="stat-n">Owner-run</div><div className="stat-d">Every job&apos;s photos reviewed by the owner</div></div>
 				{googleRating ? (
 					<div className="stat-item">
@@ -263,30 +264,49 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 			</div>
 
 			{/* FEATURES */}
-			<section className="section section-white" id="services">
-				<div className="sect-eye">Why manhattan mint</div>
-				<h2>Built for the way<br /><em>New Yorkers live.</em></h2>
-				<p className="sect-sub">Your schedule is packed, your space is tight, and your standards are high. Every part of Manhattan Mint was built around that.</p>
-				<div className="features-grid">
-					<div className="feat">
-						<div className="feat-icon"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg></div>
-						<div className="feat-title">Vetted professionals</div>
-						<p className="feat-body">Every cleaner is background-checked, insured, and trained to our standard before their first booking.</p>
-					</div>
-					<div className="feat">
-						<div className="feat-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg></div>
-						<div className="feat-title">Book in 60 seconds</div>
-						<p className="feat-body">Select size, date, and add-ons online. Instant confirmation — no phone calls, no back-and-forth.</p>
-					</div>
-					<div className="feat">
-						<div className="feat-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg></div>
-						<div className="feat-title">Apartment specialists</div>
-						<p className="feat-body">We work exclusively in Manhattan. Our team knows co-op rules, tight layouts, and building access.</p>
-					</div>
-					<div className="feat">
-						<div className="feat-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg></div>
-						<div className="feat-title">Fully insured</div>
-						<p className="feat-body">Full liability on every visit. If anything is ever not right, we fix it — no questions, no hassle.</p>
+			<section className="section section-white why" id="services">
+				<div className="why-grid">
+					<figure className="why-photo">
+						<Image src="/home/why.jpg" alt="Sunlit, freshly cleaned living room with plants and tall windows" fill sizes="(max-width: 960px) 100vw, 46vw" />
+						<figcaption className="why-caption">
+							<span className="why-caption-eye">The Mint Mark</span>
+							<span className="why-caption-text">59 details. Every room. Every visit.</span>
+						</figcaption>
+					</figure>
+					<div className="why-copy">
+						<div className="sect-eye">Why Manhattan Mint</div>
+						<h2>Built for the way<br /><em>New Yorkers live.</em></h2>
+						<p className="sect-sub why-sub">Your schedule is packed, your space is tight, and your standards are high. Every part of Manhattan Mint was built around that.</p>
+						<ol className="why-list">
+							<li>
+								<span className="why-n">01</span>
+								<div>
+									<h3>Vetted, then trained.</h3>
+									<p>Every cleaner is background-checked through Certn, interviewed in person by the founder, and trained on the Mint Mark checklist before their first booking. On a recurring plan, the same person comes back every time.</p>
+								</div>
+							</li>
+							<li>
+								<span className="why-n">02</span>
+								<div>
+									<h3>Priced in 60 seconds, charged after.</h3>
+									<p>See your exact flat rate before you enter a single detail. Book online with instant confirmation, and your card is only charged once the clean is done and the photos are in.</p>
+								</div>
+							</li>
+							<li>
+								<span className="why-n">03</span>
+								<div>
+									<h3>Manhattan, and only Manhattan.</h3>
+									<p>Co-op boards, COIs, service-elevator hours, fifth-floor walk-ups, doormen who want a name. We work nowhere else, so we already know your building&apos;s rules.</p>
+								</div>
+							</li>
+							<li>
+								<span className="why-n">04</span>
+								<div>
+									<h3>Bonded, insured, guaranteed.</h3>
+									<p>Full liability coverage on every visit, and if anything isn&apos;t right within 48 hours we come back and fix it at no charge. No forms, no arguing.</p>
+								</div>
+							</li>
+						</ol>
 					</div>
 				</div>
 			</section>
@@ -484,7 +504,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 			</section>
 
 			{/* NEIGHBORHOODS */}
-			<section className="section hoods-bg" id="areas">
+			<section className="section hoods-bg sky-bg" id="areas">
 				<div className="sect-eye">Service areas</div>
 				<h2>All of Manhattan.<br /><em>Your neighborhood, covered.</em></h2>
 				<p className="sect-sub">We operate across all Manhattan neighborhoods, plus select parts of Brooklyn and Queens on request. Tap yours to see what we clean there.</p>
@@ -493,12 +513,13 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 					<Link href="/neighborhoods" className="hood">Greenwich Village</Link><Link href="/neighborhoods/chelsea" className="hood">Chelsea</Link><Link href="/neighborhoods/flatiron" className="hood">Flatiron</Link>
 					<Link href="/neighborhoods" className="hood">Gramercy</Link><Link href="/neighborhoods/murray-hill" className="hood">Murray Hill</Link><Link href="/neighborhoods" className="hood">Midtown</Link>
 					<Link href="/neighborhoods" className="hood">Hell&apos;s Kitchen</Link><Link href="/neighborhoods/upper-east-side" className="hood">Upper East Side</Link><Link href="/neighborhoods/upper-west-side" className="hood">Upper West Side</Link>
-					<Link href="/neighborhoods" className="hood">Harlem</Link><Link href="/neighborhoods" className="hood">Washington Heights</Link><Link href="/neighborhoods/financial-district" className="hood">FiDi</Link>
+					<Link href="/neighborhoods/financial-district" className="hood">FiDi</Link>
 					<Link href="/neighborhoods" className="hood">Battery Park</Link><Link href="/neighborhoods" className="hood">Nolita</Link><Link href="/neighborhoods" className="hood">Lower East Side</Link>
-					<Link href="/neighborhoods" className="hood">Kips Bay</Link><Link href="/neighborhoods" className="hood">Sutton Place</Link><Link href="/neighborhoods" className="hood">Carnegie Hill</Link>
-					<Link href="/neighborhoods" className="hood">Morningside Heights</Link><Link href="/neighborhoods" className="hood">Inwood</Link><Link href="/neighborhoods" className="hood">Hudson Yards</Link>
+					<Link href="/neighborhoods" className="hood">Kips Bay</Link><Link href="/neighborhoods" className="hood">Sutton Place</Link>
+					<Link href="/neighborhoods" className="hood">Hudson Yards</Link>
 					<Link href="/neighborhoods" className="hood">Yorkville</Link>
 				</div>
+				<p className="hoods-more"><Link href="/neighborhoods">See the areas we cover in detail →</Link></p>
 			</section>
 
 			{/* GUARANTEE */}
@@ -608,7 +629,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 			</section>
 
 			{/* NOT FOR EVERYONE */}
-			<section className="section notfor-bg" id="not-for-everyone">
+			<section className="section notfor-bg sky-bg" id="not-for-everyone">
 				<div className="notfor-inner">
 					<div className="sect-eye">A straight answer</div>
 					<h2>We&apos;re not for everyone.<br /><em>And that&apos;s on purpose.</em></h2>
