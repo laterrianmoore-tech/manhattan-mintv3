@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { caseStudies } from "../data";
@@ -104,6 +105,12 @@ export default async function CaseStudyPage({ params }: Props) {
 						Service: <Link href="/#services">{study.service}</Link>
 					</span>
 				</div>
+
+				{study.image && (
+					<figure className="cs-hero-img">
+						<Image src={study.image.src} alt={study.image.alt} fill sizes="(max-width: 760px) 100vw, 720px" priority />
+					</figure>
+				)}
 
 				<h2 className="cs-section-head">The challenge</h2>
 				{study.challenge.map((paragraph, index) => (

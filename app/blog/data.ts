@@ -35,6 +35,7 @@ export const blogPosts: BlogPost[] = [
 		publishedAt: "2026-09-29",
 		excerpt:
 			"Heat season starts October 1. The weeks before it are the best window all year to reset a Manhattan apartment — radiators, windows, closets, and the kitchen before the holidays.",
+		image: { src: "/blog/fall-cleaning-checklist-manhattan-apartment.jpg", alt: "Apartment window above a radiator, ready for heat season" },
 		intro: [
 			"There is a two-week stretch every fall when a Manhattan apartment is easiest to get truly clean. The summer humidity has broken, the windows can still be open, and the radiators haven't switched on yet. Once they do — October 1, by city law — every speck of dust left in the apartment starts moving, and whatever is sitting on the radiator fins gets baked on for the next eight months.",
 			"This is the checklist we work through for our recurring clients in late September and early October. It builds on our [season-by-season guide](/blog/how-nyc-weather-affects-apartment-cleanliness) — that article explains why Manhattan dirt runs on a calendar; this one is the fall to-do list, room by room, in the order that actually matters.",
@@ -106,6 +107,7 @@ export const blogPosts: BlogPost[] = [
 		publishedAt: "2026-07-08",
 		excerpt:
 			"Heat season, salt season, pollen season, humidity season — Manhattan dirt runs on a calendar. What each season does to your apartment, and the schedule that keeps up.",
+		image: { src: "/blog/how-nyc-weather-affects-apartment-cleanliness.jpg", alt: "Rain on an apartment window looking onto a tree-lined street" },
 		intro: [
 			"Ask anyone who cleans Manhattan apartments for a living and they'll tell you the borough has more than four seasons. There's radiator season, salt season, pollen season, and humidity season — and each one changes what shows up on your floors, sills, and shelves. The dust you fight in January is not the same problem as the yellow-green film on your sills in April or the white haze by your front door in February.",
 			"This guide walks the calendar the way we plan it for our recurring clients: what each season actually does to a Manhattan apartment, what to do about it yourself, and when the big cleans are worth scheduling. It pairs with our [pre-war cleaning guide](/blog/how-to-clean-pre-war-apartments) — the techniques there, the timing here.",
@@ -185,6 +187,7 @@ export const blogPosts: BlogPost[] = [
 		updatedAt: "2026-07-08",
 		excerpt:
 			"Cast-iron radiators, crown moldings, single-pane windows facing a bus route — pre-war apartments are beautiful and they fight back. The techniques that actually work.",
+		image: { src: "/blog/how-to-clean-pre-war-apartments.jpg", alt: "Tall windows and original details in a pre-war apartment" },
 		intro: [
 			"Roughly half of Manhattan's housing stock was built before World War II, and anyone who lives in it knows the trade: high ceilings, real moldings, and solid walls in exchange for dust that seems to regenerate overnight. That's not your imagination. Pre-war buildings produce and trap dirt differently than post-war construction, and cleaning them well requires different techniques — not just more effort.",
 			"Here's what two years of cleaning pre-war apartments across the Upper West Side, the Village, and Harlem has taught us, in enough detail that you can apply it yourself between professional cleans.",
@@ -250,6 +253,7 @@ export const blogPosts: BlogPost[] = [
 		publishedAt: "2026-06-28",
 		excerpt:
 			"Co-op boards can turn away any vendor at the lobby — and they do, daily. Here's what your building will require from a cleaning service, and how to hire one that already knows the drill.",
+		image: { src: "/blog/cleaning-services-for-co-ops.jpg", alt: "Marble hallway leading to an apartment door in a classic building" },
 		intro: [
 			"If you live in a Manhattan co-op, you already know the building has opinions about who comes through the lobby. Contractors, dog walkers, movers — and yes, cleaning services — all typically need to satisfy the board's requirements before they're allowed upstairs. A cleaner who shows up without the right paperwork doesn't get a warning; they get turned away, and you get a text at work asking why there's a stranger in the lobby claiming to know you.",
 			"This guide covers what most NYC co-op buildings actually require from a cleaning service, and the questions worth asking before you hire one.",

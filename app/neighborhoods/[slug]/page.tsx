@@ -72,45 +72,47 @@ export default async function NeighborhoodPage({ params }: Props) {
 	];
 
 	return (
-		<div className="cs-page sv-page nb-page">
+		<div className="nb-page">
 			<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-			<div className="sv-hero">
-				<div>
-					<div className="cs-eye">Apartment cleaning · {n.name}</div>
-					<h1 className="cs-h1">
-						{n.h1[0]}
-						<br />
-						<em>{n.h1[1]}</em>
-					</h1>
-					<div className="nb-bounds">{n.bounds}</div>
-					<p className="cs-lede">{n.lede}</p>
-					<div className="sv-actions">
-						<Link href="/#pricing" className="sv-btn">See your exact price →</Link>
-						<Link href="/quote" className="sv-btn-ghost">Book now</Link>
+			<header className={`nb-hero${n.image ? " has-photo" : ""}`}>
+				{n.image && (
+					<div className="nb-hero-bg" aria-hidden="true">
+						<Image src={n.image.src} alt="" fill sizes="100vw" priority />
 					</div>
-					<div className="sv-trust">
-						<span>Charged only after the clean</span>
-						<span>Same cleaner every visit</span>
-						<span>COI-ready</span>
+				)}
+				<div className="nb-hero-inner">
+					<div>
+						<div className="cs-eye nb-eye">Apartment cleaning · {n.name}</div>
+						<h1 className="cs-h1 nb-h1">
+							{n.h1[0]}
+							<br />
+							<em>{n.h1[1]}</em>
+						</h1>
+						<div className="nb-bounds">{n.bounds}</div>
+						<p className="nb-lede">{n.lede}</p>
+						<div className="sv-actions">
+							<Link href="/#pricing" className="sv-btn">See your exact price →</Link>
+							<Link href="/quote" className="sv-btn-ghost nb-ghost">Book now</Link>
+						</div>
+						<div className="sv-trust nb-trust">
+							<span>Charged only after the clean</span>
+							<span>Same cleaner every visit</span>
+							<span>COI-ready</span>
+						</div>
 					</div>
-				</div>
-				<aside className="nb-side">
-					{n.image && (
-						<figure className="nb-photo">
-							<Image src={n.image.src} alt={n.image.alt} fill sizes="(max-width: 900px) 100vw, 360px" priority />
-						</figure>
-					)}
-					<div className="sv-price nb-popular">
+					<aside className="nb-popular">
 						<div className="sv-price-eye">Most booked here</div>
 						<div className="nb-popular-name">{n.popular.service}</div>
 						<p className="nb-popular-why">{n.popular.why}</p>
 						<div className="nb-popular-ex">{n.popular.example}</div>
 						<Link href={`/services/${n.popular.serviceSlug}`} className="sv-price-btn">About this service →</Link>
-					</div>
-				</aside>
-			</div>
+					</aside>
+				</div>
+				{n.image?.credit && <span className="nb-credit">Photo: {n.image.credit}</span>}
+			</header>
 
+			<div className="cs-page sv-page nb-body">
 			<section className="sv-section">
 				<h2 className="cs-section-head">What we clean in {n.name}</h2>
 				<div className="nb-buildings">
@@ -184,6 +186,7 @@ export default async function NeighborhoodPage({ params }: Props) {
 					</Link>
 				))}
 				<Link href="/neighborhoods">All neighborhoods →</Link>
+			</div>
 			</div>
 		</div>
 	);

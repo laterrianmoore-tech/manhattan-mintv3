@@ -6,29 +6,106 @@
 	margin: -0.25rem 0 1.5rem;
 }
 
-.nb-side {
-	display: flex;
-	flex-direction: column;
-	gap: 1.25rem;
-	position: sticky;
-	top: 6.5rem;
-}
-
-.nb-photo {
+/* Full-bleed hero: the neighborhood photo sits behind the headline with a
+   dark-to-transparent wash so the type stays legible; the "most booked" card
+   floats on the right on a frosted dark panel. */
+.nb-hero {
 	position: relative;
-	aspect-ratio: 4 / 3;
-	margin: 0;
-	border-radius: 3px;
+	background: var(--dark, #0f0f0f);
+	color: #fff;
 	overflow: hidden;
-	background: var(--mint-light, #e1f5ee);
 }
 
-.nb-photo img {
+.nb-hero-bg {
+	position: absolute;
+	inset: 0;
+}
+
+.nb-hero-bg img {
 	object-fit: cover;
+	object-position: center;
+}
+
+.nb-hero-bg::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(90deg, rgba(10, 12, 11, 0.88) 0%, rgba(10, 12, 11, 0.72) 45%, rgba(10, 12, 11, 0.35) 100%),
+		linear-gradient(180deg, rgba(10, 12, 11, 0.25) 0%, rgba(10, 12, 11, 0) 30%, rgba(10, 12, 11, 0.55) 100%);
+}
+
+.nb-hero-inner {
+	position: relative;
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 7rem 1.5rem 5rem;
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 340px;
+	gap: 4rem;
+	align-items: end;
+	min-height: 78vh;
+}
+
+.nb-eye {
+	color: var(--mint-mid, #5dcaa5);
+}
+
+.nb-h1 {
+	color: #fff;
+	max-width: 640px;
+}
+
+.nb-h1 em {
+	color: var(--mint-mid, #5dcaa5);
+}
+
+.nb-bounds {
+	color: rgba(255, 255, 255, 0.55);
+}
+
+.nb-lede {
+	font-size: 1.02rem;
+	line-height: 1.78;
+	font-weight: 300;
+	color: rgba(255, 255, 255, 0.78);
+	max-width: 560px;
+	margin: 0 0 2rem;
+}
+
+.nb-ghost {
+	border-color: rgba(255, 255, 255, 0.35);
+	color: #fff;
+}
+
+.nb-trust {
+	color: rgba(255, 255, 255, 0.55);
+}
+
+.nb-trust span::before {
+	color: var(--mint-mid, #5dcaa5);
 }
 
 .nb-popular {
-	position: static;
+	background: rgba(15, 15, 15, 0.72);
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	padding: 2rem;
+	border-radius: 3px;
+}
+
+.nb-credit {
+	position: absolute;
+	right: 1rem;
+	bottom: 0.6rem;
+	font-size: 0.6rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: rgba(255, 255, 255, 0.35);
+}
+
+.nb-body {
+	padding-top: 4.5rem;
 }
 
 .nb-popular-name {
@@ -102,8 +179,14 @@
 }
 
 @media (max-width: 900px) {
-	.nb-side {
-		position: static;
+	.nb-hero-inner {
+		grid-template-columns: 1fr;
+		gap: 2.5rem;
+		padding: 5.5rem 1.25rem 3.5rem;
+		min-height: 0;
+	}
+	.nb-hero-bg::after {
+		background: linear-gradient(180deg, rgba(10, 12, 11, 0.55) 0%, rgba(10, 12, 11, 0.82) 60%, rgba(10, 12, 11, 0.95) 100%);
 	}
 	.nb-buildings {
 		grid-template-columns: 1fr;

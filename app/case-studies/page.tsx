@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { caseStudies } from "./data";
 import "./case-studies.css";
@@ -58,7 +59,12 @@ export default function CaseStudiesPage() {
 
 			<div className="cs-index-grid">
 				{caseStudies.map((study) => (
-					<Link key={study.slug} href={`/case-studies/${study.slug}`} className="cs-index-card">
+					<Link key={study.slug} href={`/case-studies/${study.slug}`} className={`cs-index-card${study.image ? " has-img" : ""}`}>
+						{study.image && (
+							<span className="cs-card-img">
+								<Image src={study.image.src} alt={study.image.alt} fill sizes="(max-width: 760px) 100vw, 400px" />
+							</span>
+						)}
 						<span className="cs-meta">
 							{study.neighborhood} · {study.propertyType} · {study.service}
 						</span>

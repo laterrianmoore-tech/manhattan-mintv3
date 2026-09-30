@@ -8,6 +8,8 @@ export type CaseStudy = {
 	service: string;
 	publishedAt: string; // ISO date
 	excerpt: string;
+	// Optional photo: hero on the article, thumbnail on the index. Files in /public/case-studies/.
+	image?: { src: string; alt: string; credit?: string };
 	challenge: string[];
 	approach: { title: string; body: string }[];
 	results: string[];
@@ -29,6 +31,7 @@ export const caseStudies: CaseStudy[] = [
 		publishedAt: "2026-05-12",
 		excerpt:
 			"450 square feet, a fourth-floor walk-up, and a century of radiator dust. Small spaces are harder to clean well — here's how we do it.",
+		image: { src: "/case-studies/pre-war-walk-up-deep-clean-upper-west-side.jpg", alt: "Sunlit pre-war room with tall windows and a cast-iron radiator", credit: "Pexels" },
 		challenge: [
 			"Pre-war buildings are beautiful, but they collect grime in ways modern apartments don't. This Upper West Side studio — roughly 450 square feet on the fourth floor of a walk-up — had cast-iron radiators that hadn't been cleaned behind in years, original moldings holding decades of dust, and window sills facing a busy avenue that turned black within a week of wiping.",
 			"Small spaces add their own problem: when every inch is used for storage, there's no such thing as an easy-to-reach surface. Under-bed storage, over-cabinet baskets, and a loft shelf all needed to be worked around without disturbing the client's system.",
@@ -72,6 +75,7 @@ export const caseStudies: CaseStudy[] = [
 		publishedAt: "2026-05-26",
 		excerpt:
 			"Her co-op board required a COI naming three entities, a service-elevator reservation, and vendor check-in before anyone could clean her apartment. That's a normal Tuesday for us.",
+		image: { src: "/case-studies/co-op-coi-cleaning-upper-east-side.jpg", alt: "Arched stone doorway of a classic Upper East Side building", credit: "Pexels" },
 		challenge: [
 			"Many Manhattan co-ops won't let a cleaning service through the lobby without paperwork. This Upper East Side building required a [certificate of insurance](/blog/cleaning-services-for-co-ops) naming the building corporation, the managing agent, and the board — plus a service elevator reservation made 48 hours ahead, and vendor check-in with the doorman on arrival.",
 			"The client had already lost a cleaner over this: her previous service missed the elevator window twice and was turned away at the door, leaving her to scramble before houseguests arrived.",
@@ -115,6 +119,7 @@ export const caseStudies: CaseStudy[] = [
 		publishedAt: "2026-06-09",
 		excerpt:
 			"Two working parents, two kids, a dog, and 1,600 square feet that never stayed clean longer than a weekend. The fix wasn't one heroic clean — it was a system.",
+		image: { src: "/case-studies/three-bedroom-family-reset-west-village.jpg", alt: "Bright family living room with hardwood floors and a dining area", credit: "Pexels" },
 		challenge: [
 			"A three-bedroom in Manhattan works harder than a three-bedroom anywhere else: it's the office, the playroom, the gym, and the dog's territory all at once. This West Village family had tried four services and kept hitting the same wall — each clean looked fine on day one and had unravelled by day four.",
 			"The real problem wasn't dirt, it was accumulation: toy rotation, school paperwork, pet hair in upholstery, and kitchen grease that one-off cleans never fully reversed.",
@@ -158,6 +163,7 @@ export const caseStudies: CaseStudy[] = [
 		publishedAt: "2026-06-20",
 		excerpt:
 			"Lofts look minimal and clean by design — which makes the dust on every beam, ledge, and open shelf twice as visible. This one needed a different playbook.",
+		image: { src: "/case-studies/loft-detail-clean-tribeca.jpg", alt: "Open-plan loft with high ceilings, large windows and exposed structure", credit: "Pexels" },
 		challenge: [
 			"Converted lofts break the standard cleaning playbook. This Tribeca space had 12-foot ceilings with exposed beams, open metal shelving instead of closed cabinets, oversized industrial windows, and radiators tucked behind custom millwork. Open-plan living means dust has nowhere to hide — every ledge is on display.",
 			"The client's previous service cleaned what was reachable and skipped what wasn't, which in a loft means skipping half the apartment's surfaces.",
