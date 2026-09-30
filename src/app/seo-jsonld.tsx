@@ -24,14 +24,17 @@ export default function SEOJsonLd() {
       addressRegion: "NY",
       addressCountry: "US",
     },
+    // Google prefers a square logo (>=112px, ideally 1:1) for the search
+    // knowledge panel; the wide image stays as the general business image.
     image: [
+      "https://manhattanmintnyc.com/brand/square",
       "https://manhattanmintnyc.com/opengraph-image",
     ],
-    logo: "https://manhattanmintnyc.com/opengraph-image",
+    logo: "https://manhattanmintnyc.com/brand/square",
     brand: {
       "@type": "Brand",
       name: "Manhattan Mint",
-      logo: "https://manhattanmintnyc.com/opengraph-image",
+      logo: "https://manhattanmintnyc.com/brand/square",
     },
   } as const;
 

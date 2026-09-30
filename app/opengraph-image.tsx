@@ -64,7 +64,7 @@ export default async function Image() {
         </div>
 
         <div style={{ display: "flex", gap: 20 }}>
-          {["Fully insured", "5.0 on Google", "Flat rates from $175"].map((badge) => (
+          {["5.0 on Google", "Flat rates from $175", "Same cleaner every visit"].map((badge) => (
             <div
               key={badge}
               style={{ background: "#e1f5ee", color: "#085041", padding: "10px 24px", borderRadius: 999, fontSize: 22, display: "flex" }}
