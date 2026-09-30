@@ -11,6 +11,18 @@ const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
   : null;
 
+const fieldStyle: React.CSSProperties = {
+  width: "100%",
+  minWidth: 0,
+  boxSizing: "border-box",
+  border: "1px solid rgba(0,0,0,.15)",
+  borderRadius: 8,
+  padding: ".6rem",
+  fontSize: "1rem",
+  fontFamily: "inherit",
+  background: "#fff",
+};
+
 const frequencies = ["One-Time", "Weekly", "Bi-Weekly", "Monthly"] as const;
 
 const extrasCatalog = [
@@ -493,7 +505,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
                 <div style={{ marginTop: "1rem", display: "grid", gap: ".75rem", gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }} className="md:grid-cols-2">
                   <label style={{ display: "grid", gap: ".3rem" }}>
                     <span style={{ fontSize: ".75rem", color: "#666" }}>Bedrooms</span>
-                    <select value={form.bedrooms} onChange={(e) => setField("bedrooms", Number(e.target.value))} style={{ border: "1px solid rgba(0,0,0,.15)", borderRadius: 8, padding: ".6rem" }}>
+                    <select value={form.bedrooms} onChange={(e) => setField("bedrooms", Number(e.target.value))} style={fieldStyle}>
                       <option value={1}>1</option>
                       <option value={2}>2</option>
                       <option value={3}>3</option>
@@ -503,7 +515,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
                   </label>
                   <label style={{ display: "grid", gap: ".3rem" }}>
                     <span style={{ fontSize: ".75rem", color: "#666" }}>Bathrooms</span>
-                    <select value={form.bathrooms} onChange={(e) => setField("bathrooms", Number(e.target.value))} style={{ border: "1px solid rgba(0,0,0,.15)", borderRadius: 8, padding: ".6rem" }}>
+                    <select value={form.bathrooms} onChange={(e) => setField("bathrooms", Number(e.target.value))} style={fieldStyle}>
                       <option value={1}>1</option>
                       <option value={2}>2</option>
                       <option value={3}>3</option>
@@ -557,7 +569,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
 
               <label style={{ display: "grid", gap: ".3rem", marginBottom: ".75rem" }}>
                 <span style={{ fontSize: ".75rem", color: "#666" }}>Date</span>
-                <input type="date" min={minServiceDate} required value={form.serviceDate} onChange={(e) => setField("serviceDate", e.target.value)} style={{ border: "1px solid rgba(0,0,0,.15)", borderRadius: 8, padding: ".6rem" }} />
+                <input type="date" min={minServiceDate} required value={form.serviceDate} onChange={(e) => setField("serviceDate", e.target.value)} style={fieldStyle} />
               </label>
               <p style={{ marginTop: "-.35rem", marginBottom: ".75rem", fontSize: ".76rem", color: "#666" }}>
                 Earliest booking date is 1 day from today.
@@ -599,22 +611,22 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
               <div style={{ display: "grid", gap: ".75rem", gridTemplateColumns: "repeat(2,minmax(0,1fr))" }}>
                 <label style={{ display: "grid", gap: ".3rem" }}>
                   <span style={{ fontSize: ".75rem", color: "#666" }}>First Name</span>
-                  <input required value={form.firstName} onChange={(e) => setField("firstName", e.target.value)} style={{ border: "1px solid rgba(0,0,0,.15)", borderRadius: 8, padding: ".6rem" }} />
+                  <input required value={form.firstName} onChange={(e) => setField("firstName", e.target.value)} style={fieldStyle} />
                 </label>
                 <label style={{ display: "grid", gap: ".3rem" }}>
                   <span style={{ fontSize: ".75rem", color: "#666" }}>Last Name</span>
-                  <input required value={form.lastName} onChange={(e) => setField("lastName", e.target.value)} style={{ border: "1px solid rgba(0,0,0,.15)", borderRadius: 8, padding: ".6rem" }} />
+                  <input required value={form.lastName} onChange={(e) => setField("lastName", e.target.value)} style={fieldStyle} />
                 </label>
               </div>
 
               <div style={{ marginTop: ".75rem", display: "grid", gap: ".75rem", gridTemplateColumns: "repeat(2,minmax(0,1fr))" }}>
                 <label style={{ display: "grid", gap: ".3rem" }}>
                   <span style={{ fontSize: ".75rem", color: "#666" }}>Email</span>
-                  <input required type="email" value={form.email} onChange={(e) => setField("email", e.target.value)} style={{ border: "1px solid rgba(0,0,0,.15)", borderRadius: 8, padding: ".6rem" }} />
+                  <input required type="email" value={form.email} onChange={(e) => setField("email", e.target.value)} style={fieldStyle} />
                 </label>
                 <label style={{ display: "grid", gap: ".3rem" }}>
                   <span style={{ fontSize: ".75rem", color: "#666" }}>Phone</span>
-                  <input required type="tel" value={form.phone} onChange={(e) => setField("phone", e.target.value)} style={{ border: "1px solid rgba(0,0,0,.15)", borderRadius: 8, padding: ".6rem" }} />
+                  <input required type="tel" value={form.phone} onChange={(e) => setField("phone", e.target.value)} style={fieldStyle} />
                 </label>
               </div>
 
@@ -626,11 +638,11 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
               <div style={{ marginTop: ".75rem", display: "grid", gap: ".75rem", gridTemplateColumns: "2fr 1fr" }}>
                 <label style={{ display: "grid", gap: ".3rem" }}>
                   <span style={{ fontSize: ".75rem", color: "#666" }}>Address</span>
-                  <input required value={form.address} onChange={(e) => setField("address", e.target.value)} style={{ border: "1px solid rgba(0,0,0,.15)", borderRadius: 8, padding: ".6rem" }} />
+                  <input required value={form.address} onChange={(e) => setField("address", e.target.value)} style={fieldStyle} />
                 </label>
                 <label style={{ display: "grid", gap: ".3rem" }}>
                   <span style={{ fontSize: ".75rem", color: "#666" }}>Apt No</span>
-                  <input value={form.aptNo} onChange={(e) => setField("aptNo", e.target.value)} style={{ border: "1px solid rgba(0,0,0,.15)", borderRadius: 8, padding: ".6rem" }} />
+                  <input value={form.aptNo} onChange={(e) => setField("aptNo", e.target.value)} style={fieldStyle} />
                 </label>
               </div>
 
@@ -642,11 +654,11 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
               <div style={{ marginTop: ".75rem", display: "grid", gap: ".75rem" }}>
                 <label style={{ display: "grid", gap: ".3rem" }}>
                   <span style={{ fontSize: ".75rem", color: "#666" }}>Access Notes</span>
-                  <textarea placeholder="Passcode, key location, or other access details if needed" value={form.accessNotes} onChange={(e) => setField("accessNotes", e.target.value)} rows={3} style={{ border: "1px solid rgba(0,0,0,.15)", borderRadius: 8, padding: ".6rem" }} />
+                  <textarea placeholder="Passcode, key location, or other access details if needed" value={form.accessNotes} onChange={(e) => setField("accessNotes", e.target.value)} rows={3} style={fieldStyle} />
                 </label>
                 <label style={{ display: "grid", gap: ".3rem" }}>
                   <span style={{ fontSize: ".75rem", color: "#666" }}>Cleaning Notes</span>
-                  <textarea placeholder="Any additional details or requests for the cleaning" value={form.cleaningNotes} onChange={(e) => setField("cleaningNotes", e.target.value)} rows={3} style={{ border: "1px solid rgba(0,0,0,.15)", borderRadius: 8, padding: ".6rem" }} />
+                  <textarea placeholder="Any additional details or requests for the cleaning" value={form.cleaningNotes} onChange={(e) => setField("cleaningNotes", e.target.value)} rows={3} style={fieldStyle} />
                 </label>
               </div>
             </div>
@@ -668,7 +680,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
               <label style={{ display: "grid", gap: ".3rem", marginBottom: ".75rem" }}>
                 <span style={{ fontSize: ".75rem", color: "#666" }}>Coupon or friend code</span>
 
-                <input value={form.couponCode} onChange={(e) => setField("couponCode", e.target.value)} placeholder="MINT20" style={{ border: "1px solid rgba(0,0,0,.15)", borderRadius: 8, padding: ".6rem" }} />
+                <input value={form.couponCode} onChange={(e) => setField("couponCode", e.target.value)} placeholder="MINT20" style={fieldStyle} />
               </label>
 
               <p style={{ marginBottom: ".75rem", fontSize: ".84rem", color: "#444" }}>
