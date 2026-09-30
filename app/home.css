@@ -132,14 +132,14 @@ h2 em{font-style:italic;color:var(--mint);}
 .cred-body{font-size:.79rem;color:var(--gray);line-height:1.65;font-weight:300;}
 
 /* NEIGHBORHOODS */
-.hoods-bg{background:var(--dark);}
+.hoods-bg{position:relative;background:var(--dark) url("/home/skyline.jpg") center 40%/cover no-repeat;isolation:isolate;}
+.hoods-bg::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,12,11,.92) 0%,rgba(10,12,11,.78) 45%,rgba(10,12,11,.62) 100%);z-index:-1;}
 .hoods-bg .sect-eye{color:var(--mint-mid);}
 .hoods-bg h2{color:#fff;}
-.hoods-bg .sect-sub{color:rgba(255,255,255,.35);}
+.hoods-bg .sect-sub{color:rgba(255,255,255,.5);}
 .hoods-grid{display:flex;flex-wrap:wrap;gap:.5rem;}
-.hood{background:rgba(255,255,255,.05);border:.5px solid rgba(255,255,255,.08);padding:.5rem 1.1rem;border-radius:2px;font-size:.78rem;color:rgba(255,255,255,.5);cursor:pointer;transition:all .2s;}
+.hood{background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.14);padding:.55rem 1.15rem;border-radius:2px;font-size:.78rem;color:rgba(255,255,255,.82);text-decoration:none;cursor:pointer;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:all .2s;}
 .hood:hover{background:rgba(29,158,117,.15);border-color:rgba(29,158,117,.3);color:var(--mint-mid);}
-.hood-link{text-decoration:none;color:var(--mint-mid);border-color:rgba(93,202,165,.3);}
 
 /* REVIEWS */
 .reviews-scroll{position:relative;max-height:620px;overflow-y:auto;margin-bottom:2.5rem;padding:2px 2px 0;scrollbar-width:thin;scrollbar-color:var(--mint-mid) transparent;}
