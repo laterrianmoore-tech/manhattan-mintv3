@@ -92,7 +92,7 @@ export const blogPosts: BlogPost[] = [
 		],
 		cta: {
 			heading: "Want the fall reset done for you?|We schedule it.",
-			body: "Book a deep clean before the heat comes on, or start a recurring plan and we'll spread the fall list across your regular visits — same cleaner every time, flat rates from $175, up to 30% off recurring. See how the schedule works in a real home in our",
+			body: "Book a deep clean before the heat comes on, or start a recurring plan and we'll spread the fall list across your regular visits — same cleaner every time, flat rates from $175, up to 20% off recurring. See how the schedule works in a real home in our",
 			caseStudySlug: "three-bedroom-family-reset-west-village",
 			caseStudyLabel: "West Village family reset case study",
 		},
@@ -171,7 +171,7 @@ export const blogPosts: BlogPost[] = [
 		],
 		cta: {
 			heading: "Cleaning in NYC is seasonal.|We plan for it.",
-			body: "Recurring plans that track the seasons — same cleaner every visit, flat rates from $175, up to 30% off recurring. See the real thing in our",
+			body: "Recurring plans that track the seasons — same cleaner every visit, flat rates from $175, up to 20% off recurring. See the real thing in our",
 			caseStudySlug: "three-bedroom-family-reset-west-village",
 			caseStudyLabel: "West Village family reset case study",
 		},

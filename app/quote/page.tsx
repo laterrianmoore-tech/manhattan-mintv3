@@ -69,7 +69,9 @@ type BookingFormState = {
 };
 
 const defaultExtras = extrasCatalog.reduce((acc, item) => {
-  acc[item.key] = false;
+  // First visits default to a deep clean so every new client starts from a
+  // proper reset; it is one tap to switch back to a standard clean.
+  acc[item.key] = item.key === "deepCleaning";
   return acc;
 }, {} as Record<ExtraKey, boolean>);
 
@@ -81,9 +83,9 @@ function basePriceForBedrooms(bedrooms: number) {
 }
 
 function discountRateForFrequency(frequency: Frequency) {
-  if (frequency === "Weekly") return 0.3;
-  if (frequency === "Bi-Weekly") return 0.25;
-  if (frequency === "Monthly") return 0.15;
+  if (frequency === "Weekly") return 0.2;
+  if (frequency === "Bi-Weekly") return 0.15;
+  if (frequency === "Monthly") return 0.1;
   return 0;
 }
 
@@ -197,7 +199,7 @@ type QuoteFormProps = {
 function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
 
   const [form, setForm] = useState<BookingFormState>({
-    frequency: "One-Time",
+    frequency: "Bi-Weekly",
     bedrooms: 1,
     bathrooms: 1,
     extras: defaultExtras,
@@ -260,7 +262,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
       couponCode: prev.couponCode || urlCode,
       extras: {
         ...prev.extras,
-        deepCleaning: storedService.includes("Deep clean"),
+        deepCleaning: storedService ? storedService.includes("Deep clean") : prev.extras.deepCleaning,
         moveInOut: storedService.includes("Move-in") || storedService.includes("Move In/Out"),
       },
       // Notes are shown to the cleaner on their portal — strip the "(+$75)"
@@ -456,9 +458,19 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
         <h1 style={{ color: "var(--dark)", fontFamily: "DM Serif Display, serif", fontWeight: 400, fontSize: "clamp(2rem,4vw,3rem)", margin: "0 0 0.55rem" }}>
           Complete your booking.
         </h1>
-        <p style={{ color: "var(--gray)", marginBottom: "1.5rem", fontWeight: 300 }}>
-          Custom booking form with service details, customer info, and payment authorization.
+        <p style={{ color: "var(--gray)", marginBottom: "1rem", fontWeight: 300 }}>
+          Exact price before you enter a card. Charged only after the clean.
         </p>
+        <div style={{ display: "grid", gap: ".6rem", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", marginBottom: "1.5rem" }}>
+          <div style={{ background: "var(--mint-light)", border: "1px solid rgba(29,158,117,.2)", borderRadius: 12, padding: ".8rem .95rem", fontSize: ".86rem", lineHeight: 1.55, color: "#2b3b35" }}>
+            <strong style={{ color: "var(--mint-dark)", display: "block", marginBottom: ".15rem" }}>Free re-clean guarantee</strong>
+            Spot something we missed? Tell us within 48 hours and we send a cleaner back at no charge. No forms, no arguing.
+          </div>
+          <div style={{ background: "var(--mint-light)", border: "1px solid rgba(29,158,117,.2)", borderRadius: 12, padding: ".8rem .95rem", fontSize: ".86rem", lineHeight: 1.55, color: "#2b3b35" }}>
+            <strong style={{ color: "var(--mint-dark)", display: "block", marginBottom: ".15rem" }}>Same cleaner every time</strong>
+            Go recurring and the person who learned your apartment is the one who comes back. Not a new stranger each visit.
+          </div>
+        </div>
 
         <div style={{ display: "grid", gap: "1rem", alignItems: "start", gridTemplateColumns: "minmax(0,1fr)" }} className="lg:grid-cols-[1.2fr,0.8fr]">
           <form onSubmit={handleSubmit} style={{ background: "#fff", border: "1px solid rgba(0,0,0,.08)", borderRadius: 14, padding: "1rem" }}>
@@ -481,12 +493,17 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
                     }}
                   >
                     {f}
+                    {f === "Bi-Weekly" ? (
+                      <span style={{ display: "block", fontSize: ".62rem", letterSpacing: ".08em", textTransform: "uppercase", marginTop: ".15rem", opacity: 0.85 }}>Most popular</span>
+                    ) : null}
                   </button>
                 ))}
               </div>
 
-              <p style={{ marginTop: ".75rem", fontSize: ".78rem", color: "#666" }}>
-                Recurring frequency pricing starts on your next clean after the first visit.
+              <p style={{ marginTop: ".75rem", fontSize: ".78rem", color: "#666", lineHeight: 1.5 }}>
+                {form.frequency === "One-Time"
+                  ? "A single visit at the flat rate. Prefer the same cleaner on a schedule? Bi-Weekly saves 15% on every visit after the first."
+                  : `Visit one is at the flat rate. From visit two, ${form.frequency === "Weekly" ? "20%" : form.frequency === "Bi-Weekly" ? "15%" : "10%"} off every clean, same cleaner, no contract. Prefer a single visit? Choose One-Time.`}
               </p>
 
 
@@ -558,7 +575,9 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
                       ? "First deep clean is on us: the +$75 comes off this visit. From visit two, standard cleans at your recurring rate."
                       : form.frequency === "Weekly" || form.frequency === "Bi-Weekly"
                         ? "Add Deep Cleaning and it's free on this first visit — start your plan from a proper reset."
-                        : "Start weekly or bi-weekly and the deep clean on your first visit (+$75) is free."}
+                        : form.extras.deepCleaning
+                          ? "First visits are deep cleans (+$75) so we start from a proper reset: inside the oven, behind and under what moves, every surface. Prefer a standard clean? Untick Deep Cleaning."
+                          : "Start weekly or bi-weekly and the deep clean on your first visit (+$75) is free."}
                   </p>
                 )}
               </div>
@@ -572,7 +591,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
                 <input type="date" min={minServiceDate} required value={form.serviceDate} onChange={(e) => setField("serviceDate", e.target.value)} style={fieldStyle} />
               </label>
               <p style={{ marginTop: "-.35rem", marginBottom: ".75rem", fontSize: ".76rem", color: "#666" }}>
-                Earliest booking date is 1 day from today.
+                Next-day is the earliest online. Need it today? Text <a href="sms:+19148637902" style={{ color: "var(--mint-dark)", fontWeight: 500 }}>(914) 863-7902</a> and we'll try to fit you in.
               </p>
 
               <div style={{ marginBottom: ".75rem" }}>

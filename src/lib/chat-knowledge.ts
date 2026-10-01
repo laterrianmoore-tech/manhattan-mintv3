@@ -10,9 +10,9 @@ export const PRICING = {
     moveInOut: 100,
   },
   recurringDiscount: {
-    weekly: 0.30,
-    biWeekly: 0.25,
-    monthly: 0.15,
+    weekly: 0.20,
+    biWeekly: 0.15,
+    monthly: 0.10,
   },
   hourlyRate: 65, // per cleaner per hour
 };

@@ -155,7 +155,7 @@ export const neighborhoods: Neighborhood[] = [
 		popular: {
 			service: "Weekly or bi-weekly standard clean",
 			serviceSlug: "apartment-cleaning",
-			why: "Families and busy couples here want the apartment kept, not rescued. Weekly at 30% off makes that cheaper per visit than a monthly reset.",
+			why: "Families and busy couples here want the apartment kept, not rescued. Weekly at 20% off makes that cheaper per visit than a monthly reset.",
 			example: "3BR / 2BA: $300 first visit, $210 per visit weekly, $225 bi-weekly.",
 		},
 		caseStudy: { slug: "three-bedroom-family-reset-west-village", label: "A full reset for a busy family's three-bedroom in the West Village" },
@@ -225,7 +225,7 @@ export const neighborhoods: Neighborhood[] = [
 		popular: {
 			service: "Bi-weekly standard clean",
 			serviceSlug: "apartment-cleaning",
-			why: "Long hours and small apartments make a fixed bi-weekly visit the easiest thing to keep up, and the price at 25% off is modest for a one-bedroom.",
+			why: "Long hours and small apartments make a fixed bi-weekly visit the easiest thing to keep up, and the price at 15% off is modest for a one-bedroom.",
 			example: "1BR / 1BA: $175 first visit, $131 per visit bi-weekly.",
 		},
 		caseStudy: { slug: "co-op-coi-cleaning-upper-east-side", label: "Working with doormen and COI requirements: our Upper East Side co-op case study" },
@@ -273,7 +273,7 @@ export const neighborhoods: Neighborhood[] = [
 		name: "Murray Hill",
 		metaTitle: "Murray Hill Apartment Cleaning — Doorman Rentals & Shares",
 		metaDescription:
-			"Apartment cleaning in Murray Hill: post-war doorman rentals, white-brick buildings, roommate shares and compact one-bedrooms. Flat rates from $175, bi-weekly plans at 25% off, book in 60 seconds.",
+			"Apartment cleaning in Murray Hill: post-war doorman rentals, white-brick buildings, roommate shares and compact one-bedrooms. Flat rates from $175, bi-weekly plans at 15% off, book in 60 seconds.",
 		bounds: "34th to 40th Street, Fifth Avenue to the East River",
 		h1: ["Murray Hill cleaning", "for people who are never home."],
 		lede:
@@ -295,7 +295,7 @@ export const neighborhoods: Neighborhood[] = [
 		popular: {
 			service: "Bi-weekly standard clean",
 			serviceSlug: "apartment-cleaning",
-			why: "Split three ways, a bi-weekly clean at 25% off costs less than a round of drinks each, and the apartment never gets to the point where nobody wants to deal with it.",
+			why: "Split three ways, a bi-weekly clean at 15% off costs less than a round of drinks each, and the apartment never gets to the point where nobody wants to deal with it.",
 			example: "2BR / 1BA share: $225 first visit, $169 per visit bi-weekly.",
 		},
 		caseStudy: { slug: "co-op-coi-cleaning-upper-east-side", label: "Working with doormen and management: our Upper East Side case study" },
@@ -330,7 +330,7 @@ export const neighborhoods: Neighborhood[] = [
 		popular: {
 			service: "Bi-weekly standard clean",
 			serviceSlug: "apartment-cleaning",
-			why: "Small apartments get messy fast and clean fast. A bi-weekly visit at 25% off keeps a one-bedroom genuinely clean for less than $135 a visit.",
+			why: "Small apartments get messy fast and clean fast. A bi-weekly visit at 15% off keeps a one-bedroom genuinely clean for under $150 a visit.",
 			example: "1BR / 1BA: $175 first visit, $131 per visit bi-weekly.",
 		},
 		caseStudy: { slug: "pre-war-walk-up-deep-clean-upper-west-side", label: "Deep-cleaning a pre-war walk-up studio (our Upper West Side case study)" },
@@ -365,7 +365,7 @@ export const neighborhoods: Neighborhood[] = [
 		popular: {
 			service: "Weekly standard clean",
 			serviceSlug: "apartment-cleaning",
-			why: "If you're home all day, you notice the apartment all day. Weekly at 30% off is the plan most work-from-home clients here settle into.",
+			why: "If you're home all day, you notice the apartment all day. Weekly at 20% off is the plan most work-from-home clients here settle into.",
 			example: "1BR / 1BA: $175 first visit, $123 per visit weekly.",
 		},
 		caseStudy: { slug: "loft-detail-clean-tribeca", label: "Detail-cleaning a Tribeca loft: high ceilings, open space, hidden dust" },

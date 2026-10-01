@@ -166,6 +166,7 @@ function Footer() {
               </li>
               <li>
                 <Link href="/brokers">For Brokers &amp; Agents</Link>
+                <Link href="/turnovers">Turnovers for Operators</Link>
               </li>
               <li>
                 <Link href="/careers">Come work with us</Link>

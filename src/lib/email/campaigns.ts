@@ -143,7 +143,7 @@ export const PROSPECT_TRACK: CampaignEmail[] = [
       ${numberedCard(1, "Every two weeks is the sweet spot.", "For most 1–2 bedroom apartments, bi-weekly is where the math works: dust never gets a foothold, bathrooms never tip past “quick wipe” territory, and each visit stays fast and thorough.")}
       ${numberedCard(2, "Weekly, if you check two of the three boxes.", "Shedding pet plus daily cooking? Avenue-facing windows plus a dog? Weekly keeps you ahead of it instead of chasing it.")}
       ${numberedCard(3, "Monthly works for the tidy and the travelling.", "Home four nights a week, no pets, takeout more than stove? Monthly professional cleans with light upkeep between is a perfectly respectable rhythm.")}
-      ${para("Here's the part that surprises people: recurring plans make the frequent option <em>cheaper</em>. Weekly saves 30% per clean, bi-weekly 25%, monthly 15% — a bi-weekly 1BR works out to about $131 instead of $175, with the same cleaner each visit whenever possible.")}
+      ${para("Here's the part that surprises people: recurring plans make the frequent option <em>cheaper</em>. Weekly saves 20% per clean, bi-weekly 15%, monthly 10% — a bi-weekly 1BR works out to about $149 instead of $175, with the same cleaner each visit whenever possible.")}
       ${ctaBlock(`${siteUrl}/quote/`, "See recurring rates", "Pick a frequency at checkout — the discount applies automatically")}`,
   },
   {
@@ -265,7 +265,7 @@ export const PROSPECT_TRACK: CampaignEmail[] = [
     body: (siteUrl) => `
       ${hero("The small thing that matters", "Why we send the same cleaner every time.")}
       ${para("A first clean is the slowest one. The cleaner is learning where the vacuum lives, which cabinet sticks, what you care about most. By the third visit that is all known, so the same two hours go further.")}
-      ${para("That is why recurring clients get the same cleaner every visit. It is also why our recurring clients rarely leave. Weekly saves 30%, biweekly 25%, monthly 15%, and you can pause or cancel by replying to any email.")}
+      ${para("That is why recurring clients get the same cleaner every visit. It is also why our recurring clients rarely leave. Weekly saves 20%, biweekly 15%, monthly 10%, and you can pause or cancel by replying to any email.")}
       ${para("If you would rather try one clean first, that works too. Every recurring client we have started that way.")}
       ${ctaBlock(`${siteUrl}/quote/`, "Book a first clean", "Pick a frequency at checkout, or leave it at one-time")}
       ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
@@ -278,7 +278,7 @@ export const PROSPECT_TRACK: CampaignEmail[] = [
       ${hero("Straight answer", "What a clean costs, in one email.")}
       ${para("Standard clean: studio or 1 bedroom $175, 2 bedroom $225, 3 bedroom $275. Extra bathrooms add $25 each. Supplies included, card charged after the clean.")}
       ${para("Deep clean adds $75 and covers baseboards, door frames, grout, the hood vent, the things a regular clean is not priced for. Move-in or move-out adds $100 and includes inside the fridge, oven, cabinets and closets.")}
-      ${para("Recurring plans take 15% to 30% off every clean after the first. The full room-by-room checklist for each level is on the site if you want to see exactly what is included.")}
+      ${para("Recurring plans take 10% to 20% off every clean after the first. The full room-by-room checklist for each level is on the site if you want to see exactly what is included.")}
       ${ctaBlock(`${siteUrl}/#checklist`, "See what each clean includes", "Standard, Deep, Move Out, side by side")}
       ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
   },
@@ -355,17 +355,17 @@ export const CUSTOMER_TRACK: CampaignEmail[] = [
   },
   {
     key: "c02-recurring",
-    subject: "Never think about cleaning again (and save up to 30%)",
-    preheader: "Recurring plans: weekly saves 30%, bi-weekly 25%, monthly 15%.",
+    subject: "Never think about cleaning again (and save up to 20%)",
+    preheader: "Recurring plans: weekly saves 20%, bi-weekly 15%, monthly 10%.",
     body: (siteUrl) => `
       ${hero(
         "Worth the math",
         "The subscription that pays you to stop thinking about it",
         "You already know what a Manhattan Mint clean looks like. A recurring plan means it just stays that way — no rebooking, no remembering, and a permanently lower price for the exact same clean.",
       )}
-      ${featureRow("Weekly — save 30%.", "For homes with pets, kids, or serious cooking. Your 1BR drops from $175 to about $123 per clean.")}
-      ${featureRow("Bi-weekly — save 25%.", "Our most popular plan by a wide margin. About $131 per clean for a 1BR, and dust never gets a foothold.")}
-      ${featureRow("Monthly — save 15%.", "The tidy-household rhythm. About $149 per clean, professional-grade reset included.")}
+      ${featureRow("Weekly — save 20%.", "For homes with pets, kids, or serious cooking. Your 1BR drops from $175 to $140 per clean.")}
+      ${featureRow("Bi-weekly — save 15%.", "Our most popular plan by a wide margin. About $149 per clean for a 1BR, and dust never gets a foothold.")}
+      ${featureRow("Monthly — save 10%.", "The tidy-household rhythm. About $158 per clean, professional-grade reset included.")}
       ${para("Same standard, same photo summary after every visit, and the same cleaner each time whenever scheduling allows — they learn your apartment, your products, your building's quirks. You can pause or cancel any time by replying to any email.")}
       ${ctaBlock(`${siteUrl}/quote/`, "Start a recurring plan", "Pick a frequency at checkout — the discount applies automatically")}`,
   },

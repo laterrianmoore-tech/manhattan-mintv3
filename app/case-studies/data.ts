@@ -134,8 +134,8 @@ export const caseStudies: CaseStudy[] = [
 				body: "Weekly visits timed for school hours, so the apartment resets before the afternoon chaos begins. Same cleaner every week, who knows which toys live where and that the dog is friendly but dramatic. It's the same schedule-first logic behind our [seasonal NYC cleaning calendar](/blog/how-nyc-weather-affects-apartment-cleanliness).",
 			},
 			{
-				title: "The 30% recurring rate",
-				body: "Weekly service runs 30% below our one-time rate — deliberately, because consistent homes are faster to clean and we pass that time back as savings.",
+				title: "The 20% recurring rate",
+				body: "Weekly service runs 20% below our one-time rate — deliberately, because consistent homes are faster to clean and we pass that time back as savings.",
 			},
 		],
 		results: [

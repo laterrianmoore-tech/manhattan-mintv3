@@ -36,7 +36,7 @@ export const faqGroups: FaqGroup[] = [
 			},
 			{
 				q: "Do you offer discounts for recurring cleans?",
-				a: "Yes: 30% off weekly, 25% off bi-weekly, 15% off monthly, on every visit from your second clean. Start a weekly or bi-weekly plan and the deep clean on your first visit (normally +$75) is free, so you begin from a proper reset. Recurring clients also get the same cleaner each time and priority on their preferred day.",
+				a: "Yes: 20% off weekly, 15% off bi-weekly (our most popular plan), 10% off monthly, on every visit from your second clean. Start a weekly or bi-weekly plan and the deep clean on your first visit (normally +$75) is free, so you begin from a proper reset. Recurring clients also get the same cleaner each time and priority on their preferred day.",
 			},
 			{
 				q: "Is there a first-time offer?",
@@ -62,7 +62,7 @@ export const faqGroups: FaqGroup[] = [
 			},
 			{
 				q: "How do I cancel or reschedule?",
-				a: "Text or email us any time. No contracts, no cancellation fee with 24 hours' notice. Cancellations or changes inside 24 hours carry a $50 fee, because your cleaner has held that slot for you.",
+				a: "Recurring clients get a \"move or skip this visit\" link in every day-before reminder email, so you can change it yourself in a few taps. Otherwise text or email us any time. No contracts, no cancellation fee with 24 hours' notice. Cancellations or changes inside 24 hours carry a $50 fee, because your cleaner has held that slot for you.",
 			},
 			{
 				q: "Do I need to be home during the clean?",

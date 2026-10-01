@@ -194,6 +194,7 @@ export default async function ServicePage({ params }: Props) {
 					</Link>
 				))}
 				<Link href="/brokers">For brokers &amp; agents →</Link>
+				<Link href="/turnovers">Turnovers for furnished-rental operators →</Link>
 			</div>
 		</div>
 	);

@@ -33,9 +33,9 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 	// Same tiers the quote page applies (discountRateForFrequency in app/quote/page.tsx).
 	const frequencyDiscounts: Record<string, { rate: number; quoteValue: string }> = {
 		"One-time": { rate: 0, quoteValue: "One-Time" },
-		"Weekly — save 30%": { rate: 0.3, quoteValue: "Weekly" },
-		"Bi-weekly — save 25%": { rate: 0.25, quoteValue: "Bi-Weekly" },
-		"Monthly — save 15%": { rate: 0.15, quoteValue: "Monthly" },
+		"Weekly — save 20%": { rate: 0.2, quoteValue: "Weekly" },
+		"Bi-weekly — save 15%": { rate: 0.15, quoteValue: "Bi-Weekly" },
+		"Monthly — save 10%": { rate: 0.1, quoteValue: "Monthly" },
 	};
 	const [selectedTier, setSelectedTier] = useState(tiers[0]);
 	const [pricingMode, setPricingMode] = useState<"flat" | "hourly">("flat");
@@ -106,7 +106,11 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 				serviceType: pricingServiceType,
 			}));
 			// The quote page picks this up so the frequency they priced is the one they book.
-			localStorage.setItem("mm_frequency", frequencyDiscounts[pricingFrequency]?.quoteValue ?? "One-Time");
+			// Only a recurring choice is carried over; a one-time price check leaves the
+			// quote page on its own default (Bi-Weekly, the plan we recommend).
+			const quoteFrequency = frequencyDiscounts[pricingFrequency]?.quoteValue ?? "One-Time";
+			if (quoteFrequency === "One-Time") localStorage.removeItem("mm_frequency");
+			else localStorage.setItem("mm_frequency", quoteFrequency);
 			return;
 		}
 
@@ -149,7 +153,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 						<button className="btn-primary" onClick={() => scrollToSection("booking")}>Book your first clean</button>
 						<button className="btn-secondary" onClick={() => scrollToSection("pricing")}>View pricing</button>
 					</div>
-					<div className="hero-micro">Studio and 1-bedroom homes from <span>$175</span> &nbsp;·&nbsp; <Link href="/quote">Flat-rate pricing</Link> &nbsp;·&nbsp; Same-week availability</div>
+					<div className="hero-micro">Studio and 1-bedroom homes from <span>$175</span> &nbsp;·&nbsp; <Link href="/quote">Flat-rate pricing</Link> &nbsp;·&nbsp; Next-day slots, same-day by text</div>
 				</div>
 				<div className="hero-r" id="booking">
 					<div className="form-head">Get a fast quote</div>
@@ -222,7 +226,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 									<option>Standard clean</option>
 									<option>Deep clean (+$75)</option>
 									<option>Move-in / Move-out (+$100)</option>
-									<option>Recurring — save 30%</option>
+									<option>Recurring — save up to 20%</option>
 								</select>
 							</div>
 						</div>
@@ -338,9 +342,9 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 						<div className="tier-block">
 							<div className="tier-head">Go recurring and save on every visit</div>
 							<div className="tier-grid">
-								<div className="tier"><div className="tier-pct">30%</div><div className="tier-name">Weekly</div></div>
-								<div className="tier"><div className="tier-pct">25%</div><div className="tier-name">Bi-weekly</div></div>
-								<div className="tier"><div className="tier-pct">15%</div><div className="tier-name">Monthly</div></div>
+								<div className="tier"><div className="tier-pct">20%</div><div className="tier-name">Weekly</div></div>
+								<div className="tier tier-popular"><div className="tier-pct">15%</div><div className="tier-name">Bi-weekly</div><div className="tier-tag">Most popular</div></div>
+								<div className="tier"><div className="tier-pct">10%</div><div className="tier-name">Monthly</div></div>
 							</div>
 							<p className="tier-bonus"><strong>Start weekly or bi-weekly</strong> and the deep clean on your first visit (+$75) is on us.</p>
 						</div>
@@ -420,7 +424,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 							<div className="pcb-note">All supplies included · No hidden fees · No card needed to see a price</div>
 							<div className="pcb-detail">
 								{pricingMode === "flat"
-									? "Deep clean +$75 · Move-in/out +$100 · Recurring saves up to 30%"
+									? "Deep clean +$75 · Move-in/out +$100 · Recurring saves up to 20%"
 									: `$${hourlyRates.ratePerCleaner}/hr per cleaner · same supplies included`}
 							</div>
 							<button

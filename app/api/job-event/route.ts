@@ -321,8 +321,8 @@ export async function POST(req: Request) {
       await sendSms({
         to: customer.phone,
         body: isSecondPromo
-          ? `Your second clean is on us. Book it any time before ${freeBy} with code ${freeCode}: ${publicSiteUrl(siteUrl)}/quote/?code=${freeCode} — same apartment, standard clean, add-ons priced normally. Loved having the same cleaner? Reply WEEKLY, BIWEEKLY, or MONTHLY after your free one to keep them and save up to 30%. — Manhattan Mint NYC`
-          : `Loved the clean? Reply WEEKLY, BIWEEKLY, or MONTHLY to keep the same cleaner and save up to 30% on every visit. And your friend code is ${friendCode}: a neighbor who books with it gets $${REFERRAL_FRIEND_DISCOUNT} off their first clean, and you get $${REFERRAL_REFERRER_CREDIT} off your next one once theirs is done. ${friendLink} — Manhattan Mint NYC`,
+          ? `Your second clean is on us. Book it any time before ${freeBy} with code ${freeCode}: ${publicSiteUrl(siteUrl)}/quote/?code=${freeCode} — same apartment, standard clean, add-ons priced normally. Loved having the same cleaner? Reply WEEKLY, BIWEEKLY, or MONTHLY after your free one to keep them and save up to 20%. — Manhattan Mint NYC`
+          : `Loved the clean? Reply WEEKLY, BIWEEKLY, or MONTHLY to keep the same cleaner and save up to 20% on every visit. And your friend code is ${friendCode}: a neighbor who books with it gets $${REFERRAL_FRIEND_DISCOUNT} off their first clean, and you get $${REFERRAL_REFERRER_CREDIT} off your next one once theirs is done. ${friendLink} — Manhattan Mint NYC`,
         cleanerId: cleaner?.id ?? null,
         bookingId,
         recipientType: "customer",

@@ -340,6 +340,9 @@ h2 em{font-style:italic;color:var(--mint);}
 .tier{background:var(--mint-light);border-radius:12px;padding:.9rem .5rem;text-align:center;}
 .tier-pct{font-family:'DM Serif Display',Georgia,serif;font-size:1.6rem;line-height:1;color:var(--mint-dark);margin-bottom:.3rem;}
 .tier-name{font-size:.72rem;color:#555;letter-spacing:.02em;}
+.tier-popular{position:relative;background:var(--mint);}
+.tier-popular .tier-pct,.tier-popular .tier-name{color:#fff;}
+.tier-tag{margin-top:.35rem;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.85);}
 .tier-bonus{margin:.9rem 0 0;font-size:.8rem;line-height:1.55;color:#555;font-weight:300;}
 .tier-bonus strong{color:var(--mint-dark);font-weight:500;}
 .pricing-panel .price-card-big{box-shadow:0 24px 60px rgba(0,0,0,.22);transform:translateY(-6px);}

@@ -154,7 +154,7 @@ export async function POST(req: Request) {
 
     if (couponNormalized === "FALL50" && new Date().toISOString().slice(0, 10) > FALL_PROMO_END) {
       return NextResponse.json(
-        { error: "Code FALL50 expired on October 31. Remove it to book at the regular price, or ask us about recurring plans that save up to 30% on every clean." },
+        { error: "Code FALL50 expired on October 31. Remove it to book at the regular price, or ask us about recurring plans that save up to 20% on every clean." },
         { status: 400 },
       );
     }
@@ -226,7 +226,7 @@ export async function POST(req: Request) {
           .limit(1);
         if (priorBookings?.length) {
           return NextResponse.json(
-            { error: `Code ${couponNormalized} is for first-time customers only. Remove it (or ask us about recurring plans — they save up to 30% on every clean) and try again.` },
+            { error: `Code ${couponNormalized} is for first-time customers only. Remove it (or ask us about recurring plans — they save up to 20% on every clean) and try again.` },
             { status: 400 },
           );
         }

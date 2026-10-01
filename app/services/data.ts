@@ -32,7 +32,7 @@ export const servicePages: ServicePage[] = [
 		name: "Apartment cleaning",
 		metaTitle: "Apartment Cleaning NYC — Flat Rate, Same Cleaner",
 		metaDescription:
-			"Manhattan apartment cleaning from $175 flat. Background-checked cleaner, eco-friendly supplies included, charged only after the clean. Same cleaner every visit on recurring plans, up to 30% off.",
+			"Manhattan apartment cleaning from $175 flat. Background-checked cleaner, eco-friendly supplies included, charged only after the clean. Same cleaner every visit on recurring plans, up to 20% off.",
 		eyebrow: "Apartment cleaning · Manhattan",
 		h1: ["Apartment cleaning,", "done the Manhattan way."],
 		lede:
@@ -92,7 +92,7 @@ export const servicePages: ServicePage[] = [
 			"Do you clean walk-ups and pre-war apartments?",
 			"What if I'm not happy with the clean?",
 		],
-		cta: { heading: ["Start with the reset,", "and we'll cover it."], body: "Book a weekly or bi-weekly plan and the deep clean on your first visit is on us: the full 46 details, $75 off, then standard cleans at up to 30% off from visit two. Price yours on the home page." },
+		cta: { heading: ["Start with the reset,", "and we'll cover it."], body: "Book a weekly or bi-weekly plan and the deep clean on your first visit is on us: the full 46 details, $75 off, then standard cleans at up to 20% off from visit two. Price yours on the home page." },
 	},
 	{
 		slug: "move-in-move-out-cleaning",

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { manageUrl } from "@/lib/manage-token";
 import sgMail from "@sendgrid/mail";
 import { supabaseAdmin } from "@/lib/supabase";
 import { sendSms } from "@/lib/openphone";
@@ -97,6 +98,7 @@ export async function GET(req: Request) {
           : null),
       total: booking.pricing_total ?? null,
       siteUrl: publicSiteUrl,
+      manageUrl: manageUrl(booking.id, publicSiteUrl),
     });
 
     if (preview) {

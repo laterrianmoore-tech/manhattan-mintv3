@@ -34,6 +34,8 @@ export type CleanReminder = {
   /** Whole dollars */
   total?: number | null;
   siteUrl: string;
+  /** Signed self-serve link: move the date or skip this visit */
+  manageUrl?: string | null;
 };
 
 function detailRow(label: string, value: string, last = false): string {
@@ -85,7 +87,11 @@ export function renderCleanReminderEmail(r: CleanReminder): { subject: string; h
 
   <p style="margin:0 0 18px;color:${BODY};font-family:${SANS};font-size:15px;line-height:1.7;"><strong style="color:${INK};">Two things that help us:</strong> let us know how we're getting in if anything has changed, and clear any counters or floors you'd like cleaned properly. If there's a room you want us to focus on, tell us and we'll spend the time there.</p>
 
-  <p style="margin:0 0 6px;color:${BODY};font-family:${SANS};font-size:15px;line-height:1.7;">Need to move the time or cancel? Reply to this email or text <a href="tel:${PHONE_E164}" style="color:${GREEN};font-weight:600;text-decoration:none;">${PHONE_DISPLAY}</a> and we'll sort it out.</p>`;
+  <p style="margin:0 0 6px;color:${BODY};font-family:${SANS};font-size:15px;line-height:1.7;">${
+    r.manageUrl
+      ? `Need to change it? <a href="${r.manageUrl}" style="color:${GREEN};font-weight:600;text-decoration:none;">Move or skip this visit</a> in a few taps, no call needed. Or reply to this email, or text <a href="tel:${PHONE_E164}" style="color:${GREEN};font-weight:600;text-decoration:none;">${PHONE_DISPLAY}</a>.`
+      : `Need to move the time or cancel? Reply to this email or text <a href="tel:${PHONE_E164}" style="color:${GREEN};font-weight:600;text-decoration:none;">${PHONE_DISPLAY}</a> and we'll sort it out.`
+  }</p>`;
 
   const html = `
 <!DOCTYPE html>
