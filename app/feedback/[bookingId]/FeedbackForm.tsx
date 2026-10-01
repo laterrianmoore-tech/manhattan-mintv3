@@ -83,21 +83,39 @@ export default function FeedbackForm({
           <h2 className="text-xl font-semibold mb-2" style={{ color: "#0f0f0f" }}>
             Thanks for the feedback.
           </h2>
-          <p className="text-sm mb-6" style={{ color: "#6b7280" }}>
-            See you next time. — Manhattan Mint NYC
-          </p>
-          <a
-            href={googleReviewUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block w-full h-12 leading-[3rem] rounded-xl text-white font-medium text-sm"
-            style={{ backgroundColor: "#1d9e75" }}
-          >
-            Share it on Google ★
-          </a>
-          <p className="text-xs mt-3" style={{ color: "#9ca3af" }}>
-            Public reviews help our small team more than anything else.
-          </p>
+          {rating >= 4 ? (
+            <>
+              <p className="text-sm mb-6" style={{ color: "#6b7280" }}>
+                See you next time. — Manhattan Mint NYC
+              </p>
+              <a
+                href={googleReviewUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block w-full h-12 leading-[3rem] rounded-xl text-white font-medium text-sm"
+                style={{ backgroundColor: "#1d9e75" }}
+              >
+                Share it on Google ★
+              </a>
+              <p className="text-xs mt-3" style={{ color: "#9ca3af" }}>
+                Public reviews help our small team more than anything else.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm mb-6" style={{ color: "#6b7280" }}>
+                That is not the standard we hold ourselves to, and the owner has just been told. If anything was missed, we come back and
+                re-do it at no charge. Text us the details and we&apos;ll sort it out.
+              </p>
+              <a
+                href="sms:+19148637902"
+                className="inline-block w-full h-12 leading-[3rem] rounded-xl text-white font-medium text-sm"
+                style={{ backgroundColor: "#0f0f0f" }}
+              >
+                Text (914) 863-7902
+              </a>
+            </>
+          )}
         </div>
       </div>
     );

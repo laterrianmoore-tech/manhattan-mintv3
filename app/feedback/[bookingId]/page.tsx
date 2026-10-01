@@ -18,7 +18,7 @@ function NotFound() {
   );
 }
 
-function AlreadyReceived({ googleReviewUrl }: { googleReviewUrl: string }) {
+function AlreadyReceived({ googleReviewUrl, happy }: { googleReviewUrl: string; happy: boolean }) {
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: "#f9fafb" }}>
       <div className="w-full max-w-[28rem] bg-white rounded-2xl shadow-sm p-8 text-center">
@@ -29,15 +29,25 @@ function AlreadyReceived({ googleReviewUrl }: { googleReviewUrl: string }) {
         <p className="text-sm mb-6" style={{ color: "#6b7280" }}>
           — Manhattan Mint NYC
         </p>
-        <a
-          href={googleReviewUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block w-full h-12 leading-[3rem] rounded-xl text-white font-medium text-sm"
-          style={{ backgroundColor: "#1d9e75" }}
-        >
-          Share it on Google ★
-        </a>
+        {happy ? (
+          <a
+            href={googleReviewUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block w-full h-12 leading-[3rem] rounded-xl text-white font-medium text-sm"
+            style={{ backgroundColor: "#1d9e75" }}
+          >
+            Share it on Google ★
+          </a>
+        ) : (
+          <a
+            href="sms:+19148637902"
+            className="inline-block w-full h-12 leading-[3rem] rounded-xl text-white font-medium text-sm"
+            style={{ backgroundColor: "#0f0f0f" }}
+          >
+            Something not right? Text (914) 863-7902
+          </a>
+        )}
       </div>
     </div>
   );
@@ -77,7 +87,7 @@ export default async function FeedbackPage({ params }: Props) {
   // Check for existing feedback
   const { data: existing } = await supabaseAdmin
     .from("feedback")
-    .select("id")
+    .select("id, rating")
     .eq("booking_id", bookingId)
     .maybeSingle();
 
@@ -87,7 +97,8 @@ export default async function FeedbackPage({ params }: Props) {
   const googleReviewUrl = reviewUrlFor(await ensureReviewToken(bookingId));
 
   if (existing) {
-    return <AlreadyReceived googleReviewUrl={googleReviewUrl} />;
+    // Owner rule (2026-10-01): the Google button only shows to a 4 or 5.
+    return <AlreadyReceived googleReviewUrl={googleReviewUrl} happy={typeof (existing as any).rating === "number" && (existing as any).rating >= 4} />;
   }
 
   return (

@@ -215,16 +215,16 @@ export async function GET(req: Request) {
         .neq("id", b.id);
       if ((count ?? 0) > 0) { skip("repeat customer"); continue; }
 
-      // Never push someone toward Google who privately told us the clean fell short.
+      // Owner rule (2026-10-01): only ask for a Google review from someone who
+      // already told us privately that the clean was a 4 or 5. No rating, no ask.
       const { data: fb } = await supabaseAdmin
         .from("feedback")
         .select("rating")
         .eq("booking_id", b.id)
         .maybeSingle();
-      if (fb && typeof (fb as any).rating === "number" && (fb as any).rating <= 3) {
-        skip(`rated ${(fb as any).rating}/5 in private feedback`);
-        continue;
-      }
+      const privateRating = fb && typeof (fb as any).rating === "number" ? ((fb as any).rating as number) : null;
+      if (privateRating === null) { skip("no private rating yet"); continue; }
+      if (privateRating < 4) { skip(`rated ${privateRating}/5 in private feedback`); continue; }
 
       if (!customer?.phone) { skip("no phone on file"); continue; }
 
