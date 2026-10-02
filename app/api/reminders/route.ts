@@ -5,6 +5,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { sendSms } from "@/lib/openphone";
 import { renderCleanReminderEmail } from "@/lib/email/clean-reminder";
 import { trackedReviewUrl } from "@/lib/review-tracking";
+import { hasActiveSubscription, HOLD_REFRESH_AFTER_DAYS, inspectHold, placeHold, releaseHold } from "@/lib/stripe-hold";
 
 export const dynamic = "force-dynamic";
 
@@ -382,6 +383,91 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`,
     `[reminders] ${tomorrow}: cleaner texts ${sent}/${bookings?.length ?? 0}, customer emails ${emailsSent}/${emailResults.length}`,
   );
 
+  // ── Card holds for tomorrow ───────────────────────────────────────────
+  // Every booking with a card gets a live authorization hold before the clean:
+  // bookings made more than a week out (the booking-time hold expires), hand-
+  // created and recurring auto-created bookings (never had one), and cards
+  // added after booking. A declined hold texts the owner tonight, while there
+  // is still time to collect another card — not after the clean is done.
+  const holdResults: Array<{ bookingId: string; action: string; ok: boolean; detail?: string }> = [];
+  try {
+    const { data: tomorrowJobs, error: holdErr } = await supabaseAdmin
+      .from("bookings")
+      .select("id, service_date, service_summary, frequency, pricing_total, stripe_charge_id, stripe_customer_id, stripe_payment_method_id, customers(first_name, last_name, stripe_customer_id)")
+      .eq("service_date", tomorrow)
+      .in("status", ["pending", "confirmed"]);
+    if (holdErr) throw new Error(holdErr.message);
+
+    const ownerPhones = (process.env.OWNER_NOTIFY_PHONE || "").split(",").map((p) => p.trim()).filter(Boolean);
+
+    for (const job of tomorrowJobs ?? []) {
+      const customer = job.customers as any;
+      const total: number = job.pricing_total ?? 0;
+      const stripeCustomerId: string | null = job.stripe_customer_id || customer?.stripe_customer_id || null;
+      if (total <= 0) { holdResults.push({ bookingId: job.id, action: "skip", ok: true, detail: "$0" }); continue; }
+      if (!stripeCustomerId) { holdResults.push({ bookingId: job.id, action: "skip", ok: true, detail: "no card" }); continue; }
+
+      const existing = await inspectHold(job.stripe_charge_id);
+      if (existing.state === "captured") { holdResults.push({ bookingId: job.id, action: "skip", ok: true, detail: "already paid" }); continue; }
+      if (existing.state === "held" && existing.ageDays < HOLD_REFRESH_AFTER_DAYS && existing.amount >= total) {
+        holdResults.push({ bookingId: job.id, action: "keep", ok: true, detail: `$${existing.amount}, ${existing.ageDays.toFixed(1)}d old` });
+        continue;
+      }
+      if (await hasActiveSubscription(stripeCustomerId)) { holdResults.push({ bookingId: job.id, action: "skip", ok: true, detail: "subscription" }); continue; }
+
+      // Stale (near expiry) or short hold: release it and place a fresh one.
+      if (existing.state === "held") await releaseHold(existing.paymentIntentId);
+
+      const hold = await placeHold({
+        stripeCustomerId,
+        paymentMethodId: job.stripe_payment_method_id,
+        amount: total,
+        description: `Manhattan Mint clean — ${job.service_date} (${job.service_summary || job.frequency})`,
+        bookingId: job.id,
+      });
+      if (hold.ok) {
+        const { error: stampErr } = await supabaseAdmin.from("bookings").update({ stripe_charge_id: hold.paymentIntentId }).eq("id", job.id);
+        if (stampErr) {
+          // Never leave an unrecorded hold on a customer's card.
+          await releaseHold(hold.paymentIntentId);
+          holdResults.push({ bookingId: job.id, action: existing.state === "held" ? "refresh" : "place", ok: false, detail: `could not record hold: ${stampErr.message}` });
+          continue;
+        }
+        holdResults.push({ bookingId: job.id, action: existing.state === "held" ? "refresh" : "place", ok: true, detail: `$${hold.amount}` });
+        continue;
+      }
+
+      // Hold failed. If the old hold was released above it is gone for good, so
+      // clear the stale id either way and tell the owner tonight.
+      if (existing.state === "held") await supabaseAdmin.from("bookings").update({ stripe_charge_id: null }).eq("id", job.id);
+      if (hold.code === "no_payment_method") {
+        // Invoice-pay clients (Stripe customer, no card). The owner already
+        // collects these by hand; no alert needed.
+        holdResults.push({ bookingId: job.id, action: "skip", ok: true, detail: "no card on Stripe customer" });
+        continue;
+      }
+      holdResults.push({ bookingId: job.id, action: "place", ok: false, detail: `${hold.declined ? "DECLINED" : "error"}: ${hold.error}` });
+      const name = `${customer?.first_name ?? ""} ${customer?.last_name ?? ""}`.trim() || "customer";
+      for (const phone of ownerPhones) {
+        await sendSms({
+          to: phone,
+          body: hold.declined
+            ? `⚠️ CARD DECLINED for tomorrow's clean: ${name}, $${total} (${hold.code || "declined"}). Job is still on. Get another card on file before the clean or collect by invoice: node scripts/card-on-file.mjs link ${stripeCustomerId}`
+            : `⚠️ Could not place the $${total} card hold for ${name}'s clean tomorrow (${hold.error.slice(0, 80)}). Job Complete will still try a normal charge.`,
+          bookingId: job.id,
+          cleanerId: null,
+          recipientType: "customer",
+          eventType: "other",
+        });
+      }
+    }
+  } catch (err: any) {
+    // The hold pass must never break the reminders above.
+    console.error("[reminders] hold pass threw:", err?.message ?? err);
+    holdResults.push({ bookingId: "-", action: "pass", ok: false, detail: err?.message ?? "unknown error" });
+  }
+  console.log(`[reminders] ${tomorrow}: holds`, holdResults.map((r) => `${r.bookingId.slice(0, 8)} ${r.action} ${r.ok ? "ok" : "FAIL"} ${r.detail ?? ""}`).join(" | "));
+
   // Day-3 review nudge rides the same daily run. Gated by REVIEW_NUDGE_ENABLED
   // and never allowed to break the reminders above.
   let reviewNudge: Record<string, unknown> = { enabled: false, skipped: true };
@@ -402,6 +488,7 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`,
     results,
     customerEmailsSent: emailsSent,
     customerEmails: emailResults,
+    holds: holdResults,
     reviewNudge,
   });
 }

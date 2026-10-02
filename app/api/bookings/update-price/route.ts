@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase";
+import { inspectHold } from "@/lib/stripe-hold";
 
 // Admin-only: change what a booking will be charged. Must happen before
 // the cleaner taps "Job Complete" — the auto-charge uses pricing_total.
@@ -31,11 +32,24 @@ export async function POST(req: Request) {
   if (booking.status === "cancelled" || booking.status === "completed") {
     return NextResponse.json({ ok: false, error: `Can't reprice a ${booking.status} job.` }, { status: 400 });
   }
+  // stripe_charge_id is a hold until Job Complete captures it. A live hold
+  // is fine to reprice: Job Complete captures up to the held amount and
+  // charges any increase separately. A captured one is money already moved.
+  let holdNote = "";
   if (booking.stripe_charge_id) {
-    return NextResponse.json(
-      { ok: false, error: "This job was already charged — adjust it in the Stripe dashboard (refund or extra charge)." },
-      { status: 400 },
-    );
+    const hold = await inspectHold(booking.stripe_charge_id);
+    if (hold.state === "held") {
+      holdNote = newTotal > hold.amount
+        ? ` The card hold is $${hold.amount}; the extra $${newTotal - hold.amount} is charged separately at Job Complete.`
+        : newTotal < hold.amount
+          ? ` Only $${newTotal} of the $${hold.amount} hold will be captured; the rest is released.`
+          : "";
+    } else if (hold.state !== "gone") {
+      return NextResponse.json(
+        { ok: false, error: "This job was already charged — adjust it in the Stripe dashboard (refund or extra charge)." },
+        { status: 400 },
+      );
+    }
   }
 
   const { error: updateErr } = await supabaseAdmin
@@ -48,5 +62,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: updateErr.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, oldTotal: booking.pricing_total, newTotal });
+  return NextResponse.json({ ok: true, oldTotal: booking.pricing_total, newTotal, holdNote });
 }

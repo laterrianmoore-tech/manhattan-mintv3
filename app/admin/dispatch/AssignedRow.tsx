@@ -24,12 +24,27 @@ type Booking = {
   completed_at: string | null;
   preferred_time_ranges: string[] | null;
   pricing_total: number;
+  stripe_charge_id?: string | null;
+  stripe_customer_id?: string | null;
   customers: {
     first_name: string;
     last_name: string;
     address: string;
   };
 };
+
+// Payment state at a glance. stripe_charge_id is the card hold until Job
+// Complete captures it, so before completion it reads as "hold".
+function HoldBadge({ booking }: { booking: Pick<Booking, "stripe_charge_id" | "stripe_customer_id" | "completed_at" | "pricing_total"> }) {
+  if (booking.completed_at || !booking.pricing_total) return null;
+  if (booking.stripe_charge_id) {
+    return <span className="ml-1 text-[11px] font-semibold text-green-700" title="Money is reserved on the card; captured at Job Complete">hold ✓</span>;
+  }
+  if (booking.stripe_customer_id) {
+    return <span className="ml-1 text-[11px] font-semibold text-amber-600" title="Card on file but no hold yet — placed automatically the day before">no hold</span>;
+  }
+  return <span className="ml-1 text-[11px] font-semibold text-red-600" title="No card on file">no card</span>;
+}
 
 type JobEvent = "on_the_way" | "arrived" | "completed";
 type Slot = "primary" | "second";
@@ -256,6 +271,7 @@ export default function AssignedRow({
           <div className="text-gray-500 text-xs truncate mt-0.5">
             {customer?.address} &middot; {booking.service_summary} &middot;{" "}
             <span className="font-semibold text-gray-700">${booking.pricing_total}</span>
+            <HoldBadge booking={booking} />
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-4">

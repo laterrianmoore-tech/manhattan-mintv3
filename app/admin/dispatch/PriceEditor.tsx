@@ -39,7 +39,7 @@ export default function PriceEditor({
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
-      onDone(`Price updated: $${initialTotal} → $${newTotal}. The card will be charged $${newTotal} at Job Complete.`);
+      onDone(`Price updated: $${initialTotal} → $${newTotal}. The card will be charged $${newTotal} at Job Complete.${data.holdNote ?? ""}`);
     } else {
       setError(data.error ?? "Something went wrong. Try again.");
       setBusy(false);

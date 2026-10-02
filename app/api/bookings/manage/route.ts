@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
 import { sendSms } from "@/lib/openphone";
 import { verifyManageToken } from "@/lib/manage-token";
+import { daysUntil, HOLD_REFRESH_AFTER_DAYS, releaseHold } from "@/lib/stripe-hold";
 
 // Customer self-serve: move a visit to another day, or (recurring plans only)
 // skip this visit and keep the plan. Reached from the signed "Move or skip this
@@ -48,7 +49,7 @@ async function loadBooking(id: string) {
   const { data, error } = await supabaseAdmin
     .from("bookings")
     .select(
-      "id, status, frequency, service_date, service_summary, preferred_time_ranges, assigned_cleaner_id, second_cleaner_id, dispatch_sms_sent_at, customers(first_name, last_name, address, apt_no, phone)",
+      "id, status, frequency, service_date, service_summary, preferred_time_ranges, assigned_cleaner_id, second_cleaner_id, dispatch_sms_sent_at, stripe_charge_id, customers(first_name, last_name, address, apt_no, phone)",
     )
     .eq("id", id)
     .single();
@@ -155,6 +156,15 @@ export async function POST(req: Request) {
   // may be missing on an older database.
   const clearReminder = await supabaseAdmin.from("bookings").update({ reminder_email_sent_at: null }).eq("id", bookingId);
   if (clearReminder.error) console.warn("[manage] could not clear reminder stamp:", clearReminder.error.message);
+
+  // A card hold only lives 7 days. Moved further out than that, release the
+  // money now; the day-before reminder places a fresh hold.
+  if (booking.stripe_charge_id && daysUntil(newDate) > HOLD_REFRESH_AFTER_DAYS) {
+    const hold = await releaseHold(booking.stripe_charge_id);
+    if (hold.released) {
+      await supabaseAdmin.from("bookings").update({ stripe_charge_id: null }).eq("id", bookingId);
+    }
+  }
 
   const customer = booking.customers as any;
   const oldDate = booking.service_date;

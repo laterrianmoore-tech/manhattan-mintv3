@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase";
 import { sendSms } from "@/lib/openphone";
 import { chargeCustomer } from "@/lib/stripe-charge";
+import { captureHold, hasActiveSubscription, inspectHold, releaseHold } from "@/lib/stripe-hold";
 import { ensureReviewToken, stampReview } from "@/lib/review-tracking";
 import { referralCodeFor, referralLink, publicSiteUrl, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT, secondCleanCodeFor, SECOND_PROMO_CODE, SECOND_WINDOW_DAYS } from "@/lib/referral";
 
@@ -189,26 +190,75 @@ export async function POST(req: Request) {
     // blocks the rest of the flow — the owner is told to collect manually.
     let chargeLine = "";
     const stripeCustomerId = booking.stripe_customer_id || customer.stripe_customer_id;
+    const chargeDescription = `Manhattan Mint clean — ${booking.service_date} (${booking.service_summary || booking.frequency})`;
+    const total: number = booking.pricing_total ?? 0;
+
+    // stripe_charge_id is the hold's PaymentIntent (placed at booking or by
+    // the day-before reminder). Capture it; charge any shortfall separately.
+    // Only when the hold is gone (expired, released) or never existed do we
+    // fall back to a fresh off-session charge.
+    let needFreshCharge = false;
+    let freshAmount = total;
     if (booking.stripe_charge_id) {
-      chargeLine = `Payment: already charged earlier.`;
-    } else if (!stripeCustomerId) {
-      chargeLine = `⚠️ Payment: NO CARD ON FILE — collect $${booking.pricing_total} manually.`;
-    } else if (!booking.pricing_total || booking.pricing_total <= 0) {
-      chargeLine = `Payment: $0 booking, nothing to charge.`;
-    } else {
-      const charge = await chargeCustomer({
-        stripeCustomerId,
-        amount: booking.pricing_total,
-        description: `Manhattan Mint clean — ${booking.service_date} (${booking.service_summary || booking.frequency})`,
-      });
-      if (charge.ok) {
-        await supabaseAdmin
-          .from("bookings")
-          .update({ stripe_charge_id: charge.paymentIntentId })
-          .eq("id", bookingId);
-        chargeLine = `💳 Card charged $${charge.amount} automatically (${charge.status}).`;
+      const hold = await inspectHold(booking.stripe_charge_id);
+      if (hold.state === "captured") {
+        chargeLine = `Payment: already charged earlier ($${hold.amount}).`;
+      } else if (hold.state === "held") {
+        if (total <= 0) {
+          await releaseHold(booking.stripe_charge_id);
+          chargeLine = `Payment: $0 booking — $${hold.amount} hold released.`;
+        } else {
+          const cap = await captureHold({ paymentIntentId: booking.stripe_charge_id, amount: total });
+          if (cap.ok) {
+            chargeLine = `💳 Card charged $${cap.captured} from the hold.`;
+            if (cap.shortfall > 0) {
+              needFreshCharge = true;
+              freshAmount = cap.shortfall;
+            }
+          } else if (cap.gone) {
+            needFreshCharge = true;
+          } else {
+            chargeLine = `⚠️ HOLD CAPTURE FAILED ($${total}): ${cap.error} — collect manually via /api/bookings/charge.`;
+          }
+        }
+      } else if (hold.state === "gone") {
+        needFreshCharge = true;
       } else {
-        chargeLine = `⚠️ AUTO-CHARGE FAILED ($${booking.pricing_total}): ${charge.error} — collect manually via /api/bookings/charge.`;
+        // Pre-hold era: a plain charge id we can't inspect. Treat as paid.
+        chargeLine = `Payment: already charged earlier.`;
+      }
+    } else {
+      needFreshCharge = true;
+    }
+
+    if (needFreshCharge) {
+      if (!stripeCustomerId) {
+        chargeLine = `⚠️ Payment: NO CARD ON FILE — collect $${freshAmount} manually.`;
+      } else if (freshAmount <= 0) {
+        chargeLine = chargeLine || `Payment: $0 booking, nothing to charge.`;
+      } else if (await hasActiveSubscription(stripeCustomerId)) {
+        chargeLine = `Payment: billed by subscription, no per-clean charge.`;
+      } else {
+        const charge = await chargeCustomer({
+          stripeCustomerId,
+          amount: freshAmount,
+          description: freshAmount < total ? `${chargeDescription} — balance after hold` : chargeDescription,
+        });
+        if (charge.ok) {
+          if (!booking.stripe_charge_id || freshAmount === total) {
+            await supabaseAdmin
+              .from("bookings")
+              .update({ stripe_charge_id: charge.paymentIntentId })
+              .eq("id", bookingId);
+          }
+          chargeLine = freshAmount < total
+            ? `${chargeLine} Plus $${charge.amount} charged for the price increase (${charge.paymentIntentId}).`
+            : `💳 Card charged $${charge.amount} automatically (${charge.status}).`;
+        } else {
+          chargeLine = freshAmount < total
+            ? `${chargeLine} ⚠️ The extra $${freshAmount} FAILED: ${charge.error} — collect manually.`
+            : `⚠️ AUTO-CHARGE FAILED ($${freshAmount}): ${charge.error} — collect manually via /api/bookings/charge.`;
+        }
       }
     }
 

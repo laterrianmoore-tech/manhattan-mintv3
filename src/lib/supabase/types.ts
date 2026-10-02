@@ -48,6 +48,8 @@ export interface Database {
           pricing_next_clean_total: number | null;
           stripe_payment_method_id: string | null;
           stripe_customer_id: string | null;
+          // PaymentIntent id: a hold from booking until Job Complete captures it.
+          stripe_charge_id: string | null;
           assigned_cleaner_id: string | null;
           calendar_event_id: string | null;
           completed_at: string | null;

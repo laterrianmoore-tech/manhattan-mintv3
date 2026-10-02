@@ -4,6 +4,7 @@ import { google } from "googleapis";
 import Stripe from "stripe";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { sendSms } from "@/lib/openphone";
+import { placeHold } from "@/lib/stripe-hold";
 import { isReferralCode, referralCodeFor, referralLink, publicSiteUrl, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT, isSecondCleanCode, secondCleanCodeFor, SECOND_PROMO_CODE, SECOND_PROMO_END, SECOND_WINDOW_DAYS } from "@/lib/referral";
 
 export const maxDuration = 30;
@@ -288,6 +289,34 @@ export async function POST(req: Request) {
       integrations.stripeConfigured && body.stripePaymentMethodId && body.stripeCustomerId
     );
 
+    // ── Authorization hold ─────────────────────────────────────────────────
+    // Reserve the full amount on the card now. A card with no funds fails
+    // here, before anything is saved, instead of at Job Complete. Only a card
+    // fault bounces the booking; a Stripe/network fault lets it through with a
+    // loud warning to the owner, and the day-before reminder retries the hold.
+    let holdId: string | null = null;
+    let holdNote = hasCardOnFile ? "" : "no card on file";
+    if (hasCardOnFile && body.pricing.total > 0) {
+      const hold = await placeHold({
+        stripeCustomerId: body.stripeCustomerId as string,
+        paymentMethodId: body.stripePaymentMethodId,
+        amount: body.pricing.total,
+        description: `Manhattan Mint clean — ${body.serviceDate} (${body.serviceSummary || `${body.bedrooms} BR / ${body.bathrooms} BA`})`,
+      });
+      if (hold.ok) {
+        holdId = hold.paymentIntentId;
+        holdNote = `$${hold.amount} hold placed`;
+      } else if (hold.declined) {
+        console.warn("booking refused — card declined at hold", hold.code);
+        return NextResponse.json({ error: hold.error, cardDeclined: true, code: hold.code ?? null }, { status: 402 });
+      } else {
+        console.error("Hold could not be placed (booking continues):", hold.error);
+        holdNote = `⚠️ hold NOT placed (${hold.error.slice(0, 120)}) — will retry the day before`;
+      }
+    } else if (hasCardOnFile) {
+      holdNote = "$0 booking, no hold";
+    }
+
     // ── Stripe + Google Calendar in parallel — non-fatal if either fails ────
     // Card saved at checkout: update the customer created in create-setup-intent
     // with full booking metadata and set the confirmed card as default.
@@ -437,6 +466,8 @@ export async function POST(req: Request) {
             pricing_next_clean_total: body.pricing.nextCleanTotal ?? null,
             stripe_payment_method_id: body.stripePaymentMethodId || null,
             stripe_customer_id: stripeCustomerId || null,
+            // The hold's PaymentIntent; becomes the charge when captured at Job Complete.
+            stripe_charge_id: holdId,
           })
           .select("id")
           .single();
@@ -477,6 +508,7 @@ export async function POST(req: Request) {
       `Coupon: ${body.couponCode || "None"}`,
       `Payment Method: card`,
       `Card On File: ${hasCardOnFile ? "Yes" : "NO — setup link sent"}`,
+      `Card Hold: ${holdNote}${holdId ? ` (${holdId})` : ""}`,
       ...(cardSetupUrl ? [`Card Setup Link: ${cardSetupUrl}`] : []),
       `Stripe Payment Method ID: ${body.stripePaymentMethodId || "n/a"}`,
       `Stripe Customer ID: ${stripeCustomerId || "n/a"}`,
@@ -498,7 +530,9 @@ export async function POST(req: Request) {
       .filter(Boolean);
 
     const paymentLineHtml = hasCardOnFile
-      ? `<p style="margin:0 0 6px;color:#555;font-size:14px;">💳 <strong>Payment:</strong> Your card is on file and will be charged after your appointment is complete.</p>`
+      ? holdId
+        ? `<p style="margin:0 0 6px;color:#555;font-size:14px;">💳 <strong>Payment:</strong> We placed a temporary $${body.pricing.total} hold on your card to reserve your spot — it may show as pending at your bank. Your card is only charged after your appointment is complete.</p>`
+        : `<p style="margin:0 0 6px;color:#555;font-size:14px;">💳 <strong>Payment:</strong> Your card is on file and will be charged after your appointment is complete.</p>`
       : `<p style="margin:0 0 6px;color:#555;font-size:14px;">💳 <strong>Payment:</strong> We couldn't save a card during booking. Please add one securely here: <a href="${cardSetupUrl || `${siteUrl}/quote`}" style="color:#2d6a4f;">Add card</a>. Your card is only charged after your appointment.</p>`;
 
     // Every customer gets a personal friend code in the confirmation: $50 off
@@ -536,7 +570,7 @@ export async function POST(req: Request) {
             ownerPhones.map((phone) =>
               sendSms({
                 to: phone,
-                body: `NEW BOOKING${hasCardOnFile ? "" : " (NO CARD!)"}: ${fullName}, ${body.serviceDate}, ${serviceLabel}, $${body.pricing.total}, ${fullAddress}. Ph: ${body.phone}`,
+                body: `NEW BOOKING${hasCardOnFile ? (holdId ? " (hold ✓)" : " (⚠️ NO HOLD)") : " (NO CARD!)"}: ${fullName}, ${body.serviceDate}, ${serviceLabel}, $${body.pricing.total}, ${fullAddress}. Ph: ${body.phone}`,
                 bookingId: supabaseBookingId ?? null,
                 cleanerId: null,
                 recipientType: "customer",
@@ -654,6 +688,7 @@ export async function POST(req: Request) {
       address: fullAddress,
       total: body.pricing.total,
       hasCardOnFile,
+      hold: holdNote,
       cardSetupUrl: cardSetupUrl ? "generated" : "n/a",
       stripeCustomerId,
       supabaseBookingId,

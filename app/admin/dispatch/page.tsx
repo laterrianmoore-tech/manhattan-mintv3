@@ -19,7 +19,7 @@ export default async function DispatchPage() {
     supabaseAdmin
       .from("bookings")
       .select(
-        "id, service_date, service_summary, bedrooms, preferred_time_ranges, pricing_total, customers(first_name, last_name, address, apt_no)"
+        "id, service_date, service_summary, bedrooms, preferred_time_ranges, pricing_total, stripe_charge_id, stripe_customer_id, customers(first_name, last_name, address, apt_no)"
       )
       .is("assigned_cleaner_id", null)
       .eq("status", "pending")
@@ -34,7 +34,7 @@ export default async function DispatchPage() {
     supabaseAdmin
       .from("bookings")
       .select(
-        "id, service_date, service_summary, assigned_cleaner_id, second_cleaner_id, dispatch_sms_sent_at, status, preferred_time_ranges, pricing_total, on_the_way_at, arrived_at, completed_at, customers(first_name, last_name, address)"
+        "id, service_date, service_summary, assigned_cleaner_id, second_cleaner_id, dispatch_sms_sent_at, status, preferred_time_ranges, pricing_total, stripe_charge_id, stripe_customer_id, on_the_way_at, arrived_at, completed_at, customers(first_name, last_name, address)"
       )
       .not("assigned_cleaner_id", "is", null)
       .in("status", ["confirmed", "in_progress"])

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase";
 import { sendSms } from "@/lib/openphone";
+import { releaseHold } from "@/lib/stripe-hold";
 
 export async function POST(req: Request) {
   const cookieStore = await cookies();
@@ -18,7 +19,7 @@ export async function POST(req: Request) {
   const { data: booking, error: bookingErr } = await supabaseAdmin
     .from("bookings")
     .select(
-      "id, service_date, service_summary, status, assigned_cleaner_id, second_cleaner_id, dispatch_sms_sent_at, preferred_time_ranges, customers(first_name, last_name, address, apt_no)"
+      "id, service_date, service_summary, status, assigned_cleaner_id, second_cleaner_id, dispatch_sms_sent_at, preferred_time_ranges, stripe_charge_id, customers(first_name, last_name, address, apt_no)"
     )
     .eq("id", bookingId)
     .single();
@@ -45,6 +46,13 @@ export async function POST(req: Request) {
   if (updateErr) {
     console.error("[cancel] UPDATE failed:", updateErr);
     return NextResponse.json({ ok: false, error: updateErr.message }, { status: 500 });
+  }
+
+  // Give the customer their money back on the spot: a cancelled job must not
+  // leave a pending hold on their card. Only a live hold is touched.
+  const hold = await releaseHold(booking.stripe_charge_id);
+  if (hold.released) {
+    await supabaseAdmin.from("bookings").update({ stripe_charge_id: null }).eq("id", bookingId);
   }
 
   // Alert the cleaner(s) only if they were actually dispatched for this job.

@@ -19,6 +19,8 @@ type Booking = {
   bedrooms: number;
   preferred_time_ranges: string[] | null;
   pricing_total: number;
+  stripe_charge_id?: string | null;
+  stripe_customer_id?: string | null;
   customers: {
     first_name: string;
     last_name: string;
@@ -26,6 +28,19 @@ type Booking = {
     apt_no: string | null;
   };
 };
+
+// Payment state at a glance: the card hold is placed at booking (or the day
+// before) and captured at Job Complete.
+function HoldBadge({ booking }: { booking: Pick<Booking, "stripe_charge_id" | "stripe_customer_id" | "pricing_total"> }) {
+  if (!booking.pricing_total) return null;
+  if (booking.stripe_charge_id) {
+    return <span className="ml-1 text-[11px] font-semibold text-green-700" title="Money is reserved on the card; captured at Job Complete">hold ✓</span>;
+  }
+  if (booking.stripe_customer_id) {
+    return <span className="ml-1 text-[11px] font-semibold text-amber-600" title="Card on file but no hold yet — placed automatically the day before">no hold</span>;
+  }
+  return <span className="ml-1 text-[11px] font-semibold text-red-600" title="No card on file">no card</span>;
+}
 
 export default function DispatchRow({
   booking,
@@ -195,6 +210,7 @@ export default function DispatchRow({
         {booking.bedrooms}BR · {booking.service_summary}
         <span className="mx-2 text-gray-300">·</span>
         <span className="font-semibold text-gray-800">${booking.pricing_total}</span>
+        <HoldBadge booking={booking} />
       </div>
       {editingSchedule ? (
         <ScheduleEditor

@@ -425,6 +425,13 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
       });
 
       const submitData = await submitRes.json().catch(() => ({}));
+      if (submitRes.status === 402 && submitData.cardDeclined) {
+        // The hold was declined: the card is the problem, so keep the card
+        // form front and center and don't offer the no-card fallback.
+        setCardError(submitData.error || "Your card was declined. Please try a different card.");
+        setSubmitting(false);
+        return;
+      }
       if (!submitRes.ok) {
         throw new Error(submitData.error || "Booking submission failed. Please try again or text us at (914) 863-7902 — do not re-enter your card.");
       }
@@ -703,7 +710,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
               </label>
 
               <p style={{ marginBottom: ".75rem", fontSize: ".84rem", color: "#444" }}>
-                Card authorization only. Your card is charged after the appointment.
+                We place a temporary hold for the booking amount now (it shows as pending at your bank). Your card is only charged after the appointment.
               </p>
 
               <div style={{ display: "flex", gap: ".45rem", marginBottom: ".75rem", flexWrap: "wrap" }}>
@@ -762,7 +769,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
               )}
 
               <p style={{ marginTop: ".75rem", fontSize: ".82rem", color: "#555", display: "flex", alignItems: "center", gap: ".4rem" }}>
-                <ShieldCheck size={15} color="#1D9E75" /> Card charged AFTER appointment.
+                <ShieldCheck size={15} color="#1D9E75" /> Hold now, charged AFTER appointment.
               </p>
 
               <label style={{ marginTop: ".85rem", display: "flex", alignItems: "center", gap: ".5rem", fontSize: ".88rem" }}>
