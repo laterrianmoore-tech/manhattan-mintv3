@@ -4,6 +4,7 @@ import AdminLoginForm from "./AdminLoginForm";
 import DispatchRow from "./DispatchRow";
 import AssignedRow from "./AssignedRow";
 import ReviewsTable, { type ReviewRow } from "./ReviewsTable";
+import { computeCleanerPay, payNote } from "@/lib/cleaner-pay";
 
 export const dynamic = "force-dynamic";
 
@@ -15,12 +16,13 @@ export default async function DispatchPage() {
     return <AdminLoginForm />;
   }
 
+  // Both booking lists read every column ("*") so the cleaner-pay fields added
+  // 2026-10-08 come through when present and are simply undefined before the
+  // migration has run, instead of failing the whole page.
   const [{ data: unassigned }, { data: cleaners }, { data: assigned }] = await Promise.all([
     supabaseAdmin
       .from("bookings")
-      .select(
-        "id, service_date, service_summary, bedrooms, preferred_time_ranges, pricing_total, stripe_charge_id, stripe_customer_id, customers(first_name, last_name, address, apt_no)"
-      )
+      .select("*, customers(first_name, last_name, address, apt_no)")
       .is("assigned_cleaner_id", null)
       .eq("status", "pending")
       .order("service_date", { ascending: true }),
@@ -33,9 +35,7 @@ export default async function DispatchPage() {
 
     supabaseAdmin
       .from("bookings")
-      .select(
-        "id, service_date, service_summary, assigned_cleaner_id, second_cleaner_id, dispatch_sms_sent_at, status, preferred_time_ranges, pricing_total, stripe_charge_id, stripe_customer_id, on_the_way_at, arrived_at, completed_at, customers(first_name, last_name, address)"
-      )
+      .select("*, customers(first_name, last_name, address)")
       .not("assigned_cleaner_id", "is", null)
       .in("status", ["confirmed", "in_progress"])
       .order("service_date", { ascending: true })
@@ -43,6 +43,15 @@ export default async function DispatchPage() {
   ]);
 
   const cleanerMap = new Map((cleaners ?? []).map((c) => [c.id, c]));
+
+  // Table estimate for jobs not yet dispatched. The regular-cleaner recurring
+  // rate depends on who gets the job, so dispatch recomputes once a cleaner
+  // is picked; this is the number the owner sees before choosing.
+  const suggestedPay = new Map<string, { amount: number; note: string; warnings: string[] }>();
+  for (const b of (unassigned ?? []) as any[]) {
+    const r = computeCleanerPay({ ...b, dispatchedAt: new Date() });
+    suggestedPay.set(b.id, { amount: r.amount, note: payNote(r), warnings: [...r.warnings, ...r.assumptions] });
+  }
 
   // Review-link tracking (2026-09-18). Queried on its own so a database that
   // hasn't run the migration yet shows a note here instead of breaking dispatch.
@@ -66,10 +75,15 @@ export default async function DispatchPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-semibold text-gray-900 mb-8">
-        <span style={{ color: "#1d9e75" }}>Manhattan Mint</span>
-        <span className="text-gray-400 font-normal"> — Dispatch</span>
-      </h1>
+      <div className="flex items-baseline justify-between mb-8">
+        <h1 className="text-2xl font-semibold text-gray-900">
+          <span style={{ color: "#1d9e75" }}>Manhattan Mint</span>
+          <span className="text-gray-400 font-normal"> — Dispatch</span>
+        </h1>
+        <a href="/admin/accounting/" className="text-sm font-medium hover:underline" style={{ color: "#1d9e75" }}>
+          Accounting →
+        </a>
+      </div>
 
       {/* Unassigned jobs */}
       <section className="mb-10">
@@ -91,7 +105,7 @@ export default async function DispatchPage() {
         ) : (
           <div className="space-y-3">
             {unassigned.map((b) => (
-              <DispatchRow key={b.id} booking={b as any} cleaners={cleaners ?? []} />
+              <DispatchRow key={b.id} booking={b as any} cleaners={cleaners ?? []} suggestedPay={suggestedPay.get(b.id) ?? null} />
             ))}
           </div>
         )}

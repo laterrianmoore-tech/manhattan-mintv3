@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase";
 import { sendSms } from "@/lib/openphone";
+import { classifyJob, computeCleanerPay, payNote, type PayResult } from "@/lib/cleaner-pay";
 
 // Assigns a cleaner to a booking and texts them the job.
 //
@@ -153,9 +154,55 @@ export async function POST(req: Request) {
     if (teammate?.first_name) teammateLine = `\n2-person job — with ${teammate.first_name}`;
   }
 
+  // ── Cleaner pay (2026-10-08) ──────────────────────────────────────────
+  // Set from the pay table unless the owner already typed a number for this
+  // slot (source "manual"), and texted with the job so the rate is known
+  // before the cleaner goes. Stored in a separate update that is allowed to
+  // fail: a database without the pay columns still dispatches normally.
+  const payColumn = slot === "second" ? "second_cleaner_pay" : "cleaner_pay";
+  const existingPay: number | null = booking[payColumn] ?? null;
+  const manualPay = existingPay != null && booking.cleaner_pay_source === "manual";
+  let pay: PayResult | null = null;
+  let payAmount: number | null = manualPay ? existingPay : null;
+  let payNeedsOwner = false;
+  if (!manualPay) {
+    const kind = classifyJob(booking);
+    if (slot === "second" && kind !== "reclean") {
+      // The table only splits re-cleans. Any other 2-person job is priced by hand.
+      payNeedsOwner = true;
+    } else {
+      // "Regular cleaner": has finished a job for this customer before, so a
+      // recurring visit pays the recurring row.
+      const { count: priorJobs } = await supabaseAdmin
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("customer_id", booking.customer_id)
+        .eq("status", "completed")
+        .neq("id", bookingId)
+        .or(`assigned_cleaner_id.eq.${cleanerId},second_cleaner_id.eq.${cleanerId}`);
+      pay = computeCleanerPay({
+        ...booking,
+        isRegularCleaner: (priorJobs ?? 0) > 0,
+        twoCleaners: !!otherSlotId,
+      });
+      payAmount = pay.amount;
+      const payUpdate: Record<string, unknown> = { [payColumn]: pay.amount };
+      if (slot === "primary") {
+        payUpdate.cleaner_pay_source = "auto";
+        payUpdate.cleaner_pay_note = payNote(pay);
+      }
+      const { error: payErr } = await supabaseAdmin.from("bookings").update(payUpdate).eq("id", bookingId);
+      if (payErr) {
+        console.error("[dispatch] cleaner pay not stored (run migrations/2026-10-08-cleaner-pay.sql):", payErr.message);
+        payAmount = null; // don't text a number the system didn't record
+      }
+    }
+  }
+  const payTextLine = payAmount != null ? `\nPay: $${payAmount}` : "";
+
   const body = `New job — ${serviceDate} ${timeRange}
 ${customer?.first_name} · ${customer?.address}${aptSuffix}
-${booking.bedrooms}BR · ${booking.service_summary}${teammateLine}
+${booking.bedrooms}BR · ${booking.service_summary}${teammateLine}${payTextLine}
 View: ${siteUrl}/cleaner/${cleaner.portal_token}`;
 
   const smsResult = await sendSms({
@@ -207,5 +254,10 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`;
     teammateNotified,
     smsSent: smsResult.ok,
     smsError: smsResult.ok ? null : smsResult.errorMessage,
+    pay: payAmount,
+    paySource: manualPay ? "manual" : payAmount != null ? "auto" : null,
+    payNote: pay ? payNote(pay) : null,
+    payWarnings: pay ? [...pay.warnings, ...pay.assumptions] : [],
+    payNeedsOwner,
   });
 }

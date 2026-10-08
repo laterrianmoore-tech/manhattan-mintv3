@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ScheduleEditor from "./ScheduleEditor";
 import PriceEditor from "./PriceEditor";
+import PayEditor from "./PayEditor";
 
 type Cleaner = {
   id: string;
@@ -21,6 +22,10 @@ type Booking = {
   pricing_total: number;
   stripe_charge_id?: string | null;
   stripe_customer_id?: string | null;
+  // Cleaner pay (2026-10-08) — undefined until the migration has run.
+  cleaner_pay?: number | null;
+  cleaner_pay_source?: "auto" | "manual" | "estimate" | null;
+  cleaner_pay_note?: string | null;
   customers: {
     first_name: string;
     last_name: string;
@@ -28,6 +33,8 @@ type Booking = {
     apt_no: string | null;
   };
 };
+
+export type SuggestedPay = { amount: number; note: string; warnings: string[] };
 
 // Payment state at a glance: the card hold is placed at booking (or the day
 // before) and captured at Job Complete.
@@ -45,9 +52,11 @@ function HoldBadge({ booking }: { booking: Pick<Booking, "stripe_charge_id" | "s
 export default function DispatchRow({
   booking,
   cleaners,
+  suggestedPay,
 }: {
   booking: Booking;
   cleaners: Cleaner[];
+  suggestedPay?: SuggestedPay | null;
 }) {
   const router = useRouter();
   const [selectedCleaner, setSelectedCleaner] = useState("");
@@ -56,11 +65,18 @@ export default function DispatchRow({
   const [loading, setLoading] = useState(false);
   const [dispatched, setDispatched] = useState(false);
   const [dispatchedName, setDispatchedName] = useState("");
+  const [dispatchedPay, setDispatchedPay] = useState("");
   const [cancelled, setCancelled] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState(false);
   const [editingPrice, setEditingPrice] = useState(false);
+  const [editingPay, setEditingPay] = useState(false);
   const [scheduleNotice, setScheduleNotice] = useState("");
   const [error, setError] = useState("");
+
+  // What dispatch will text: the owner's number if one is saved, else the table.
+  const manualPay = booking.cleaner_pay != null && booking.cleaner_pay_source === "manual";
+  const payShown = manualPay ? booking.cleaner_pay : suggestedPay?.amount ?? null;
+  const payWarnings = manualPay ? [] : suggestedPay?.warnings ?? [];
 
   const dateStr = new Date(booking.service_date + "T12:00:00").toLocaleDateString("en-US", {
     weekday: "short",
@@ -99,6 +115,12 @@ export default function DispatchRow({
         return;
       }
 
+      // What the cleaner was told they'll earn.
+      const payBits: string[] = [];
+      if (data.pay != null) payBits.push(`${name?.first_name ?? "cleaner"} $${data.pay}${data.paySource === "manual" ? " (your number)" : ""}`);
+      else payBits.push(`${name?.first_name ?? "cleaner"}: no pay texted — set it with Edit pay`);
+      if (Array.isArray(data.payWarnings) && data.payWarnings.length) payBits.push(data.payWarnings.join(" "));
+
       // Second cleaner, if one was picked. The job is already assigned to the
       // first cleaner at this point, so a failure here is reported, not fatal.
       let label = cleanerName;
@@ -128,9 +150,12 @@ export default function DispatchRow({
           return;
         }
         label = `${cleanerName} + ${secondName}`;
+        if (data2.pay != null) payBits.push(`${second?.first_name ?? "2nd"} $${data2.pay}`);
+        else if (data2.payNeedsOwner) payBits.push(`${second?.first_name ?? "2nd cleaner"}: the table doesn't split 2-person jobs — set their pay from the Assigned list`);
       }
 
       setDispatchedName(label);
+      setDispatchedPay(payBits.join(" · "));
       setDispatched(true);
       router.refresh();
     } else {
@@ -187,6 +212,7 @@ export default function DispatchRow({
         <span>✓</span>
         <span>
           Dispatched to <strong>{dispatchedName}</strong>
+          {dispatchedPay && <span className="block text-xs text-green-700 mt-0.5">Pay texted: {dispatchedPay}</span>}
         </span>
       </div>
     );
@@ -211,8 +237,38 @@ export default function DispatchRow({
         <span className="mx-2 text-gray-300">·</span>
         <span className="font-semibold text-gray-800">${booking.pricing_total}</span>
         <HoldBadge booking={booking} />
+        {payShown != null && (
+          <>
+            <span className="mx-2 text-gray-300">·</span>
+            <span
+              className="text-xs font-semibold"
+              style={{ color: manualPay ? "#085041" : "#1d9e75" }}
+              title={manualPay ? booking.cleaner_pay_note ?? "Set by you" : suggestedPay?.note ?? "Pay table"}
+            >
+              pay ${payShown}
+              <span className="font-normal text-gray-400"> {manualPay ? "set by you" : "table"}</span>
+            </span>
+          </>
+        )}
       </div>
-      {editingSchedule ? (
+      {payWarnings.length > 0 && (
+        <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
+          {payWarnings.join(" ")}
+        </p>
+      )}
+      {editingPay ? (
+        <PayEditor
+          bookingId={booking.id}
+          initialAmount={manualPay ? booking.cleaner_pay ?? null : null}
+          suggested={suggestedPay?.amount ?? null}
+          onDone={(message) => {
+            setEditingPay(false);
+            setScheduleNotice(message);
+            router.refresh();
+          }}
+          onClose={() => setEditingPay(false)}
+        />
+      ) : editingSchedule ? (
         <ScheduleEditor
           bookingId={booking.id}
           initialDate={booking.service_date}
@@ -297,6 +353,14 @@ export default function DispatchRow({
           title="Change what the card is charged at Job Complete"
         >
           Edit price
+        </button>
+        <button
+          onClick={() => setEditingPay(true)}
+          disabled={loading}
+          className="h-10 px-3 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:border-gray-400 disabled:opacity-50 whitespace-nowrap"
+          title="Set what the cleaner is paid — overrides the table and goes in the job text"
+        >
+          Edit pay
         </button>
         <button
           onClick={handleCancel}

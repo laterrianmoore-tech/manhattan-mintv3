@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { sendSms } from "@/lib/openphone";
 import { chargeCustomer } from "@/lib/stripe-charge";
 import { captureHold, hasActiveSubscription, inspectHold, releaseHold } from "@/lib/stripe-hold";
+import { recordCollection } from "@/lib/stripe-accounting";
 import { ensureReviewToken, stampReview } from "@/lib/review-tracking";
 import { referralCodeFor, referralLink, publicSiteUrl, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT, secondCleanCodeFor, SECOND_PROMO_CODE, SECOND_WINDOW_DAYS } from "@/lib/referral";
 
@@ -261,6 +262,12 @@ export async function POST(req: Request) {
         }
       }
     }
+
+    // ── Ledger (2026-10-08) ────────────────────────────────────────────
+    // Copy what was actually collected + Stripe's fee onto the booking so
+    // /admin/accounting is a plain read. Invoice-paid jobs are picked up
+    // later by the same helper when the invoice settles.
+    await recordCollection(bookingId);
 
     // ── Auto-create the next recurring booking ─────────────────────────
     // Recurring customers should never need a manual booking created.

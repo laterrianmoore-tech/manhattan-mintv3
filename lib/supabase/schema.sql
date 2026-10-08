@@ -164,3 +164,24 @@ alter table cleaners enable row level security;
 alter table email_subscribers enable row level security;
 alter table email_unsubscribes enable row level security;
 alter table campaign_sends enable row level security;
+
+-- ============================================================
+-- CLEANER PAY + ACCOUNTING (added 2026-10-08)
+-- See migrations/2026-10-08-cleaner-pay.sql for an existing database.
+-- Pay is set at dispatch from src/lib/cleaner-pay.ts; /admin/accounting
+-- shows the weekly ledger and marks payouts.
+-- ============================================================
+alter table bookings
+  add column if not exists cleaner_pay               integer,
+  add column if not exists second_cleaner_pay        integer,
+  add column if not exists cleaner_pay_source        text check (cleaner_pay_source in ('auto', 'manual', 'estimate')),
+  add column if not exists cleaner_pay_note          text,
+  add column if not exists cleaner_paid_at           timestamptz,
+  add column if not exists cleaner_payout_ref        text,
+  add column if not exists second_cleaner_paid_at    timestamptz,
+  add column if not exists second_cleaner_payout_ref text,
+  add column if not exists collected_cents           integer,
+  add column if not exists stripe_fee_cents          integer,
+  add column if not exists collected_at              timestamptz,
+  add column if not exists collected_ref             text;
+create index if not exists bookings_cleaner_unpaid_idx on bookings(assigned_cleaner_id) where cleaner_pay is not null and cleaner_paid_at is null;

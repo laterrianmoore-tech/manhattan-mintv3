@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ScheduleEditor from "./ScheduleEditor";
 import PriceEditor from "./PriceEditor";
+import PayEditor from "./PayEditor";
 
 type Cleaner = {
   id: string;
@@ -26,6 +27,11 @@ type Booking = {
   pricing_total: number;
   stripe_charge_id?: string | null;
   stripe_customer_id?: string | null;
+  // Cleaner pay (2026-10-08) — undefined until the migration has run.
+  cleaner_pay?: number | null;
+  second_cleaner_pay?: number | null;
+  cleaner_pay_source?: "auto" | "manual" | "estimate" | null;
+  cleaner_pay_note?: string | null;
   customers: {
     first_name: string;
     last_name: string;
@@ -66,6 +72,8 @@ export default function AssignedRow({
   // Which cleaner slot the picker below is editing; null = picker closed.
   const [switching, setSwitching] = useState<Slot | null>(null);
   const [repricing, setRepricing] = useState(false);
+  // Which cleaner's pay the editor below is changing; null = closed.
+  const [editingPay, setEditingPay] = useState<Slot | null>(null);
   const [newCleaner, setNewCleaner] = useState("");
   const [onWayAt, setOnWayAt] = useState(booking.on_the_way_at);
   const [arrivedAt, setArrivedAt] = useState(booking.arrived_at);
@@ -276,12 +284,31 @@ export default function AssignedRow({
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-4">
           {cleanerName && (
-            <span className="text-gray-600 text-xs">
+            <span className="text-gray-600 text-xs text-right">
               {cleanerName}
+              {booking.cleaner_pay != null && (
+                <span
+                  className="ml-1 font-semibold"
+                  style={{ color: booking.cleaner_pay_source === "manual" ? "#085041" : "#1d9e75" }}
+                  title={booking.cleaner_pay_note ?? (booking.cleaner_pay_source === "manual" ? "Set by you" : "Pay table")}
+                >
+                  ${booking.cleaner_pay}
+                </span>
+              )}
+              {booking.cleaner_pay == null && booking.dispatch_sms_sent_at && (
+                <span className="ml-1 text-amber-600" title="No pay recorded for this job — use Edit pay">no pay set</span>
+              )}
               {secondCleanerName && (
                 <>
                   {" "}
                   <span className="text-gray-400">+</span> {secondCleanerName}
+                  {booking.second_cleaner_pay != null ? (
+                    <span className="ml-1 font-semibold" style={{ color: "#1d9e75" }}>
+                      ${booking.second_cleaner_pay}
+                    </span>
+                  ) : (
+                    <span className="ml-1 text-amber-600" title="Set the 2nd cleaner's pay with Edit 2nd pay">no pay set</span>
+                  )}
                 </>
               )}
             </span>
@@ -349,6 +376,22 @@ export default function AssignedRow({
           }}
           onClose={() => {
             setRepricing(false);
+            setError("");
+          }}
+        />
+      ) : editingPay ? (
+        <PayEditor
+          bookingId={booking.id}
+          slot={editingPay}
+          initialAmount={editingPay === "second" ? booking.second_cleaner_pay ?? null : booking.cleaner_pay ?? null}
+          cleanerName={editingPay === "second" ? secondCleanerName ?? null : cleanerName}
+          onDone={(message) => {
+            setNotice(message);
+            setEditingPay(null);
+            router.refresh();
+          }}
+          onClose={() => {
+            setEditingPay(null);
             setError("");
           }}
         />
@@ -440,6 +483,24 @@ export default function AssignedRow({
           >
             Edit price
           </button>
+          <button
+            onClick={() => setEditingPay("primary")}
+            disabled={busy}
+            className="px-3 py-1 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:border-gray-400"
+            title="Change what the cleaner is paid — they're texted the new number"
+          >
+            Edit pay
+          </button>
+          {booking.second_cleaner_id && (
+            <button
+              onClick={() => setEditingPay("second")}
+              disabled={busy}
+              className="px-3 py-1 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:border-gray-400"
+              title="Set the 2nd cleaner's pay"
+            >
+              Edit 2nd pay
+            </button>
+          )}
           <button
             onClick={handleCancel}
             disabled={busy}

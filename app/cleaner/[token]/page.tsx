@@ -50,18 +50,23 @@ export default async function CleanerPortal({ params }: Props) {
   // A cleaner sees every job they're on — as the primary or as the second
   // cleaner on a 2-person job. The teammate's name is pulled through both
   // foreign keys so the card can say who they're working with.
+  // "*" so the cleaner-pay columns (2026-10-08) come through when present and
+  // the page keeps working on a database that hasn't run that migration.
+  // Pricing columns are also in "*" but are never rendered: JobCard reads only
+  // the fields it names, and the pay shown is the cleaner's own rate.
   const { data: allBookings } = await supabaseAdmin
     .from("bookings")
     .select(
-      "id, service_date, service_summary, bedrooms, bathrooms, preferred_time_ranges, cleaning_notes, status, on_the_way_at, arrived_at, completed_at, assigned_cleaner_id, second_cleaner_id, customers(first_name, address, apt_no, access_notes, key_access), primary_cleaner:cleaners!assigned_cleaner_id(first_name), second_cleaner:cleaners!second_cleaner_id(first_name)"
+      "*, customers(first_name, address, apt_no, access_notes, key_access), primary_cleaner:cleaners!assigned_cleaner_id(first_name), second_cleaner:cleaners!second_cleaner_id(first_name)"
     )
     .or(`assigned_cleaner_id.eq.${cleaner.id},second_cleaner_id.eq.${cleaner.id}`)
     .order("service_date", { ascending: true });
 
   const bookings = (allBookings ?? []).map((b: any) => {
-    const teammate =
-      b.assigned_cleaner_id === cleaner.id ? b.second_cleaner : b.primary_cleaner;
-    return { ...b, teammate_first_name: teammate?.first_name ?? null };
+    const isPrimary = b.assigned_cleaner_id === cleaner.id;
+    const teammate = isPrimary ? b.second_cleaner : b.primary_cleaner;
+    const myPay: number | null = isPrimary ? b.cleaner_pay ?? null : b.second_cleaner_pay ?? null;
+    return { ...b, teammate_first_name: teammate?.first_name ?? null, my_pay: myPay };
   });
 
   const isOpen = (b: (typeof bookings)[number]) =>
@@ -179,6 +184,11 @@ function JobCard({
         <div className="text-sm text-gray-700 font-medium pt-0.5">
           {booking.bedrooms}BR &middot; {booking.service_summary}
         </div>
+        {booking.my_pay != null && (
+          <div className="text-sm font-semibold pt-0.5" style={{ color: "#085041" }}>
+            Pay: ${booking.my_pay}
+          </div>
+        )}
         {booking.teammate_first_name && (
           <div
             className="inline-block mt-1 text-xs font-semibold rounded px-2 py-1"
