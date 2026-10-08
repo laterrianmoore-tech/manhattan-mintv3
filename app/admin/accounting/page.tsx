@@ -57,6 +57,14 @@ function mondayOf(ymd: string) {
 function fmtDay(ymd: string, opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" }) {
   return new Date(ymd + "T12:00:00").toLocaleDateString("en-US", opts);
 }
+// "Rebecca (last name pending)" must not become "Rebecca (." — only a real
+// surname gets an initial.
+function custName(c: { first_name?: string | null; last_name?: string | null } | null | undefined) {
+  const first = (c?.first_name ?? "").trim();
+  const last = (c?.last_name ?? "").trim();
+  const initial = /^[A-Za-z]/.test(last) ? ` ${last[0]}.` : "";
+  return (first + initial).trim() || "—";
+}
 function money(n: number | null | undefined, { cents = false, dash = "—" }: { cents?: boolean; dash?: string } = {}) {
   if (n == null) return dash;
   const v = cents ? n / 100 : n;
@@ -116,7 +124,7 @@ export default async function AccountingPage({
   type Owed = { bookingId: string; slot: "primary" | "second"; cleanerId: string; date: string; customer: string; amount: number; note: string | null };
   const owed: Owed[] = [];
   for (const r of completed) {
-    const customer = [r.customers?.first_name, r.customers?.last_name?.[0] ? `${r.customers.last_name[0]}.` : ""].filter(Boolean).join(" ");
+    const customer = custName(r.customers);
     if (r.assigned_cleaner_id && r.cleaner_pay != null && !r.cleaner_paid_at) {
       owed.push({ bookingId: r.id, slot: "primary", cleanerId: r.assigned_cleaner_id, date: r.service_date, customer, amount: r.cleaner_pay, note: r.cleaner_pay_note });
     }
@@ -259,7 +267,8 @@ export default async function AccountingPage({
           <p className="text-xs text-gray-400 mb-3">
             Pay already promised on scheduled jobs: <span className="font-semibold text-gray-700">{money(upcomingPay)}</span> across {upcoming.length} job{upcoming.length === 1 ? "" : "s"}.
           </p>
-          <table className="w-full border border-gray-200 rounded-xl overflow-hidden">
+          <div className="overflow-x-auto">
+          <table className="w-full border border-gray-200 rounded-xl overflow-hidden min-w-[480px]">
             <thead className="bg-gray-50">
               <tr>
                 <th className={th}>Date</th>
@@ -273,7 +282,7 @@ export default async function AccountingPage({
               {upcoming.map((r) => (
                 <tr key={r.id} className="border-t border-gray-100">
                   <td className={td}>{fmtDay(r.service_date, { weekday: "short", month: "short", day: "numeric" })}</td>
-                  <td className={td}>{r.customers?.first_name} {r.customers?.last_name?.[0] ? `${r.customers.last_name[0]}.` : ""}</td>
+                  <td className={td}>{custName(r.customers)}</td>
                   <td className={td}>{cleanerName(r.assigned_cleaner_id)}{r.second_cleaner_id ? ` + ${cleanerName(r.second_cleaner_id)}` : ""}</td>
                   <td className={tdr}>{money(r.pricing_total)}</td>
                   <td className={tdr}>
@@ -283,6 +292,7 @@ export default async function AccountingPage({
               ))}
             </tbody>
           </table>
+          </div>
         </section>
       )}
 
@@ -345,7 +355,7 @@ export default async function AccountingPage({
                     <tr key={r.id} className="border-t border-gray-100">
                       <td className={td}>{fmtDay(r.service_date, { weekday: "short", day: "numeric" })}</td>
                       <td className={td}>
-                        {r.customers?.first_name} {r.customers?.last_name?.[0] ? `${r.customers.last_name[0]}.` : ""}
+                        {custName(r.customers)}
                         <div className="text-[11px] text-gray-400">{r.service_summary}</div>
                       </td>
                       <td className={td}>
