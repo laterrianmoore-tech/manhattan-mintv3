@@ -6,6 +6,7 @@ import { sendSms } from "@/lib/openphone";
 import { renderCleanReminderEmail } from "@/lib/email/clean-reminder";
 import { trackedReviewUrl } from "@/lib/review-tracking";
 import { hasActiveSubscription, HOLD_REFRESH_AFTER_DAYS, inspectHold, placeHold, releaseHold } from "@/lib/stripe-hold";
+import { reconcileCleanerPayouts } from "@/lib/stripe-payouts";
 
 export const dynamic = "force-dynamic";
 
@@ -480,6 +481,17 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`,
     }
   }
 
+  // Match today's Stripe transfers to completed jobs so the ledger is current
+  // even if nobody opens /admin/accounting. Read-only on Stripe, never fatal.
+  let payouts: Record<string, unknown> = { skipped: true };
+  try {
+    const r = await reconcileCleanerPayouts();
+    payouts = { ok: r.ok, stamped: r.stamped.length, unapplied: r.unappliedCredit, unknown: r.unknownTransfers.length, error: r.error };
+  } catch (err: any) {
+    console.error("[reminders] payout reconcile threw:", err?.message ?? err);
+    payouts = { ok: false, error: err?.message ?? "unknown error" };
+  }
+
   return NextResponse.json({
     ok: true,
     date: tomorrow,
@@ -490,5 +502,6 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`,
     customerEmails: emailResults,
     holds: holdResults,
     reviewNudge,
+    payouts,
   });
 }

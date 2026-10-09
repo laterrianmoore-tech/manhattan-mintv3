@@ -2,6 +2,8 @@ import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase";
 import AdminLoginForm from "../dispatch/AdminLoginForm";
 import MarkPaidForm from "./MarkPaidForm";
+import { listTransfers, OWNER_DRAW_ACCOUNT, reconcileCleanerPayouts } from "@/lib/stripe-payouts";
+import { mercuryExpenses } from "@/lib/mercury";
 
 export const dynamic = "force-dynamic";
 
@@ -65,11 +67,11 @@ function custName(c: { first_name?: string | null; last_name?: string | null } |
   const initial = /^[A-Za-z]/.test(last) ? ` ${last[0]}.` : "";
   return (first + initial).trim() || "—";
 }
-function money(n: number | null | undefined, { cents = false, dash = "—" }: { cents?: boolean; dash?: string } = {}) {
+function money(n: number | null | undefined, { cents = false, decimals = false, dash = "—" }: { cents?: boolean; decimals?: boolean; dash?: string } = {}) {
   if (n == null) return dash;
   const v = cents ? n / 100 : n;
   const neg = v < 0;
-  const s = Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: cents ? 2 : 0, maximumFractionDigits: 2 });
+  const s = Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: cents || decimals ? 2 : 0, maximumFractionDigits: 2 });
   return `${neg ? "−" : ""}$${s}`;
 }
 
@@ -102,6 +104,15 @@ export default async function AccountingPage({
   const thisMonday = mondayOf(today);
   const weekStart = week && /^\d{4}-\d{2}-\d{2}$/.test(week) ? mondayOf(week) : thisMonday;
   const weekEnd = addDays(weekStart, 6);
+
+  // Payouts are matched from Stripe transfers before anything is read, so a
+  // transfer sent a minute ago already shows as paid. Mercury expenses and the
+  // owner's draws load alongside; both are read-only and never block the page.
+  const [reconcile, mercury, draws] = await Promise.all([
+    reconcileCleanerPayouts(),
+    mercuryExpenses(LEDGER_SINCE.slice(0, 7) + "-01"),
+    listTransfers("2026-08-01T00:00:00Z").then((all) => all.filter((t) => t.destination === OWNER_DRAW_ACCOUNT)).catch(() => []),
+  ]);
 
   const [{ data: cleaners }, { data: rows, error }] = await Promise.all([
     supabaseAdmin.from("cleaners").select("id, first_name, last_name"),
@@ -175,6 +186,22 @@ export default async function AccountingPage({
     .sort((a, b) => (a.service_date < b.service_date ? -1 : 1));
   const upcomingPay = upcoming.reduce((s, r) => s + (r.cleaner_pay ?? 0) + (r.second_cleaner_pay ?? 0), 0);
 
+  // ── Monthly P&L: labor from the ledger, everything else from Mercury ───
+  const monthKeys = new Set<string>();
+  for (const r of completed) monthKeys.add(r.service_date.slice(0, 7));
+  for (const m of Object.keys(mercury.byMonth)) monthKeys.add(m);
+  for (const t of draws) monthKeys.add(t.created.slice(0, 7));
+  const months = [...monthKeys].filter((m) => m >= LEDGER_SINCE.slice(0, 7)).sort().reverse();
+  const pnl = months.map((m) => {
+    const t = totals(completed.filter((r) => r.service_date.startsWith(m)));
+    const expenses = mercury.byMonth[m] ?? 0;
+    const drawn = draws.filter((d) => d.created.startsWith(m)).reduce((s, d) => s + d.amount, 0);
+    return { m, ...t, expenses, net: t.margin - expenses, drawn };
+  });
+  const thisMonth = today.slice(0, 7);
+  const monthLabel = (m: string) => new Date(m + "-15T12:00:00").toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const recentExpenses = mercury.expenses.filter((e) => e.date >= addDays(today, -30)).slice().reverse();
+
   const th = "text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500 px-2 py-1.5";
   const thr = th + " text-right";
   const td = "px-2 py-1.5 text-sm text-gray-700 align-top";
@@ -216,7 +243,20 @@ export default async function AccountingPage({
             </span>
           )}
         </div>
-        <p className="text-xs text-gray-400 mb-4">Completed jobs whose pay hasn&apos;t gone out. Send the transfer in Stripe, then mark it here.</p>
+        <p className="text-xs text-gray-400 mb-4">
+          Completed jobs whose pay hasn&apos;t gone out. Send the transfer in Stripe as usual; it is matched to the job here automatically, nothing to click.
+        </p>
+        {!reconcile.ok && (
+          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+            Couldn&apos;t check Stripe transfers just now ({reconcile.error ?? "unknown error"}); the list below may be behind.
+          </p>
+        )}
+        {reconcile.unknownTransfers.length > 0 && (
+          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+            {reconcile.unknownTransfers.length} Stripe transfer{reconcile.unknownTransfers.length === 1 ? "" : "s"} went to an account no cleaner is linked to:{" "}
+            {reconcile.unknownTransfers.map((t) => `${fmtDay(t.created.slice(0, 10))} ${money(t.amount)} → ${t.destination}`).join(", ")}.
+          </p>
+        )}
         {owed.length === 0 ? (
           <p className="text-sm text-gray-400">Nothing owed. Everyone is paid up.</p>
         ) : (
@@ -241,11 +281,22 @@ export default async function AccountingPage({
                       ))}
                     </tbody>
                   </table>
-                  <MarkPaidForm
-                    cleanerName={cleanerName(cleanerId).split(" ")[0]}
-                    total={total}
-                    items={list.map((o) => ({ bookingId: o.bookingId, slot: o.slot }))}
-                  />
+                  {reconcile.unappliedCredit[cleanerId] ? (
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+                      {money(reconcile.unappliedCredit[cleanerId])} already sent to {cleanerName(cleanerId).split(" ")[0]} isn&apos;t enough to cover the next job, so it stays listed.
+                      Send the remaining {money(total - reconcile.unappliedCredit[cleanerId])} and it clears, or use Edit pay on dispatch if the job&apos;s pay is wrong.
+                    </p>
+                  ) : null}
+                  <details className="text-xs text-gray-400">
+                    <summary className="cursor-pointer hover:text-gray-600">Paid some other way (Zelle, cash)? Record it by hand</summary>
+                    <div className="mt-2">
+                      <MarkPaidForm
+                        cleanerName={cleanerName(cleanerId).split(" ")[0]}
+                        total={total}
+                        items={list.map((o) => ({ bookingId: o.bookingId, slot: o.slot }))}
+                      />
+                    </div>
+                  </details>
                 </div>
               );
             })}
@@ -296,6 +347,88 @@ export default async function AccountingPage({
         </section>
       )}
 
+      {/* ── Monthly P&L ─────────────────────────────────────────────── */}
+      <section className="mb-10">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-700 mb-1">Monthly P&amp;L</h2>
+        <p className="text-xs text-gray-400 mb-3">
+          Collected and cleaner pay from the ledger; expenses are the Mercury card, pulled live.
+          {mercury.ok && mercury.checkingBalance != null && (
+            <> Mercury checking {money(mercury.checkingBalance, { decimals: true })}{mercury.cardBalance != null ? `, card balance ${money(mercury.cardBalance, { decimals: true })}` : ""}.</>
+          )}
+        </p>
+        {!mercury.configured && (
+          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+            Mercury isn&apos;t connected on the site yet: add <code>MERCURY_API_TOKEN</code> (read-only) in Netlify environment variables and redeploy. Expenses show as $0 until then.
+          </p>
+        )}
+        {mercury.configured && !mercury.ok && (
+          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+            Mercury didn&apos;t answer ({mercury.error ?? "unknown error"}); expenses show as $0 for now.
+          </p>
+        )}
+        <div className="overflow-x-auto">
+          <table className="w-full border border-gray-200 rounded-xl overflow-hidden min-w-[640px]">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className={th}>Month</th>
+                <th className={thr}>Jobs</th>
+                <th className={thr}>Collected</th>
+                <th className={thr}>Stripe fees</th>
+                <th className={thr}>Cleaner pay</th>
+                <th className={thr}>Expenses</th>
+                <th className={thr}>Net</th>
+                <th className={thr}>To Mercury</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pnl.map((p) => (
+                <tr key={p.m} className={"border-t border-gray-100" + (p.m === thisMonth ? " bg-green-50" : "")}>
+                  <td className={td}>
+                    {monthLabel(p.m)}
+                    {p.m === thisMonth && <span className="ml-1 text-[10px] text-gray-400">to date</span>}
+                  </td>
+                  <td className={tdr}>{p.jobs}</td>
+                  <td className={tdr}>{money(p.collected)}</td>
+                  <td className={tdr + " text-gray-400"}>{money(p.fee, { decimals: true })}</td>
+                  <td className={tdr}>{money(p.pay)}</td>
+                  <td className={tdr}>{money(p.expenses, { decimals: true })}</td>
+                  <td className={tdr + " font-semibold"} style={{ color: p.net >= 0 ? "#085041" : "#b91c1c" }}>{money(p.net, { decimals: true })}</td>
+                  <td className={tdr + " text-gray-500"} title="Transfers from the Stripe balance to the business bank account">{p.drawn ? money(p.drawn, { decimals: true }) : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {mercury.ok && (
+          <details className="mt-3 text-xs text-gray-500">
+            <summary className="cursor-pointer hover:text-gray-700">
+              Expenses, last 30 days ({money(recentExpenses.reduce((s, e) => s + e.amount, 0), { decimals: true })})
+            </summary>
+            <table className="w-full mt-2 border border-gray-200 rounded-xl overflow-hidden">
+              <tbody>
+                {recentExpenses.map((e) => (
+                  <tr key={e.id} className="border-t border-gray-100">
+                    <td className={td + " w-24 text-xs"}>{fmtDay(e.date)}</td>
+                    <td className={td + " text-xs"}>{e.merchant}</td>
+                    <td className={td + " text-xs text-gray-400"}>{e.category}</td>
+                    <td className={tdr + " text-xs"}>{money(e.amount, { decimals: true })}</td>
+                  </tr>
+                ))}
+                {recentExpenses.length === 0 && (
+                  <tr><td className={td + " text-xs text-gray-400"}>Nothing on the card in the last 30 days.</td></tr>
+                )}
+              </tbody>
+            </table>
+            {Object.keys(mercury.byMonthCategory[thisMonth] ?? {}).length > 0 && (
+              <p className="mt-2 text-xs text-gray-400">
+                This month by category:{" "}
+                {Object.entries(mercury.byMonthCategory[thisMonth]).sort((a, b) => b[1] - a[1]).map(([c, v]) => `${c} ${money(v, { decimals: true })}`).join(" · ")}
+              </p>
+            )}
+          </details>
+        )}
+      </section>
+
       {/* ── Summary tiles ───────────────────────────────────────────── */}
       <section className="mb-10 grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
@@ -307,7 +440,7 @@ export default async function AccountingPage({
             <div className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-2">{label}</div>
             <div className="text-2xl font-semibold tabular-nums" style={{ color: t.margin >= 0 ? "#085041" : "#b91c1c" }}>{money(t.margin)}</div>
             <div className="text-xs text-gray-500 mt-1">
-              margin on {t.jobs} job{t.jobs === 1 ? "" : "s"} · {money(t.collected)} in · {money(t.pay)} pay · {money(t.fee, { cents: true })} fees
+              margin on {t.jobs} job{t.jobs === 1 ? "" : "s"} · {money(t.collected)} in · {money(t.pay)} pay · {money(t.fee, { decimals: true })} fees
               {t.estimated > 0 && <span className="text-amber-600"> · {t.estimated} using ticket</span>}
             </div>
           </div>
@@ -384,7 +517,7 @@ export default async function AccountingPage({
                   <td className={td} colSpan={3}>{selectedTotals.jobs} job{selectedTotals.jobs === 1 ? "" : "s"}</td>
                   <td className={tdr}>{money(selectedTotals.billed)}</td>
                   <td className={tdr}>{money(selectedTotals.collected)}</td>
-                  <td className={tdr + " text-gray-500"}>{money(selectedTotals.fee, { cents: true })}</td>
+                  <td className={tdr + " text-gray-500"}>{money(selectedTotals.fee, { decimals: true })}</td>
                   <td className={tdr}>{money(selectedTotals.pay)}</td>
                   <td className={tdr} style={{ color: selectedTotals.margin >= 0 ? "#085041" : "#b91c1c" }}>{money(selectedTotals.margin)}</td>
                 </tr>
@@ -424,7 +557,7 @@ export default async function AccountingPage({
                   </td>
                   <td className={tdr}>{t.jobs}</td>
                   <td className={tdr}>{money(t.collected)}</td>
-                  <td className={tdr + " text-gray-400"}>{money(t.fee, { cents: true })}</td>
+                  <td className={tdr + " text-gray-400"}>{money(t.fee, { decimals: true })}</td>
                   <td className={tdr}>{money(t.pay)}</td>
                   <td className={tdr + " font-semibold"} style={{ color: t.margin >= 0 ? "#085041" : "#b91c1c" }}>{money(t.margin)}</td>
                   <td className={tdr + " text-gray-500"}>{pct == null ? "—" : `${pct}%`}</td>
