@@ -9,8 +9,10 @@ export type ChargeResult =
 // post-booking Checkout setup link attach but aren't set as default).
 export async function chargeCustomer(opts: {
   stripeCustomerId: string;
-  amount: number; // dollars
+  amount: number; // dollars, tax included when the booking is taxable
   description: string;
+  /** Extra PaymentIntent metadata (tax_cents etc.). */
+  metadata?: Record<string, string>;
 }): Promise<ChargeResult> {
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeKey) return { ok: false, error: "Missing STRIPE_SECRET_KEY" };
@@ -43,6 +45,7 @@ export async function chargeCustomer(opts: {
       off_session: true,
       confirm: true,
       description: opts.description || "Manhattan Mint cleaning service",
+      ...(opts.metadata && Object.keys(opts.metadata).length ? { metadata: opts.metadata } : {}),
     });
 
     return {

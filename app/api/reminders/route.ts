@@ -8,6 +8,7 @@ import { trackedReviewUrl } from "@/lib/review-tracking";
 import { hasActiveSubscription, HOLD_REFRESH_AFTER_DAYS, inspectHold, placeHold, releaseHold } from "@/lib/stripe-hold";
 import { reconcileCleanerPayouts } from "@/lib/stripe-payouts";
 import { arrivalTagFor, isPlaceholderEmail } from "@/lib/arrival-window";
+import { isTaxableBooking, quoteTax, taxMetadata } from "@/lib/stripe-tax";
 
 export const dynamic = "force-dynamic";
 
@@ -398,7 +399,7 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`,
   try {
     const { data: tomorrowJobs, error: holdErr } = await supabaseAdmin
       .from("bookings")
-      .select("id, service_date, service_summary, frequency, pricing_total, stripe_charge_id, stripe_customer_id, stripe_payment_method_id, customers(first_name, last_name, stripe_customer_id)")
+      .select("id, created_at, customer_id, service_date, service_summary, frequency, pricing_total, stripe_charge_id, stripe_customer_id, stripe_payment_method_id, customers(first_name, last_name, address, apt_no, stripe_customer_id)")
       .eq("service_date", tomorrow)
       .in("status", ["pending", "confirmed"]);
     if (holdErr) throw new Error(holdErr.message);
@@ -407,7 +408,12 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`,
 
     for (const job of tomorrowJobs ?? []) {
       const customer = job.customers as any;
-      const total: number = job.pricing_total ?? 0;
+      const price: number = job.pricing_total ?? 0;
+      // Taxable bookings hold price + NY sales tax (2026-10-10).
+      const tax = price > 0 && (await isTaxableBooking({ customerId: job.customer_id, createdAt: job.created_at }))
+        ? await quoteTax({ amountDollars: price, address: customer?.address, aptNo: customer?.apt_no, reference: job.id })
+        : null;
+      const total = Math.round((price + (tax ? tax.taxCents / 100 : 0)) * 100) / 100;
       const stripeCustomerId: string | null = job.stripe_customer_id || customer?.stripe_customer_id || null;
       if (total <= 0) { holdResults.push({ bookingId: job.id, action: "skip", ok: true, detail: "$0" }); continue; }
       if (!stripeCustomerId) { holdResults.push({ bookingId: job.id, action: "skip", ok: true, detail: "no card" }); continue; }
@@ -429,6 +435,7 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`,
         amount: total,
         description: `Manhattan Mint clean — ${job.service_date} (${job.service_summary || job.frequency})`,
         bookingId: job.id,
+        metadata: tax ? taxMetadata(tax) : undefined,
       });
       if (hold.ok) {
         const { error: stampErr } = await supabaseAdmin.from("bookings").update({ stripe_charge_id: hold.paymentIntentId }).eq("id", job.id);

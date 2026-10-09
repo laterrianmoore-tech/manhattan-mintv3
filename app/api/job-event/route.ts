@@ -8,6 +8,7 @@ import { recordCollection } from "@/lib/stripe-accounting";
 import { ensureReviewToken, reviewUrlFor, stampReview } from "@/lib/review-tracking";
 import { referralCodeFor, referralLink, publicSiteUrl, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT, secondCleanCodeFor, SECOND_PROMO_CODE, SECOND_WINDOW_DAYS } from "@/lib/referral";
 import { accountUrl } from "@/lib/manage-token";
+import { fmtTax, isTaxableBooking, quoteTax, recordTaxTransaction, taxMetadata } from "@/lib/stripe-tax";
 
 const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 const ORDINALS = ["1st", "2nd", "3rd", "4th"];
@@ -193,7 +194,19 @@ export async function POST(req: Request) {
     let chargeLine = "";
     const stripeCustomerId = booking.stripe_customer_id || customer.stripe_customer_id;
     const chargeDescription = `Manhattan Mint clean — ${booking.service_date} (${booking.service_summary || booking.frequency})`;
-    const total: number = booking.pricing_total ?? 0;
+    const price: number = booking.pricing_total ?? 0;
+    // Sales tax on top for taxable (new-customer) bookings (2026-10-10). Quoted
+    // fresh here because a calculation made at booking time can expire. The
+    // tax is part of what the card pays and is netted back out in accounting.
+    const taxable = price > 0 && (await isTaxableBooking({ customerId: booking.customer_id, createdAt: booking.created_at }));
+    const tax = taxable
+      ? await quoteTax({ amountDollars: price, address: customer?.address, aptNo: customer?.apt_no, reference: bookingId })
+      : null;
+    const taxDollars = tax ? tax.taxCents / 100 : 0;
+    const total = Math.round((price + taxDollars) * 100) / 100;
+    const taxLine = tax && tax.taxCents > 0 ? ` incl. ${fmtTax(tax)}` : tax?.error ? ` (⚠️ tax not calculated: ${tax.error})` : "";
+    const taxMeta = tax ? taxMetadata(tax) : {};
+    let paidPaymentIntentId: string | null = null;
 
     // stripe_charge_id is the hold's PaymentIntent (placed at booking or by
     // the day-before reminder). Capture it; charge any shortfall separately.
@@ -212,7 +225,8 @@ export async function POST(req: Request) {
         } else {
           const cap = await captureHold({ paymentIntentId: booking.stripe_charge_id, amount: total });
           if (cap.ok) {
-            chargeLine = `💳 Card charged $${cap.captured} from the hold.`;
+            paidPaymentIntentId = cap.paymentIntentId;
+            chargeLine = `💳 Card charged $${cap.captured} from the hold${taxLine}.`;
             if (cap.shortfall > 0) {
               needFreshCharge = true;
               freshAmount = cap.shortfall;
@@ -245,8 +259,10 @@ export async function POST(req: Request) {
           stripeCustomerId,
           amount: freshAmount,
           description: freshAmount < total ? `${chargeDescription} — balance after hold` : chargeDescription,
+          metadata: { supabase_booking_id: bookingId, ...(freshAmount === total ? taxMeta : {}) },
         });
         if (charge.ok) {
+          if (freshAmount === total) paidPaymentIntentId = charge.paymentIntentId;
           if (!booking.stripe_charge_id || freshAmount === total) {
             await supabaseAdmin
               .from("bookings")
@@ -262,6 +278,13 @@ export async function POST(req: Request) {
             : `⚠️ AUTO-CHARGE FAILED ($${freshAmount}): ${charge.error} — collect manually via /api/bookings/charge.`;
         }
       }
+    }
+
+    // Tax report: once the full amount is in, record the Stripe Tax
+    // transaction against the PaymentIntent that carried it.
+    if (tax && tax.taxCents > 0 && paidPaymentIntentId) {
+      const txId = await recordTaxTransaction(tax.calculationId, paidPaymentIntentId);
+      if (!txId) chargeLine += " ⚠️ Tax transaction not recorded in Stripe Tax.";
     }
 
     // ── Ledger (2026-10-08) ────────────────────────────────────────────

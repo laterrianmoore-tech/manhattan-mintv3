@@ -7,6 +7,7 @@ import { sendSms } from "@/lib/openphone";
 import { placeHold } from "@/lib/stripe-hold";
 import { isReferralCode, referralCodeFor, referralLink, publicSiteUrl, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT, isSecondCleanCode, secondCleanCodeFor, SECOND_PROMO_CODE, SECOND_PROMO_END, SECOND_WINDOW_DAYS } from "@/lib/referral";
 import { accountUrl } from "@/lib/manage-token";
+import { isTaxableBooking, quoteTax, taxMetadata } from "@/lib/stripe-tax";
 
 export const maxDuration = 30;
 
@@ -297,12 +298,26 @@ export async function POST(req: Request) {
     // loud warning to the owner, and the day-before reminder retries the hold.
     let holdId: string | null = null;
     let holdNote = hasCardOnFile ? "" : "no card on file";
+
+    // NY sales tax on top for new customers (2026-10-10). A returning customer
+    // (any booking before TAX_START_AT) keeps pre-tax pricing for now.
+    const { data: priorCustomer } = await supabaseAdmin.from("customers").select("id").eq("email", body.email).maybeSingle();
+    const taxable = body.pricing.total > 0 && (await isTaxableBooking({ customerId: priorCustomer?.id ?? null }));
+    const tax = taxable ? await quoteTax({ amountDollars: body.pricing.total, address: body.address, aptNo: body.aptNo, reference: "booking" }) : null;
+    const taxDollars = tax ? tax.taxCents / 100 : 0;
+    const amountDue = Math.round((body.pricing.total + taxDollars) * 100) / 100;
+    const taxRowHtml = tax && tax.taxCents > 0
+      ? `<tr><td style="padding:5px 0;color:#555;font-size:14px;">Sales tax (${tax.jurisdiction ?? "NY"} ${tax.ratePct ?? ""}%)</td><td style="padding:5px 0;color:#0f0f0f;font-size:14px;font-weight:500;">$${taxDollars.toFixed(2)}</td></tr>`
+      : "";
+    const dueLabel = tax && tax.taxCents > 0 ? `$${amountDue.toFixed(2)}` : `$${body.pricing.total}`;
+
     if (hasCardOnFile && body.pricing.total > 0) {
       const hold = await placeHold({
         stripeCustomerId: body.stripeCustomerId as string,
         paymentMethodId: body.stripePaymentMethodId,
-        amount: body.pricing.total,
+        amount: amountDue,
         description: `Manhattan Mint clean — ${body.serviceDate} (${body.serviceSummary || `${body.bedrooms} BR / ${body.bathrooms} BA`})`,
+        metadata: tax ? taxMetadata(tax) : undefined,
       });
       if (hold.ok) {
         holdId = hold.paymentIntentId;
@@ -514,7 +529,7 @@ export async function POST(req: Request) {
       `Stripe Payment Method ID: ${body.stripePaymentMethodId || "n/a"}`,
       `Stripe Customer ID: ${stripeCustomerId || "n/a"}`,
       `Card Charge Timing: ${body.cardChargeTiming || "AFTER appointment"}`,
-      `Booking Total: $${body.pricing.total}`,
+      `Booking Total: $${body.pricing.total}${tax && tax.taxCents > 0 ? ` + $${taxDollars.toFixed(2)} NY sales tax = $${amountDue.toFixed(2)}` : ""}`,
       `Next Clean Total: $${body.pricing.nextCleanTotal ?? body.pricing.total}`,
     ].join("\n");
 
@@ -532,7 +547,7 @@ export async function POST(req: Request) {
 
     const paymentLineHtml = hasCardOnFile
       ? holdId
-        ? `<p style="margin:0 0 6px;color:#555;font-size:14px;">💳 <strong>Payment:</strong> We placed a temporary $${body.pricing.total} hold on your card to reserve your spot — it may show as pending at your bank. Your card is only charged after your appointment is complete.</p>`
+        ? `<p style="margin:0 0 6px;color:#555;font-size:14px;">💳 <strong>Payment:</strong> We placed a temporary ${dueLabel} hold on your card to reserve your spot — it may show as pending at your bank. Your card is only charged after your appointment is complete.</p>`
         : `<p style="margin:0 0 6px;color:#555;font-size:14px;">💳 <strong>Payment:</strong> Your card is on file and will be charged after your appointment is complete.</p>`
       : `<p style="margin:0 0 6px;color:#555;font-size:14px;">💳 <strong>Payment:</strong> We couldn't save a card during booking. Please add one securely here: <a href="${cardSetupUrl || `${siteUrl}/quote`}" style="color:#2d6a4f;">Add card</a>. Your card is only charged after your appointment.</p>`;
 
@@ -573,7 +588,7 @@ export async function POST(req: Request) {
             ownerPhones.map((phone) =>
               sendSms({
                 to: phone,
-                body: `NEW BOOKING${hasCardOnFile ? (holdId ? " (hold ✓)" : " (⚠️ NO HOLD)") : " (NO CARD!)"}: ${fullName}, ${body.serviceDate}, ${serviceLabel}, $${body.pricing.total}, ${fullAddress}. Ph: ${body.phone}`,
+                body: `NEW BOOKING${hasCardOnFile ? (holdId ? " (hold ✓)" : " (⚠️ NO HOLD)") : " (NO CARD!)"}: ${fullName}, ${body.serviceDate}, ${serviceLabel}, $${body.pricing.total}${tax && tax.taxCents > 0 ? ` + $${taxDollars.toFixed(2)} tax` : ""}, ${fullAddress}. Ph: ${body.phone}`,
                 bookingId: supabaseBookingId ?? null,
                 cleanerId: null,
                 recipientType: "customer",
@@ -613,7 +628,8 @@ export async function POST(req: Request) {
             <tr><td style="padding:5px 0;color:#555;font-size:14px;">Preferred Time</td><td style="padding:5px 0;color:#0f0f0f;font-size:14px;font-weight:500;">${body.preferredTimeRanges?.length ? body.preferredTimeRanges.join(", ") : "Flexible"}</td></tr>
             <tr><td style="padding:5px 0;color:#555;font-size:14px;">Address</td><td style="padding:5px 0;color:#0f0f0f;font-size:14px;font-weight:500;">${fullAddress}</td></tr>
             ${body.selectedExtras.length ? `<tr><td style="padding:5px 0;color:#555;font-size:14px;vertical-align:top;">Extras</td><td style="padding:5px 0;color:#0f0f0f;font-size:14px;font-weight:500;">${extrasLabel}</td></tr>` : ""}
-            <tr><td style="padding:8px 0 0;color:#555;font-size:14px;border-top:1px solid #e0e0e0;">Total</td><td style="padding:8px 0 0;color:#2d6a4f;font-size:16px;font-weight:700;border-top:1px solid #e0e0e0;">$${body.pricing.total}</td></tr>
+            ${taxRowHtml ? `<tr><td style="padding:5px 0;color:#555;font-size:14px;">Clean</td><td style="padding:5px 0;color:#0f0f0f;font-size:14px;font-weight:500;">$${body.pricing.total}</td></tr>${taxRowHtml}` : ""}
+            <tr><td style="padding:8px 0 0;color:#555;font-size:14px;border-top:1px solid #e0e0e0;">Total</td><td style="padding:8px 0 0;color:#2d6a4f;font-size:16px;font-weight:700;border-top:1px solid #e0e0e0;">${dueLabel}</td></tr>
           </table>
 
           ${paymentLineHtml}

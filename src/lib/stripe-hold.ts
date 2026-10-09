@@ -88,9 +88,11 @@ async function resolvePaymentMethod(stripe: Stripe, customerId: string, preferre
 export async function placeHold(opts: {
   stripeCustomerId: string;
   paymentMethodId?: string | null;
-  amount: number; // dollars
+  amount: number; // dollars, tax included when the booking is taxable
   description: string;
   bookingId?: string | null;
+  /** Extra PaymentIntent metadata (tax_cents etc.). */
+  metadata?: Record<string, string>;
 }): Promise<HoldResult> {
   const stripe = client();
   if (!stripe) return { ok: false, declined: false, error: "Missing STRIPE_SECRET_KEY" };
@@ -116,6 +118,7 @@ export async function placeHold(opts: {
       metadata: {
         kind: "booking_hold",
         ...(opts.bookingId ? { supabase_booking_id: opts.bookingId } : {}),
+        ...(opts.metadata ?? {}),
       },
     });
     if (pi.status !== "requires_capture") {

@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { supabaseAdmin } from "./supabase";
+import { taxCentsFromMetadata } from "./stripe-tax";
 
 // What a booking actually brought in (2026-10-08).
 //
@@ -32,17 +33,22 @@ export async function collectionForPayment(paymentId: string): Promise<Collectio
   if (!stripe || !paymentId) return null;
   try {
     let charge: Stripe.Charge | null = null;
+    let piMetadata: Stripe.Metadata | null = null;
     if (paymentId.startsWith("pi_")) {
       const pi = await stripe.paymentIntents.retrieve(paymentId, { expand: ["latest_charge.balance_transaction"] });
       if (pi.status !== "succeeded") return null;
       charge = (pi.latest_charge as Stripe.Charge | null) ?? null;
+      piMetadata = pi.metadata;
     } else if (paymentId.startsWith("ch_")) {
       charge = await stripe.charges.retrieve(paymentId, { expand: ["balance_transaction"] });
     }
     if (!charge || charge.status !== "succeeded") return null;
     const bt = charge.balance_transaction as Stripe.BalanceTransaction | null;
+    // Sales tax (2026-10-10) rides on the PaymentIntent and is not revenue:
+    // "collected" is what the business keeps before Stripe's fee.
+    const taxCents = taxCentsFromMetadata(piMetadata) || taxCentsFromMetadata(charge.metadata);
     return {
-      collectedCents: charge.amount_captured ?? charge.amount,
+      collectedCents: Math.max(0, (charge.amount_captured ?? charge.amount) - taxCents),
       feeCents: bt?.fee ?? 0,
       collectedAt: new Date(charge.created * 1000).toISOString(),
       ref: charge.payment_intent ? String(charge.payment_intent) : charge.id,
@@ -78,7 +84,11 @@ export async function collectionForInvoice(bookingId: string): Promise<Collectio
       }
     }
     return {
-      collectedCents: inv.amount_paid,
+      // Invoice tax (automatic_tax on) is not revenue either.
+      collectedCents: Math.max(
+        0,
+        inv.amount_paid - ((inv as any).total_taxes ?? []).reduce((s: number, t: { amount?: number }) => s + (t.amount ?? 0), 0),
+      ),
       feeCents,
       collectedAt: new Date(((inv.status_transitions?.paid_at ?? inv.created) as number) * 1000).toISOString(),
       ref,

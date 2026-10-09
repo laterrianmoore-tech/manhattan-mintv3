@@ -839,7 +839,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
               </div>
 
               <p style={{ marginTop: ".6rem", fontSize: ".75rem", color: "#666" }}>
-                Includes all selected options. Final card charge is processed after appointment completion.
+                Includes all selected options. Final card charge is processed after appointment completion, plus NY sales tax where it applies.
               </p>
 
               {form.frequency !== "One-Time" && (
