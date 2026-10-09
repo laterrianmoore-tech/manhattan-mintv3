@@ -12,7 +12,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
 
-  const { bookingId, newTotal } = await req.json();
+  // applyToFuture (2026-10-09): also set pricing_next_clean_total, so the
+  // auto-created next visit carries the new rate. Left off, the edit is a
+  // one-visit deal and the next booking returns to the standing rate — which
+  // is how a welcome rate expires on its own.
+  const { bookingId, newTotal, applyToFuture } = await req.json();
   if (!bookingId || typeof newTotal !== "number" || !Number.isInteger(newTotal)) {
     return NextResponse.json({ ok: false, error: "bookingId and a whole-dollar newTotal are required" }, { status: 400 });
   }
@@ -54,7 +58,7 @@ export async function POST(req: Request) {
 
   const { error: updateErr } = await supabaseAdmin
     .from("bookings")
-    .update({ pricing_total: newTotal })
+    .update(applyToFuture === true ? { pricing_total: newTotal, pricing_next_clean_total: newTotal } : { pricing_total: newTotal })
     .eq("id", bookingId);
 
   if (updateErr) {

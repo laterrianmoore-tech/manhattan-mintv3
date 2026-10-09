@@ -7,6 +7,7 @@ import { captureHold, hasActiveSubscription, inspectHold, releaseHold } from "@/
 import { recordCollection } from "@/lib/stripe-accounting";
 import { ensureReviewToken, stampReview } from "@/lib/review-tracking";
 import { referralCodeFor, referralLink, publicSiteUrl, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT, secondCleanCodeFor, SECOND_PROMO_CODE, SECOND_WINDOW_DAYS } from "@/lib/referral";
+import { accountUrl } from "@/lib/manage-token";
 
 const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 const ORDINALS = ["1st", "2nd", "3rd", "4th"];
@@ -346,7 +347,7 @@ export async function POST(req: Request) {
     if (skipReviewAndUpsell) {
       await sendSms({
         to: customer.phone,
-        body: `Hi ${customer.first_name} — your Manhattan Mint clean is complete! 💚 Thank you for having us back. Know a neighbor who needs us? Your friend code ${friendCode} gets them $${REFERRAL_FRIEND_DISCOUNT} off their first clean and you $${REFERRAL_REFERRER_CREDIT} off your next: ${friendLink} — Manhattan Mint NYC`,
+        body: `Hi ${customer.first_name} — your Manhattan Mint clean is complete! 💚 Thank you for having us back. Your next visits, card and friend code (${friendCode}, $${REFERRAL_FRIEND_DISCOUNT} off a neighbor's first clean, $${REFERRAL_REFERRER_CREDIT} off your next) are all here: ${accountUrl(booking.customer_id, siteUrl)} — Manhattan Mint NYC`,
         cleanerId: cleaner?.id ?? null,
         bookingId,
         recipientType: "customer",
@@ -379,7 +380,7 @@ export async function POST(req: Request) {
         to: customer.phone,
         body: isSecondPromo
           ? `Your second clean is on us. Book it any time before ${freeBy} with code ${freeCode}: ${publicSiteUrl(siteUrl)}/quote/?code=${freeCode} — same apartment, standard clean, add-ons priced normally. Loved having the same cleaner? Reply WEEKLY, BIWEEKLY, or MONTHLY after your free one to keep them and save up to 20%. — Manhattan Mint NYC`
-          : `Loved the clean? Reply WEEKLY, BIWEEKLY, or MONTHLY to keep the same cleaner and save up to 20% on every visit. And your friend code is ${friendCode}: a neighbor who books with it gets $${REFERRAL_FRIEND_DISCOUNT} off their first clean, and you get $${REFERRAL_REFERRER_CREDIT} off your next one once theirs is done. ${friendLink} — Manhattan Mint NYC`,
+          : `Loved the clean? Reply WEEKLY, BIWEEKLY, or MONTHLY to keep the same cleaner and save up to 20% on every visit. And your friend code is ${friendCode}: a neighbor who books with it gets $${REFERRAL_FRIEND_DISCOUNT} off their first clean, and you get $${REFERRAL_REFERRER_CREDIT} off your next one once theirs is done. ${friendLink} Your account (visits, card, friend code): ${accountUrl(booking.customer_id, siteUrl)} — Manhattan Mint NYC`,
         cleanerId: cleaner?.id ?? null,
         bookingId,
         recipientType: "customer",

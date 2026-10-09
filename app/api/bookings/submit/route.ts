@@ -6,6 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { sendSms } from "@/lib/openphone";
 import { placeHold } from "@/lib/stripe-hold";
 import { isReferralCode, referralCodeFor, referralLink, publicSiteUrl, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT, isSecondCleanCode, secondCleanCodeFor, SECOND_PROMO_CODE, SECOND_PROMO_END, SECOND_WINDOW_DAYS } from "@/lib/referral";
+import { accountUrl } from "@/lib/manage-token";
 
 export const maxDuration = 30;
 
@@ -551,6 +552,8 @@ export async function POST(req: Request) {
     const referralSms = friendCode
       ? ` Know a neighbor who needs a cleaner? Your friend code ${friendCode} gets them $${REFERRAL_FRIEND_DISCOUNT} off their first clean and you $${REFERRAL_REFERRER_CREDIT} off your next: ${friendLink}`
       : "";
+    // Account link (2026-10-09): visits, move/skip, card, friend code, one page, no login.
+    const accountSms = supabaseCustomerId ? ` Your account (visits, card, friend code): ${accountUrl(supabaseCustomerId, siteUrl)}` : "";
 
     const notificationResults = await Promise.allSettled([
       // 1. Owner alert email — FIRST priority
@@ -644,7 +647,7 @@ export async function POST(req: Request) {
         ? sendSms({
             to: body.phone,
             body: hasCardOnFile
-              ? `Thanks for booking Manhattan Mint, ${body.firstName}. If you need to cancel or reschedule, please give us at least 24 hours notice.${referralSms} — Manhattan Mint NYC`
+              ? `Thanks for booking Manhattan Mint, ${body.firstName}. If you need to cancel or reschedule, please give us at least 24 hours notice.${accountSms}${referralSms} — Manhattan Mint NYC`
               : `Thanks for booking Manhattan Mint, ${body.firstName}! One last step — add your card securely here (charged only after your clean): ${cardSetupUrl || siteUrl} — Manhattan Mint NYC`,
             bookingId: supabaseBookingId ?? null,
             cleanerId: null,

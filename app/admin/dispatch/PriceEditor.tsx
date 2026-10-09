@@ -17,6 +17,9 @@ export default function PriceEditor({
   onClose: () => void;
 }) {
   const [value, setValue] = useState(String(initialTotal));
+  // Off by default: a one-visit price (welcome rate, make-good) expires on its
+  // own because the next auto-created visit uses pricing_next_clean_total.
+  const [applyToFuture, setApplyToFuture] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -35,11 +38,15 @@ export default function PriceEditor({
     const res = await fetch("/api/bookings/update-price/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bookingId, newTotal }),
+      body: JSON.stringify({ bookingId, newTotal, applyToFuture }),
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
-      onDone(`Price updated: $${initialTotal} → $${newTotal}. The card will be charged $${newTotal} at Job Complete.${data.holdNote ?? ""}`);
+      onDone(
+        `Price updated: $${initialTotal} → $${newTotal}. The card will be charged $${newTotal} at Job Complete.${data.holdNote ?? ""}${
+          applyToFuture ? ` Future visits will also be $${newTotal}.` : " This visit only; the next one returns to the standing rate."
+        }`,
+      );
     } else {
       setError(data.error ?? "Something went wrong. Try again.");
       setBusy(false);
@@ -61,6 +68,10 @@ export default function PriceEditor({
           autoFocus
         />
       </div>
+      <label className="flex items-center gap-1 text-xs text-gray-600 cursor-pointer" title="Off: this visit only (a welcome rate expires by itself). On: every future visit too.">
+        <input type="checkbox" checked={applyToFuture} onChange={(e) => setApplyToFuture(e.target.checked)} />
+        Going forward too
+      </label>
       <button
         onClick={handleSave}
         disabled={busy}

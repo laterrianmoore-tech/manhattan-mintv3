@@ -25,3 +25,21 @@ export function manageUrl(bookingId: string, siteUrl: string): string {
   const params = new URLSearchParams({ b: bookingId, t: manageToken(bookingId) });
   return `${siteUrl.replace(/\/$/, "")}/manage/?${params.toString()}`;
 }
+
+// Customer account links (2026-10-09): the same idea per customer instead of
+// per booking. No password, no login: the link in their texts is the key.
+export function accountToken(customerId: string): string {
+  return createHmac("sha256", secret()).update(`account:${customerId.trim()}`).digest("hex").slice(0, 32);
+}
+
+export function verifyAccountToken(customerId: string, token: string): boolean {
+  if (!customerId || !token) return false;
+  const expected = accountToken(customerId);
+  if (token.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(expected), Buffer.from(token));
+}
+
+export function accountUrl(customerId: string, siteUrl: string): string {
+  const params = new URLSearchParams({ c: customerId, t: accountToken(customerId) });
+  return `${siteUrl.replace(/\/$/, "")}/account/?${params.toString()}`;
+}
