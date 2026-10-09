@@ -17,10 +17,7 @@ function fmt(d: string, opts: Intl.DateTimeFormatOptions = { weekday: "long", mo
 function nyToday(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
 }
-function arrivalTag(notes: string | null | undefined): string | null {
-  const m = String(notes ?? "").match(/\[Arrival window:\s*([^\]]+)\]/i);
-  return m ? m[1].trim() : null;
-}
+import { arrivalTagFor } from "@/lib/arrival-window";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -54,7 +51,7 @@ export async function GET(req: Request) {
       date: b.service_date,
       dateLabel: fmt(b.service_date),
       summary: b.service_summary,
-      window: arrivalTag(b.cleaning_notes) ?? (Array.isArray(b.preferred_time_ranges) ? b.preferred_time_ranges.join(", ") : ""),
+      window: arrivalTagFor(b, "account page") ?? (Array.isArray(b.preferred_time_ranges) ? b.preferred_time_ranges.join(", ") : ""),
       price: b.pricing_total,
       cleaner: b.cleaners?.first_name ?? null,
       status: b.status,

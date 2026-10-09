@@ -7,6 +7,7 @@ import { renderCleanReminderEmail } from "@/lib/email/clean-reminder";
 import { trackedReviewUrl } from "@/lib/review-tracking";
 import { hasActiveSubscription, HOLD_REFRESH_AFTER_DAYS, inspectHold, placeHold, releaseHold } from "@/lib/stripe-hold";
 import { reconcileCleanerPayouts } from "@/lib/stripe-payouts";
+import { arrivalTagFor, isPlaceholderEmail } from "@/lib/arrival-window";
 
 export const dynamic = "force-dynamic";
 
@@ -71,6 +72,7 @@ export async function GET(req: Request) {
 
     const customer = booking.customers as any;
     if (!customer?.email) return { ok: false, reason: "customer has no email" };
+    if (isPlaceholderEmail(customer.email)) return { ok: false, reason: "phone-only customer (placeholder email)" };
 
     if (!force && !preview) {
       const claim = await supabaseAdmin
@@ -86,7 +88,7 @@ export async function GET(req: Request) {
     const { subject, html } = renderCleanReminderEmail({
       firstName: customer.first_name || "there",
       dateLabel: longDate(booking.service_date),
-      arrivalWindow: (booking.cleaning_notes || "").match(/\[Arrival window: ([^\]]+)\]/)?.[1] ?? null,
+      arrivalWindow: arrivalTagFor(booking, "customer reminder"),
       timeLabel: Array.isArray(booking.preferred_time_ranges)
         ? booking.preferred_time_ranges.join(", ")
         : booking.preferred_time_ranges || null,
@@ -333,8 +335,9 @@ export async function GET(req: Request) {
       ? booking.preferred_time_ranges.join(", ")
       : booking.preferred_time_ranges || "";
     const aptSuffix = customer?.apt_no ? ` Apt ${customer.apt_no}` : "";
-    // Surface an exact arrival window if one was stamped into the notes
-    const arrivalTag = (booking.cleaning_notes || "").match(/\[Arrival window: ([^\]]+)\]/)?.[1];
+    // Surface an exact arrival window if one was stamped into the notes and
+    // it agrees with the booking's window (a stale tag is dropped, not sent).
+    const arrivalTag = arrivalTagFor(booking, "cleaner reminder");
 
     for (const cleaner of jobCleaners ?? []) {
       if (!cleaner?.phone) continue;
