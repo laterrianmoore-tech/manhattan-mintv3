@@ -5,7 +5,7 @@ import { sendSms } from "@/lib/openphone";
 import { chargeCustomer } from "@/lib/stripe-charge";
 import { captureHold, hasActiveSubscription, inspectHold, releaseHold } from "@/lib/stripe-hold";
 import { recordCollection } from "@/lib/stripe-accounting";
-import { ensureReviewToken, stampReview } from "@/lib/review-tracking";
+import { ensureReviewToken, reviewUrlFor, stampReview } from "@/lib/review-tracking";
 import { referralCodeFor, referralLink, publicSiteUrl, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT, secondCleanCodeFor, SECOND_PROMO_CODE, SECOND_WINDOW_DAYS } from "@/lib/referral";
 import { accountUrl } from "@/lib/manage-token";
 
@@ -345,26 +345,47 @@ export async function POST(req: Request) {
     const friendLink = referralLink(friendCode, siteUrl);
 
     if (skipReviewAndUpsell) {
-      await sendSms({
+      // Repeat and recurring customers are asked for a Google review exactly
+      // once (owner decision 2026-10-09): they were never asked before, and
+      // they are the happiest customers. Any earlier ask or a recorded review
+      // on any of their bookings means no ask here.
+      let askOnce = false;
+      const { count: askedBefore } = await supabaseAdmin
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("customer_id", booking.customer_id)
+        .or("review_link_sent_at.not.is.null,review_received_at.not.is.null");
+      if ((askedBefore ?? 0) === 0) askOnce = true;
+      const reviewLink = askOnce ? reviewUrlFor(await ensureReviewToken(bookingId)) : null;
+      const accountLink = accountUrl(booking.customer_id, siteUrl);
+      const repeatText = await sendSms({
         to: customer.phone,
-        body: `Hi ${customer.first_name} — your Manhattan Mint clean is complete! 💚 Thank you for having us back. Your next visits, card and friend code (${friendCode}, $${REFERRAL_FRIEND_DISCOUNT} off a neighbor's first clean, $${REFERRAL_REFERRER_CREDIT} off your next) are all here: ${accountUrl(booking.customer_id, siteUrl)} — Manhattan Mint NYC`,
+        body: reviewLink
+          ? `Hi ${customer.first_name} — your Manhattan Mint clean is complete! 💚 Thank you for having us back. One favor, just once: a quick Google review helps us more than anything, 30 seconds: ${reviewLink} Your visits, card and friend code are here: ${accountLink}`
+          : `Hi ${customer.first_name} — your Manhattan Mint clean is complete! 💚 Thank you for having us back. Your next visits, card and friend code (${friendCode}, $${REFERRAL_FRIEND_DISCOUNT} off a neighbor's first clean, $${REFERRAL_REFERRER_CREDIT} off your next) are all here: ${accountLink} — Manhattan Mint NYC`,
         cleanerId: cleaner?.id ?? null,
         bookingId,
         recipientType: "customer",
         eventType: "completed",
       });
+      if (reviewLink && repeatText.ok) {
+        await stampReview(bookingId, { review_link_sent_at: now });
+      }
     } else {
       // Review tracking (2026-09-18): mint this booking's review_token now so
       // the feedback page's "Share it on Google" button — and the day-3 nudge
       // in /api/reminders — can use the tracked /api/r/<token>/ link. Returns
       // null (and logs) if the columns don't exist yet; nothing below depends
       // on it, so Complete keeps working before the migration has run.
-      await ensureReviewToken(bookingId);
+      // One step (owner decision 2026-10-09): the text carries the tracked
+      // Google link itself. The feedback form in between produced zero reviews.
+      // Unhappy customers are pointed at a reply instead.
+      const reviewLink = reviewUrlFor(await ensureReviewToken(bookingId));
 
       // Sent as two texts — a single message with every ask buries the review link.
       const reviewText = await sendSms({
         to: customer.phone,
-        body: `Hi ${customer.first_name} — your Manhattan Mint clean is complete! 💚 How did we do? It takes 30 seconds and means the world to our team: ${siteUrl}/feedback/${bookingId}`,
+        body: `Hi ${customer.first_name} — your Manhattan Mint clean is complete! 💚 If you're happy with it, a quick Google review helps us more than anything, 30 seconds: ${reviewLink} Anything not right? Reply here and we'll fix it.`,
         cleanerId: cleaner?.id ?? null,
         bookingId,
         recipientType: "customer",

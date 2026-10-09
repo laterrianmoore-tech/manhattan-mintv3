@@ -167,7 +167,8 @@ export async function GET(req: Request) {
   // Each send is claimed via review_nudge_sent_at first, so a repeat run can't
   // text anyone twice; the claim is handed back if OpenPhone rejects the send.
   // Never offers anything in exchange for a review.
-  const nudgeEnabled = process.env.REVIEW_NUDGE_ENABLED === "true";
+  // ON by default since 2026-10-09 (owner: "fix reviews"); set REVIEW_NUDGE_ENABLED=false to pause.
+  const nudgeEnabled = process.env.REVIEW_NUDGE_ENABLED !== "false";
   type NudgeResult = {
     bookingId: string;
     customer: string;
@@ -273,7 +274,7 @@ export async function GET(req: Request) {
     const dryRun = url.searchParams.get("dryRun") === "1";
     if (!nudgeEnabled && !dryRun) {
       return NextResponse.json(
-        { ok: false, mode: "reviewNudge", enabled: false, error: 'REVIEW_NUDGE_ENABLED is not "true". Add &dryRun=1 to preview without sending.' },
+        { ok: false, mode: "reviewNudge", enabled: false, error: 'REVIEW_NUDGE_ENABLED is set to "false". Add &dryRun=1 to preview without sending.' },
         { status: 400 },
       );
     }
