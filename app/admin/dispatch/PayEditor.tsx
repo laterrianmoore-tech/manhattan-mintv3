@@ -47,8 +47,8 @@ export default function PayEditor({
       const who = cleanerName ?? (slot === "second" ? "2nd cleaner" : "cleaner");
       onDone(
         data.previous != null && data.previous !== amount
-          ? `${who}'s pay: $${data.previous} → $${amount}.${data.cleanerTexted ? " They've been texted the update." : ""}`
-          : `${who}'s pay set to $${amount}.${data.cleanerTexted ? " They've been texted." : ""}`,
+          ? `${who}'s pay: $${data.previous} → $${amount}.`
+          : `${who}'s pay set to $${amount}.`,
       );
     } else {
       setError(data.error ?? "Something went wrong. Try again.");
