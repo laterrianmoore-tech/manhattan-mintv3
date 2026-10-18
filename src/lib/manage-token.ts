@@ -42,7 +42,8 @@ export function verifyConnectToken(accountId: string, token: string): boolean {
 
 export function connectOnboardUrl(accountId: string, siteUrl: string): string {
   const params = new URLSearchParams({ a: accountId, t: connectToken(accountId) });
-  return `${siteUrl.replace(/\/$/, "")}/api/connect/onboard?${params.toString()}`;
+  // Trailing slash: next.config has trailingSlash on, and the bare path 308s.
+  return `${siteUrl.replace(/\/$/, "")}/api/connect/onboard/?${params.toString()}`;
 }
 
 // Customer account links (2026-10-09): the same idea per customer instead of

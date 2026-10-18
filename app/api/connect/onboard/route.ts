@@ -39,7 +39,7 @@ export async function GET(req: Request) {
     const link = await stripe.accountLinks.create({
       account: accountId,
       type: "account_onboarding",
-      refresh_url: `${siteUrl}/api/connect/onboard?${url.searchParams.toString()}`,
+      refresh_url: `${siteUrl}/api/connect/onboard/?${url.searchParams.toString()}`,
       return_url: `${siteUrl}/thank-you?connect=done`,
     });
     return NextResponse.redirect(link.url, 302);
