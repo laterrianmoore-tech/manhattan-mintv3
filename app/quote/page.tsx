@@ -96,6 +96,7 @@ const FLAT_PRICE_COUPONS: Record<string, number> = {
   MINT125: 125,
   MINT150: 150,
   MINT200: 200,
+  MINT225: 225,
   MINT250: 250,
   MINT350: 350,
   // Free clean — total drops to $0 for the first visit. The card is still
