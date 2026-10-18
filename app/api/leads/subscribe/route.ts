@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import sgMail from "@sendgrid/mail";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { activePromo } from "@/lib/promo";
 import {
   renderCampaignEmail,
   unsubscribeUrl,
@@ -46,10 +47,10 @@ export async function POST(req: Request) {
   // The popup promises the code "straight to your inbox" — deliver it. While
   // the fall promo runs (through 2026-10-31, same date as the popup and the
   // booking route) the code is FALL50 for $50; afterwards it's MINT25 for $25.
-  const fallPromo = new Date().toISOString().slice(0, 10) <= "2026-10-31";
-  const code = fallPromo ? "FALL50" : "MINT25";
-  const amount = fallPromo ? 50 : 25;
-  const offerName = fallPromo ? "Fall reset offer" : "Welcome offer";
+  const seasonal = activePromo();
+  const code = seasonal ? seasonal.code : "MINT25";
+  const amount = seasonal ? seasonal.amount : 25;
+  const offerName = seasonal ? seasonal.name : "Welcome offer";
   const fromPrice = 175 - amount;
   try {
     await sgMail.send({
@@ -62,8 +63,8 @@ export async function POST(req: Request) {
           ${hero(
             offerName,
             `Welcome${name ? `, ${name.trim().split(" ")[0]}` : ""} — your $${amount} off is here`,
-            fallPromo
-              ? "As promised, straight to your inbox. Use it on your first clean, any apartment size, any service type. Book by October 31."
+            seasonal
+              ? `As promised, straight to your inbox. Use it on your first clean, any apartment size, any service type. Book by ${seasonal.endLabel}${seasonal.code === "INLAWS" ? ", before the guests do" : ""}.`
               : "As promised, straight to your inbox. Use this on your first clean — it works on any apartment size and any service type.",
           )}
           ${offerBlock(code, "Your code", `$${amount} off your first clean · studios & 1BRs from $${fromPrice}`)}

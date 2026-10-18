@@ -26,6 +26,25 @@ export function manageUrl(bookingId: string, siteUrl: string): string {
   return `${siteUrl.replace(/\/$/, "")}/manage/?${params.toString()}`;
 }
 
+// Stripe Connect onboarding links (2026-10-18): a durable, textable URL per
+// Connect account. Stripe's own account links expire in minutes, so
+// /api/connect/onboard?a=acct_…&t=… mints a fresh one on every visit.
+export function connectToken(accountId: string): string {
+  return createHmac("sha256", secret()).update(`connect:${accountId.trim()}`).digest("hex").slice(0, 32);
+}
+
+export function verifyConnectToken(accountId: string, token: string): boolean {
+  if (!accountId || !token) return false;
+  const expected = connectToken(accountId);
+  if (token.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(expected), Buffer.from(token));
+}
+
+export function connectOnboardUrl(accountId: string, siteUrl: string): string {
+  const params = new URLSearchParams({ a: accountId, t: connectToken(accountId) });
+  return `${siteUrl.replace(/\/$/, "")}/api/connect/onboard?${params.toString()}`;
+}
+
 // Customer account links (2026-10-09): the same idea per customer instead of
 // per booking. No password, no login: the link in their texts is the key.
 export function accountToken(customerId: string): string {

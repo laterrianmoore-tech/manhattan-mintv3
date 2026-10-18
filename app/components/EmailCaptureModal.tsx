@@ -1,20 +1,107 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { activePromo, daysLeft as promoDaysLeft, promoByCode, type SeasonalPromo } from "@/lib/promo";
 
 type Status = "idle" | "loading" | "success" | "error";
 
-// Seasonal promo: while active, the popup leads with the fall offer and shows
-// the code outright (fewer steps = more bookings). After the end date it falls
-// back to the evergreen $25 welcome-offer email capture, no redeploy needed.
-// Keep these two values in sync with FALL50 in app/quote/page.tsx and
-// app/api/bookings/submit/route.ts.
-const FALL_PROMO_END = "2026-10-31";
-const FALL_CODE = "FALL50";
-const FALL_AMOUNT = 50;
+// Seasonal promo: while one is active (dates in src/lib/promo.ts), the popup
+// leads with the offer and shows the code outright (fewer steps = more
+// bookings). Between seasons it falls back to the evergreen $25 welcome-offer
+// email capture, no redeploy needed. Each season's words live here; a code
+// without an entry below falls back to the welcome popup.
+type PromoCopy = {
+  kicker: string;
+  line1: string; // headline, white
+  line2: string; // headline, italic accent
+  sub: string; // follows "Take $X off your first clean"
+  successSub: string;
+  successCta: string;
+  fine: string;
+  leaf: boolean; // the fall leaf graphic
+  clock: boolean; // live countdown (days · hours · minutes · seconds) instead of "N days left"
+  dismissKey: string; // own key so people who dismissed the last popup see this one once
+};
 
-function fallPromoActive() {
-  return new Date().toISOString().slice(0, 10) <= FALL_PROMO_END;
+// Ticks once a second until the promo's last moment (local time, end of day).
+function useCountdown(end: string | null) {
+  const target = end ? new Date(`${end}T23:59:59`).getTime() : 0;
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!end) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [end]);
+  const left = Math.max(0, target - now);
+  const s = Math.floor(left / 1000);
+  return {
+    days: Math.floor(s / 86400),
+    hours: Math.floor((s % 86400) / 3600),
+    minutes: Math.floor((s % 3600) / 60),
+    seconds: s % 60,
+  };
+}
+
+function Countdown({ end }: { end: string }) {
+  const t = useCountdown(end);
+  const two = (n: number) => String(n).padStart(2, "0");
+  const cells: [string, string][] = [
+    [String(t.days), t.days === 1 ? "day" : "days"],
+    [two(t.hours), "hrs"],
+    [two(t.minutes), "min"],
+    [two(t.seconds), "sec"],
+  ];
+  return (
+    <div className="fp-clock" role="timer" aria-label={`${t.days} days ${t.hours} hours ${t.minutes} minutes left`}>
+      {cells.map(([v, l], i) => (
+        <span key={l} className="fp-clock-cell">
+          <span className="fp-clock-num">{v}</span>
+          <span className="fp-clock-lbl">{l}</span>
+          {i < cells.length - 1 && <span className="fp-clock-sep" aria-hidden="true">:</span>}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+const PROMO_COPY: Record<string, PromoCopy> = {
+  FALL50: {
+    kicker: "Fall in Manhattan",
+    line1: "Heat's on. Windows shut.",
+    line2: "Time for a reset.",
+    sub: "this fall. Same background-checked cleaner every visit if you go recurring, photo summary when we're done. Ends October 31.",
+    successSub: "Use it on the booking page before October 31. Card is only charged after the clean.",
+    successCta: "Book my fall clean",
+    fine: "First clean only · Manhattan apartments · book by Oct 31, 2026",
+    leaf: true,
+    clock: false,
+    dismissKey: "mm_modal_dismissed_fall",
+  },
+  INLAWS: {
+    kicker: "Guest Room Emergency",
+    line1: "Your mother-in-law lands Thursday.",
+    line2: "We land Wednesday.",
+    sub: "before the guests arrive. Same background-checked cleaner every visit if you go recurring, photo summary when we're done. Ends December 23.",
+    successSub: "Use it on the booking page before December 23. Card is only charged after the clean.",
+    successCta: "Book before they land",
+    fine: "First clean only · Manhattan apartments · book by Dec 23, 2026",
+    leaf: false,
+    clock: true,
+    dismissKey: "mm_modal_dismissed_inlaws",
+  },
+};
+
+// `?promo=INLAWS` previews a season's popup before its start date (display
+// only; the booking API still enforces the real window).
+function resolvePromo(): SeasonalPromo | null {
+  if (typeof window !== "undefined") {
+    const wanted = new URLSearchParams(window.location.search).get("promo");
+    if (wanted) {
+      const p = promoByCode(wanted);
+      if (p) return p;
+    }
+  }
+  return activePromo();
 }
 
 export default function EmailCaptureModal() {
@@ -24,12 +111,16 @@ export default function EmailCaptureModal() {
   const [name, setName] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [copied, setCopied] = useState(false);
-  const promo = fallPromoActive();
-  const daysLeft = Math.max(0, Math.ceil((new Date(`${FALL_PROMO_END}T23:59:59`).getTime() - Date.now()) / 86400000));
+  const [season] = useState<SeasonalPromo | null>(() => resolvePromo());
+  const copy = season ? PROMO_COPY[season.code] : undefined;
+  const promo = Boolean(season && copy);
+  const PROMO_CODE = season?.code ?? "";
+  const PROMO_AMOUNT = season?.amount ?? 0;
+  const daysLeft = season ? promoDaysLeft(season) : 0;
 
   const copyCode = async () => {
     try {
-      await navigator.clipboard.writeText(FALL_CODE);
+      await navigator.clipboard.writeText(PROMO_CODE);
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
@@ -40,9 +131,9 @@ export default function EmailCaptureModal() {
   useEffect(() => {
     if (localStorage.getItem("mm_subscribed")) return;
 
-    // A dismissal hides the popup for 7 days. The fall promo uses its own key
-    // so people who dismissed the old welcome popup still see it once.
-    const dismissKey = promo ? "mm_modal_dismissed_fall" : "mm_modal_dismissed";
+    // A dismissal hides the popup for 7 days. Each season uses its own key so
+    // people who dismissed the previous popup still see the new one once.
+    const dismissKey = promo && copy ? copy.dismissKey : "mm_modal_dismissed";
     const dismissed = localStorage.getItem(dismissKey);
     if (dismissed) {
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
@@ -57,10 +148,10 @@ export default function EmailCaptureModal() {
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, [promo]);
+  }, [promo, copy]);
 
   const dismiss = () => {
-    localStorage.setItem(promo ? "mm_modal_dismissed_fall" : "mm_modal_dismissed", Date.now().toString());
+    localStorage.setItem(promo && copy ? copy.dismissKey : "mm_modal_dismissed", Date.now().toString());
     setVisible(false);
     setTimeout(() => setRendered(false), 450);
   };
@@ -248,7 +339,7 @@ export default function EmailCaptureModal() {
       <input type="text" placeholder="First name (optional)" value={name} onChange={(e) => setName(e.target.value)} style={s.input} />
       <input type="email" placeholder="Your email address" required value={email} onChange={(e) => setEmail(e.target.value)} style={s.input} />
       <button type="submit" disabled={status === "loading"} style={s.btn}>
-        {status === "loading" ? "Saving..." : promo ? `Email me the $${FALL_AMOUNT} code →` : "Claim my $25 off →"}
+        {status === "loading" ? "Saving..." : promo ? `Email me the $${PROMO_AMOUNT} code →` : "Claim my $25 off →"}
       </button>
     </form>
   );
@@ -266,6 +357,11 @@ export default function EmailCaptureModal() {
         .fp-title{font-family:'DM Serif Display',serif;font-weight:400;color:#fff;font-size:clamp(1.85rem,6vw,2.45rem);line-height:1.08;letter-spacing:-.02em;margin:0 0 .85rem;}
         .fp-title em{font-style:italic;color:#f0a24a;}
         .fp-sub{color:rgba(255,255,255,.62);font-size:.86rem;line-height:1.65;font-weight:300;margin:0 0 1.35rem;max-width:34ch;}
+        .fp-clock{display:inline-flex;align-items:baseline;gap:.15rem;margin:-.15rem 0 1.1rem;padding:.45rem .8rem;background:rgba(240,162,74,.08);border:1px solid rgba(240,162,74,.3);border-radius:8px;font-variant-numeric:tabular-nums;}
+        .fp-clock-cell{display:inline-flex;align-items:baseline;gap:.3rem;}
+        .fp-clock-num{font-family:'DM Serif Display',serif;color:#fff;font-size:1.25rem;line-height:1;min-width:1.3ch;text-align:right;}
+        .fp-clock-lbl{color:#f0a24a;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;}
+        .fp-clock-sep{color:rgba(240,162,74,.6);font-family:'DM Serif Display',serif;font-size:1.1rem;margin:0 .35rem 0 .45rem;}
         .fp-sub strong{color:#fff;font-weight:500;}
         .fp-ticket{width:100%;display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;align-items:center;gap:0 1rem;text-align:left;background:rgba(255,255,255,.05);border:1px dashed rgba(240,162,74,.55);border-radius:10px;padding:.8rem 1rem;cursor:pointer;font-family:inherit;color:#fff;transition:background .2s,border-color .2s;}
         .fp-ticket:hover{background:rgba(240,162,74,.08);border-color:#f0a24a;}
@@ -292,17 +388,17 @@ export default function EmailCaptureModal() {
       <div style={s.modal} className={promo ? "mm-modal-promo" : undefined}>
         <button style={s.dismiss} onClick={dismiss} aria-label="Close">✕</button>
 
-        {status === "success" && promo ? (
+        {status === "success" && promo && copy ? (
           <div className="fp">
             <div className="fp-kicker"><span className="fp-kicker-dot" />You&apos;re in</div>
             <h2 className="fp-title">Here&apos;s your code.<br /><em>It&apos;s in your inbox too.</em></h2>
-            <p className="fp-sub">Use it on the booking page before October 31. Card is only charged after the clean.</p>
-            <button type="button" className="fp-ticket" onClick={copyCode} aria-label="Copy code FALL50">
+            <p className="fp-sub">{copy.successSub}</p>
+            <button type="button" className="fp-ticket" onClick={copyCode} aria-label={`Copy code ${PROMO_CODE}`}>
               <span className="fp-ticket-label">Your code</span>
-              <span className="fp-ticket-code">{FALL_CODE}</span>
+              <span className="fp-ticket-code">{PROMO_CODE}</span>
               <span className="fp-ticket-copy">{copied ? "Copied ✓" : "Tap to copy"}</span>
             </button>
-            <a href={`/quote/?code=${FALL_CODE}`} className="fp-cta">Book my fall clean<span aria-hidden="true">→</span></a>
+            <a href={`/quote/?code=${PROMO_CODE}`} className="fp-cta">{copy.successCta}<span aria-hidden="true">→</span></a>
           </div>
         ) : status === "success" ? (
           <div style={{ textAlign: "center", padding: "1.5rem 0" }}>
@@ -311,34 +407,37 @@ export default function EmailCaptureModal() {
             <div style={s.headline}>Check your inbox.</div>
             <div style={s.sub}>Your $25 discount code is on its way.</div>
           </div>
-        ) : promo ? (
+        ) : promo && copy ? (
           <div className="fp">
-            <svg className="fp-leaf" viewBox="0 0 120 120" aria-hidden="true">
-              <path d="M96 14C60 18 30 40 22 78c-2 9-2 18 0 28 10 2 19 2 28 0 38-8 60-38 64-74 1-6 1-12-2-18h-8z" fill="url(#fpg)" />
-              <path d="M24 104C44 76 66 54 96 22" stroke="rgba(255,255,255,.22)" strokeWidth="2" fill="none" strokeLinecap="round" />
-              <defs><linearGradient id="fpg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stopColor="#b8541c" /><stop offset="1" stopColor="#f0a24a" /></linearGradient></defs>
-            </svg>
+            {copy.leaf && (
+              <svg className="fp-leaf" viewBox="0 0 120 120" aria-hidden="true">
+                <path d="M96 14C60 18 30 40 22 78c-2 9-2 18 0 28 10 2 19 2 28 0 38-8 60-38 64-74 1-6 1-12-2-18h-8z" fill="url(#fpg)" />
+                <path d="M24 104C44 76 66 54 96 22" stroke="rgba(255,255,255,.22)" strokeWidth="2" fill="none" strokeLinecap="round" />
+                <defs><linearGradient id="fpg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stopColor="#b8541c" /><stop offset="1" stopColor="#f0a24a" /></linearGradient></defs>
+              </svg>
+            )}
 
             <div className="fp-kicker">
               <span className="fp-kicker-dot" />
-              Fall in Manhattan · {daysLeft} {daysLeft === 1 ? "day" : "days"} left
+              {copy.kicker}{copy.clock ? "" : ` · ${daysLeft} ${daysLeft === 1 ? "day" : "days"} left`}
             </div>
 
             <h2 className="fp-title">
-              Heat&apos;s on. Windows shut.<br />
-              <em>Time for a reset.</em>
+              {copy.line1}<br />
+              <em>{copy.line2}</em>
             </h2>
 
+            {copy.clock && season && <Countdown end={season.end} />}
+
             <p className="fp-sub">
-              Take <strong>${FALL_AMOUNT} off your first clean</strong> this fall. Same background-checked cleaner every visit
-              if you go recurring, photo summary when we&apos;re done. Ends October 31.
+              Take <strong>${PROMO_AMOUNT} off your first clean</strong> {copy.sub}
             </p>
 
             <form onSubmit={submit} className="fp-form">
               <input type="text" placeholder="First name (optional)" value={name} onChange={(e) => setName(e.target.value)} className="fp-input" />
               <input type="email" placeholder="Your email" required value={email} onChange={(e) => setEmail(e.target.value)} className="fp-input" />
               <button type="submit" disabled={status === "loading"} className="fp-cta fp-cta-btn">
-                {status === "loading" ? "One second..." : `Send me my $${FALL_AMOUNT} code`}
+                {status === "loading" ? "One second..." : `Send me my $${PROMO_AMOUNT} code`}
                 {status === "loading" ? null : <span aria-hidden="true">→</span>}
               </button>
             </form>
@@ -351,7 +450,7 @@ export default function EmailCaptureModal() {
             )}
 
             <p className="fp-fine">
-              First clean only · Manhattan apartments · book by Oct 31, 2026 · By subscribing you agree to occasional emails from Manhattan Mint NYC LLC. Unsubscribe any time.
+              {copy.fine} · By subscribing you agree to occasional emails from Manhattan Mint NYC LLC. Unsubscribe any time.
             </p>
           </div>
         ) : (

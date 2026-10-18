@@ -6,6 +6,7 @@ import { Sparkles, Truck, Boxes, PanelsTopLeft, Refrigerator, FolderKanban, Shir
 import { loadStripe } from "@stripe/stripe-js";
 import { CardElement, Elements, useElements, useStripe } from "@stripe/react-stripe-js";
 import { isReferralCode, isSecondCleanCode, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT, SECOND_PROMO_CODE } from "@/lib/referral";
+import { isSeasonalPromoCode, promoByCode } from "@/lib/promo";
 
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
@@ -124,8 +125,10 @@ function couponDiscount(couponCode: string, subtotalAfterFrequency: number, stan
   if (isReferralCode(normalized)) return Math.min(REFERRAL_FRIEND_DISCOUNT, subtotalAfterFrequency);
   // Channel codes for Alexia's Facebook / LinkedIn posts (first clean only, server-enforced).
   if (normalized === "FB25" || normalized === "LI25") return 25;
-  // Fall promo: $50 off a first clean booked by Oct 31, 2026 (server-enforced).
-  if (normalized === "FALL50") return Math.min(50, subtotalAfterFrequency);
+  // Seasonal promos (FALL50, INLAWS…): flat amount off a first clean inside the
+  // promo window; dates and amounts live in src/lib/promo.ts (server-enforced).
+  const seasonal = promoByCode(normalized);
+  if (seasonal) return Math.min(seasonal.amount, subtotalAfterFrequency);
   if (normalized === "MINT20") return Math.round(subtotalAfterFrequency * 0.2);
   if (normalized === "MINT25") return 25;
   if (normalized === "WELCOME15") return 15;
@@ -249,7 +252,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
 
     // A friend's referral link lands here as /quote/?code=MINTxxxxxx.
     const urlCode = (new URLSearchParams(window.location.search).get("code") || "").trim().toUpperCase();
-    if (urlCode && (isReferralCode(urlCode) || isSecondCleanCode(urlCode) || urlCode === "FALL50" || urlCode === SECOND_PROMO_CODE)) setReferralBanner(urlCode);
+    if (urlCode && (isReferralCode(urlCode) || isSecondCleanCode(urlCode) || isSeasonalPromoCode(urlCode) || urlCode === SECOND_PROMO_CODE)) setReferralBanner(urlCode);
 
     setForm((prev) => ({
       ...prev,
@@ -697,6 +700,8 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
                 <div style={{ marginBottom: ".75rem", border: "1px solid rgba(29,158,117,.25)", background: "var(--mint-light)", color: "var(--mint-dark)", borderRadius: 10, padding: ".8rem .9rem", fontSize: ".85rem" }}>
                   {referralBanner === "FALL50"
                     ? "Fall promo applied: $50 off your first clean with code FALL50. Book by October 31."
+                    : referralBanner === "INLAWS"
+                    ? "Guest Room Emergency applied: $50 off your first clean with code INLAWS. Book by December 23, before they land."
                     : referralBanner === SECOND_PROMO_CODE
                     ? "Second Clean on Us is applied. Book this first clean at the regular price; when it's done we'll text you a code for a free standard clean of the same apartment, good for 60 days."
                     : isSecondCleanCode(referralBanner)

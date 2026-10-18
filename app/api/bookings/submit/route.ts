@@ -8,6 +8,7 @@ import { placeHold } from "@/lib/stripe-hold";
 import { isReferralCode, referralCodeFor, referralLink, publicSiteUrl, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT, isSecondCleanCode, secondCleanCodeFor, SECOND_PROMO_CODE, SECOND_PROMO_END, SECOND_WINDOW_DAYS } from "@/lib/referral";
 import { accountUrl } from "@/lib/manage-token";
 import { isTaxableBooking, quoteTax, taxMetadata } from "@/lib/stripe-tax";
+import { SEASONAL_PROMOS, promoByCode, promoStatus } from "@/lib/promo";
 
 export const maxDuration = 30;
 
@@ -122,9 +123,7 @@ export async function POST(req: Request) {
     // already has a real booking (confirmed, in progress, or completed), reject
     // so the discount can't be reused on repeat cleans. MINTFREE makes the
     // whole first clean $0, so it especially must not be reusable.
-    const FIRST_CLEAN_COUPONS = ["MINT25", "WELCOME15", "MINTFREE", "FB25", "LI25", "FALL50", SECOND_PROMO_CODE];
-    // Fall promo: $50 off a first clean, bookings placed through Oct 31, 2026.
-    const FALL_PROMO_END = "2026-10-31";
+    const FIRST_CLEAN_COUPONS = ["MINT25", "WELCOME15", "MINTFREE", "FB25", "LI25", ...SEASONAL_PROMOS.map((p) => p.code), SECOND_PROMO_CODE];
     const couponNormalized = (body.couponCode || "").trim().toUpperCase();
 
     // ── Make-good coupon guard ───────────────────────────────────────────────
@@ -155,11 +154,22 @@ export async function POST(req: Request) {
       }
     }
 
-    if (couponNormalized === "FALL50" && new Date().toISOString().slice(0, 10) > FALL_PROMO_END) {
-      return NextResponse.json(
-        { error: "Code FALL50 expired on October 31. Remove it to book at the regular price, or ask us about recurring plans that save up to 20% on every clean." },
-        { status: 400 },
-      );
+    // Seasonal promos (FALL50, INLAWS…) only work inside their window; see src/lib/promo.ts.
+    const seasonal = promoByCode(couponNormalized);
+    if (seasonal) {
+      const status = promoStatus(couponNormalized);
+      if (status === "expired") {
+        return NextResponse.json(
+          { error: `Code ${seasonal.code} expired on ${seasonal.endLabel}. Remove it to book at the regular price, or ask us about recurring plans that save up to 20% on every clean.` },
+          { status: 400 },
+        );
+      }
+      if (status === "upcoming") {
+        return NextResponse.json(
+          { error: `Code ${seasonal.code} isn't live yet. Remove it to book at the regular price.` },
+          { status: 400 },
+        );
+      }
     }
 
     if (couponNormalized === SECOND_PROMO_CODE && new Date().toISOString().slice(0, 10) > SECOND_PROMO_END) {
