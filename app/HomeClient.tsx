@@ -561,7 +561,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 								<div className="rev-avatar">{review.author.charAt(0)}</div>
 								<div className="rev-who">
 									<div className="rev-name">{review.author}</div>
-									<div className="rev-place">{review.neighborhood ?? "Google review"}</div>
+									<div className="rev-place">{review.neighborhood ?? (review.source === "Direct" ? "Verified client" : `${review.source} review`)}</div>
 								</div>
 								{review.source === "Google" && (
 									<svg className="rev-g" viewBox="0 0 24 24" aria-label="Posted on Google">
@@ -579,7 +579,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 							<div className="rev-text">&quot;{review.text}&quot;</div>
 							<div className="rev-date">
 								{review.date}
-								{review.source === "Google" ? " · Posted on Google" : " · Verified client"}
+								{review.source === "Direct" ? " · Verified client" : ` · Posted on ${review.source}`}
 							</div>
 						</div>
 					))}

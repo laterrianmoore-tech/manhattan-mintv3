@@ -114,7 +114,21 @@ export const reviews: Review[] = [
 		date: "July 2026",
 		source: "Google",
 	},
-	// More from the profile, ready to swap in:
+	{
+		author: "Nick C.",
+		rating: 5,
+		text: "I had a great experience with Manhattan Mint. I've tried a few cleaning services for my apartment and Manhattan Mint tops the list in quality of service. It felt like I was stepping into a new apartment. Very reasonable pricing and haven't been able to find better value elsewhere.",
+		date: "September 2026",
+		source: "Yelp",
+	},
+	{
+		author: "Erin S.",
+		rating: 5,
+		text: "My apartment was spotless and it felt so good to end the week with a clean place. I will definitely be using them again!",
+		date: "September 2026",
+		source: "Yelp",
+	},
+	// More from the Google profile, ready to swap in:
 	// Connor Byrne — "Quick and efficient"
 	// Zachary Petrolia — "Highly recommend"
 ];

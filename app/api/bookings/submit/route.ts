@@ -548,7 +548,7 @@ export async function POST(req: Request) {
     const paymentLineHtml = hasCardOnFile
       ? holdId
         ? `<p style="margin:0 0 6px;color:#555;font-size:14px;">💳 <strong>Payment:</strong> We placed a temporary ${dueLabel} hold on your card to reserve your spot — it may show as pending at your bank. Your card is only charged after your appointment is complete.</p>`
-        : `<p style="margin:0 0 6px;color:#555;font-size:14px;">💳 <strong>Payment:</strong> Your card is on file and will be charged after your appointment is complete.</p>`
+        : `<p style="margin:0 0 6px;color:#555;font-size:14px;">💳 <strong>Payment:</strong> Your card is on file and will be charged after your appointment is complete. The day before your clean we place a temporary hold for the amount, which may show as pending at your bank.</p>`
       : `<p style="margin:0 0 6px;color:#555;font-size:14px;">💳 <strong>Payment:</strong> We couldn't save a card during booking. Please add one securely here: <a href="${cardSetupUrl || `${siteUrl}/quote`}" style="color:#2d6a4f;">Add card</a>. Your card is only charged after your appointment.</p>`;
 
     // Every customer gets a personal friend code in the confirmation: $50 off
