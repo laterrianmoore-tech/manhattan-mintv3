@@ -24,6 +24,13 @@ export type Review = {
 
 export const reviews: Review[] = [
 	{
+		author: "Jody Cohn",
+		rating: 5,
+		text: "I had 2 different cleaners from Manhattan Mint during the few months my regular housekeeper was away. They were both extremely hard working, thorough, honest, and efficient. My apartment was very clean after their visits and I would hire them again in the future if I needed to. It was a pleasure dealing with this company. Easy to book cleanings and fair pricing. I paid a bit more for the first “deep” cleaning and then a lower price for each regular cleaning thereafter. Highly recommend!",
+		date: "October 2026",
+		source: "Google",
+	},
+	{
 		author: "Nate Joseph",
 		rating: 5,
 		text: "I cannot praise the results of Manhattan Mint's great deep cleaning job enough! I've hired cleaners before, but this is the first time I can absolutely say that I was absolutely floored by the quality and attention to detail this service provided. Veronica did a phenomenal job cleaning our apartment and I will be having Manhattan Mint clean my apartment every time from now on. I cannot recommend them enough!",
@@ -93,9 +100,21 @@ export const reviews: Review[] = [
 		date: "June 2026",
 		source: "Google",
 	},
+	{
+		author: "Caroline Welsh",
+		rating: 5,
+		text: "Always great! Very timely and professional!",
+		date: "July 2026",
+		source: "Google",
+	},
+	{
+		author: "Florence Amelia",
+		rating: 5,
+		text: "Great service, would definitely recommend",
+		date: "July 2026",
+		source: "Google",
+	},
 	// More from the profile, ready to swap in:
-	// Caroline Welsh — "Always great! Very timely and professional!"
-	// Florence Amelia — "Great service, would definitely recommend"
 	// Connor Byrne — "Quick and efficient"
 	// Zachary Petrolia — "Highly recommend"
 ];
