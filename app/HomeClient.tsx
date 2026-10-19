@@ -625,7 +625,6 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 						<span className="rev-source-score">
 							<span className="rev-stars" aria-hidden="true">★★★★★</span>
 							<strong>{REVIEW_SOURCES.Yelp.rating.toFixed(1)}</strong>
-							· {REVIEW_SOURCES.Yelp.count} reviews
 						</span>
 						<a className="rev-all" href={REVIEW_SOURCES.Yelp.url} target="_blank" rel="noopener noreferrer">
 							Read all on Yelp →
