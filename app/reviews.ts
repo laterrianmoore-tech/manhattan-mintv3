@@ -11,7 +11,19 @@
 // link) lives in src/lib/google-reviews.ts and is re-exported for convenience.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export { GOOGLE_REVIEWS_URL } from "@/lib/google-reviews";
+import { GOOGLE_REVIEWS_URL } from "@/lib/google-reviews";
+export { GOOGLE_REVIEWS_URL };
+
+export const YELP_REVIEWS_URL = "https://www.yelp.com/biz/manhattan-mint-nyc-new-york";
+
+// Header line for each source block on the home page. Copied from the
+// profiles (2026-10-18: Google 5.0 / 21, Yelp 5.0 / 3); the Google count is
+// replaced by the live Places number when that fetch is configured. Bump the
+// Yelp count whenever a new Yelp review is added below.
+export const REVIEW_SOURCES = {
+	Google: { rating: 5.0, count: 21, url: GOOGLE_REVIEWS_URL },
+	Yelp: { rating: 5.0, count: 3, url: YELP_REVIEWS_URL },
+} as const;
 
 export type Review = {
 	author: string;

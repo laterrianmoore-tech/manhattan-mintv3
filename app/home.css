@@ -158,7 +158,22 @@ h2 em{font-style:italic;color:var(--mint);}
 .hood:hover{background:rgba(29,158,117,.15);border-color:rgba(29,158,117,.3);color:var(--mint-mid);}
 
 /* REVIEWS */
-.reviews-scroll{position:relative;max-height:620px;overflow-y:auto;margin-bottom:2.5rem;padding:2px 2px 0;scrollbar-width:thin;scrollbar-color:var(--mint-mid) transparent;}
+.rev-source{margin-bottom:3rem;}
+.rev-source:last-child{margin-bottom:0;}
+.rev-source-head{display:flex;align-items:center;flex-wrap:wrap;gap:.75rem 1.4rem;margin-bottom:1.4rem;padding-bottom:1rem;border-bottom:.5px solid var(--border);}
+.rev-brand{display:inline-flex;align-items:center;gap:.55rem;font-weight:500;font-size:1rem;letter-spacing:-.01em;}
+.rev-brand .rev-g{width:22px;height:22px;}
+.rev-yelp-logo{height:28px;width:auto;display:block;}
+.rev-source-score{display:inline-flex;align-items:center;gap:.5rem;font-size:.85rem;color:var(--gray);}
+.rev-source-score .rev-stars{margin:0;font-size:.8rem;}
+.rev-source-score strong{color:#0f0f0f;font-weight:600;font-size:.95rem;}
+.rev-source-head .rev-all{margin-left:auto;}
+.rev-source-yelp{padding:1.75rem 1.75rem 1.9rem;border-radius:6px;background:linear-gradient(180deg,#fff7f6 0%,#fff 100%);border:.5px solid #f3d9d6;}
+.rev-source-yelp .rev-source-head{border-bottom-color:#f0cfcb;}
+.rev-source-yelp .review{background:#fff;}
+.reviews-grid-yelp{grid-template-columns:repeat(2,1fr);}
+.rev-yelp-badge{height:18px;width:auto;flex-shrink:0;}
+.reviews-scroll{position:relative;max-height:620px;overflow-y:auto;padding:2px 2px 0;scrollbar-width:thin;scrollbar-color:var(--mint-mid) transparent;}
 .reviews-scroll::-webkit-scrollbar{width:6px;}
 .reviews-scroll::-webkit-scrollbar-thumb{background:var(--mint-mid);border-radius:3px;}
 .reviews-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;}
@@ -254,6 +269,9 @@ h2 em{font-style:italic;color:var(--mint);}
 	.steps-grid{grid-template-columns:1fr;gap:2px;}
 	.cred-grid{grid-template-columns:1fr;gap:2.5rem;}
 	.reviews-grid{grid-template-columns:1fr;}
+	.reviews-grid-yelp{grid-template-columns:1fr;}
+	.rev-source-head .rev-all{margin-left:0;}
+	.rev-source-yelp{padding:1.25rem 1.1rem 1.3rem;}
 	.cs-grid{grid-template-columns:1fr;}
 	.faq-grid{grid-template-columns:1fr;}
 	.cta-band{flex-direction:column;padding:4rem 1.5rem;}
