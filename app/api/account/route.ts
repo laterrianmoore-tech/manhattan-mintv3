@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { supabaseAdmin } from "@/lib/supabase";
 import { manageUrl, verifyAccountToken } from "@/lib/manage-token";
+import { acceptKeepOffer, keepOfferFor } from "@/lib/keep-offer";
+import { sendSms } from "@/lib/openphone";
 import { publicSiteUrl, referralCodeFor, referralLink, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT } from "@/lib/referral";
 
 // Customer account (2026-10-09): everything a client needs to see in one
@@ -100,6 +102,7 @@ export async function GET(req: Request) {
   return NextResponse.json({
     ok: true,
     account: {
+      keepOffer: await keepOfferFor(customerId),
       firstName: customer.first_name,
       address: [customer.address, customer.apt_no ? `Apt ${customer.apt_no}` : ""].filter(Boolean).join(" "),
       plan,
@@ -113,4 +116,36 @@ export async function GET(req: Request) {
       bookUrl: `${siteUrl}/quote/`,
     },
   });
+}
+
+// "Keep my cleaner" (2026-10-18): one tap from the account page books the next
+// visit two weeks out on the bi-weekly plan. Body: { c, t, action: "keep" }.
+export async function POST(req: Request) {
+  let body: any = {};
+  try { body = await req.json(); } catch { /* fall through to validation */ }
+  const customerId = String(body?.c ?? "").trim();
+  const token = String(body?.t ?? "").trim();
+  if (!verifyAccountToken(customerId, token)) {
+    return NextResponse.json({ ok: false, error: "This link isn't valid." }, { status: 401 });
+  }
+  if (body?.action !== "keep") return NextResponse.json({ ok: false, error: "Unknown action." }, { status: 400 });
+
+  const offer = await keepOfferFor(customerId);
+  if (!offer) return NextResponse.json({ ok: false, error: "This offer isn't available right now. Text us and we'll set it up." }, { status: 409 });
+
+  const { bookingId } = await acceptKeepOffer(offer, "account page");
+  const dateLabel = fmt(offer.nextDate);
+  const ownerPhones = (process.env.OWNER_NOTIFY_PHONE || "").split(",").map((p) => p.trim()).filter(Boolean);
+  for (const to of ownerPhones) {
+    await sendSms({
+      to,
+      body: `🔁 KEEP request: ${offer.firstName} wants ${offer.cleanerName ?? "the same cleaner"} every other week. First visit ${dateLabel} (${offer.window.join("/") || "any time"}) at $${offer.price}. Booking is pending in dispatch; assign ${offer.cleanerName ?? "the cleaner"}.`,
+      bookingId,
+      cleanerId: null,
+      recipientType: "customer",
+      eventType: "other",
+    });
+  }
+  console.log("[account] keep offer accepted", { customerId, bookingId, price: offer.price, nextDate: offer.nextDate });
+  return NextResponse.json({ ok: true, bookingId, dateLabel, price: offer.price, cleaner: offer.cleanerName });
 }

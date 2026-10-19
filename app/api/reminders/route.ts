@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { manageUrl } from "@/lib/manage-token";
+import { accountUrl, manageUrl } from "@/lib/manage-token";
+import { keepOfferFor } from "@/lib/keep-offer";
 import sgMail from "@sendgrid/mail";
 import { supabaseAdmin } from "@/lib/supabase";
 import { sendSms } from "@/lib/openphone";
@@ -272,6 +273,77 @@ export async function GET(req: Request) {
     return { ok: true, enabled: nudgeEnabled, dryRun, candidates: candidates?.length ?? 0, sent, results };
   }
 
+  // ── 48-hour "keep my cleaner" follow-up (owner decision 2026-10-18) ──────
+  // Two days after a first clean, a one-time customer with nothing else
+  // booked gets one text offering the same cleaner every other week at the
+  // bi-weekly rate, with a one-tap link to their account page. The daily run
+  // sees each completion in the 2–3 day window exactly once; a dispatch_log
+  // lookup guards against a manual re-run when the log is readable.
+  //   ?keepFollowUp=1            runs just this step
+  //   ?keepFollowUp=1&dryRun=1   lists who WOULD be texted, sends nothing
+  type KeepResult = { bookingId: string; customer: string; action: "sent" | "would send" | "skipped" | "failed"; reason?: string; body?: string };
+  async function runKeepFollowUp(dryRun: boolean) {
+    const nowMs = Date.now();
+    const windowStart = new Date(nowMs - 3 * 24 * 60 * 60 * 1000).toISOString();
+    const windowEnd = new Date(nowMs - 2 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: candidates, error: candErr } = await supabaseAdmin
+      .from("bookings")
+      .select("id, customer_id, frequency, completed_at, customers(first_name, phone)")
+      .eq("status", "completed")
+      .gte("completed_at", windowStart)
+      .lte("completed_at", windowEnd)
+      .order("completed_at", { ascending: true });
+    if (candErr) {
+      console.error("[reminders] keep follow-up lookup failed:", candErr.message);
+      return { ok: false, dryRun, error: candErr.message, candidates: 0, sent: 0, results: [] as KeepResult[] };
+    }
+    const results: KeepResult[] = [];
+    let sent = 0;
+    const seenCustomers = new Set<string>();
+    for (const b of candidates ?? []) {
+      const customer = b.customers as any;
+      const first = customer?.first_name || "there";
+      const skip = (reason: string) => results.push({ bookingId: b.id, customer: first, action: "skipped", reason });
+      if (seenCustomers.has(b.customer_id)) { skip("duplicate customer in window"); continue; }
+      seenCustomers.add(b.customer_id);
+      if (isRecurring(b.frequency)) { skip("recurring plan"); continue; }
+      const { count } = await supabaseAdmin
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("customer_id", b.customer_id)
+        .eq("status", "completed")
+        .neq("id", b.id);
+      if ((count ?? 0) > 0) { skip("repeat customer"); continue; }
+      const offer = await keepOfferFor(b.customer_id);
+      if (!offer) { skip("no offer (already booked or on a plan)"); continue; }
+      if (!customer?.phone) { skip("no phone on file"); continue; }
+      // Best-effort dedupe against a manual re-run.
+      const { data: already } = await supabaseAdmin
+        .from("dispatch_log")
+        .select("id")
+        .eq("booking_id", b.id)
+        .eq("recipient_type", "customer")
+        .ilike("message_body", "%every other week at 15% off%")
+        .limit(1);
+      if (already?.length) { skip("already sent"); continue; }
+
+      const link = `${accountUrl(b.customer_id, publicSiteUrl)}&keep=1`;
+      const who = offer.cleanerName ?? "your cleaner";
+      const body = `Hi ${first}, it's Manhattan Mint. Hope the apartment still feels good. If you'd like ${who} back every other week at 15% off ($${offer.price} a visit), tap here and we'll hold the same slot: ${link} Or reply with a day that works better.`;
+      if (dryRun) { results.push({ bookingId: b.id, customer: first, action: "would send", body }); continue; }
+      const res = await sendSms({ to: customer.phone, body, bookingId: b.id, recipientType: "customer", eventType: "other" });
+      if (res.ok) { sent++; results.push({ bookingId: b.id, customer: first, action: "sent" }); }
+      else results.push({ bookingId: b.id, customer: first, action: "failed", reason: res.errorMessage ?? "send failed" });
+    }
+    console.log(`[reminders] keep follow-up${dryRun ? " (dry run)" : ""}: ${sent} sent of ${candidates?.length ?? 0} candidates`);
+    return { ok: true, dryRun, candidates: candidates?.length ?? 0, sent, results };
+  }
+
+  if (url.searchParams.get("keepFollowUp") === "1") {
+    const result = await runKeepFollowUp(url.searchParams.get("dryRun") === "1");
+    return NextResponse.json({ ...result, mode: "keepFollowUp" }, { status: result.ok ? 200 : 500 });
+  }
+
   // Nudge-only mode.
   if (url.searchParams.get("reviewNudge") === "1") {
     const dryRun = url.searchParams.get("dryRun") === "1";
@@ -492,6 +564,15 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`,
     }
   }
 
+  // 48-hour "keep my cleaner" follow-up rides the same daily run. Never fatal.
+  let keepFollowUp: Record<string, unknown> = { skipped: true };
+  try {
+    keepFollowUp = await runKeepFollowUp(false);
+  } catch (err: any) {
+    console.error("[reminders] keep follow-up step threw:", err?.message ?? err);
+    keepFollowUp = { ok: false, error: err?.message ?? "unknown error" };
+  }
+
   // Match today's Stripe transfers to completed jobs so the ledger is current
   // even if nobody opens /admin/accounting. Read-only on Stripe, never fatal.
   let payouts: Record<string, unknown> = { skipped: true };
@@ -513,6 +594,7 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`,
     customerEmails: emailResults,
     holds: holdResults,
     reviewNudge,
+    keepFollowUp,
     payouts,
   });
 }

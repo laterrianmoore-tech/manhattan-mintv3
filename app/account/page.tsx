@@ -9,7 +9,9 @@ import { useEffect, useState } from "react";
 
 type Visit = { id: string; date: string; dateLabel: string; summary: string | null; window: string; price: number; cleaner: string | null; status: string; manageUrl: string };
 type Past = { id: string; date: string; dateLabel: string; summary: string | null; price: number; cleaner: string | null };
+type KeepOffer = { cleanerName: string | null; price: number; nextDate: string; frequency: string; window: string[] };
 type Account = {
+  keepOffer: KeepOffer | null;
   firstName: string;
   address: string;
   plan: string | null;
@@ -32,11 +34,31 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(true);
   const [cardSaved, setCardSaved] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [creds, setCreds] = useState<{ c: string; t: string } | null>(null);
+  const [keepHighlight, setKeepHighlight] = useState(false);
+  const [keepState, setKeepState] = useState<{ status: "idle" | "saving" | "done" | "error"; message?: string }>({ status: "idle" });
+
+  const keepCleaner = async () => {
+    if (!creds || keepState.status === "saving") return;
+    setKeepState({ status: "saving" });
+    try {
+      const r = await fetch("/api/account/", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...creds, action: "keep" }) });
+      const j = await r.json();
+      if (!j.ok) throw new Error(j.error || "Something went wrong.");
+      setKeepState({ status: "done", message: `Done. ${j.cleaner ?? "Your cleaner"} is booked for ${j.dateLabel} at $${j.price}. We'll confirm the arrival window the day before.` });
+      const fresh = await fetch(`/api/account/?c=${encodeURIComponent(creds.c)}&t=${encodeURIComponent(creds.t)}`).then((x) => x.json());
+      if (fresh.ok) setAccount(fresh.account);
+    } catch (e) {
+      setKeepState({ status: "error", message: (e as Error).message });
+    }
+  };
 
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     const c = (sp.get("c") || "").trim();
     const t = (sp.get("t") || "").trim();
+    setCreds(c && t ? { c, t } : null);
+    setKeepHighlight(sp.get("keep") === "1");
     setCardSaved(sp.get("card") === "saved");
     if (!c || !t) {
       setError("This link is missing its key. Open it from one of our texts, or text (914) 863-7902 and we'll send a fresh one.");
@@ -116,6 +138,28 @@ export default function AccountPage() {
                   </div>
                 )}
               </div>
+
+              {/* Keep my cleaner: one tap from a first clean to every other week */}
+              {(account.keepOffer || keepState.status === "done") && (
+                <div style={{ ...card, border: keepHighlight ? `2px solid ${MINT}` : (card.border as string), background: "#f3faf7" }}>
+                  <h2 style={h2}>Keep {account.keepOffer?.cleanerName ?? "your cleaner"}?</h2>
+                  {keepState.status === "done" ? (
+                    <p style={muted}>{keepState.message}</p>
+                  ) : (
+                    <>
+                      <p style={{ ...muted, marginBottom: ".85rem" }}>
+                        {account.keepOffer?.cleanerName ?? "The same cleaner"} can come back every other week at 15% off: ${account.keepOffer?.price} a visit, same arrival window, same person.
+                        Next visit would be {new Date(`${account.keepOffer?.nextDate}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}. Skip or move any visit from this page.
+                      </p>
+                      <button type="button" onClick={keepCleaner} disabled={keepState.status === "saving"} style={{ ...btn, cursor: "pointer", opacity: keepState.status === "saving" ? 0.7 : 1 }}>
+                        {keepState.status === "saving" ? "Booking..." : `Keep ${account.keepOffer?.cleanerName ?? "my cleaner"} every other week`}
+                      </button>
+                      {keepState.status === "error" && <p style={{ ...muted, color: "#b42318", marginTop: ".6rem" }}>{keepState.message}</p>}
+                      <p style={{ ...muted, fontSize: ".8rem", marginTop: ".6rem" }}>Prefer weekly or monthly, or a different day? Text (914) 863-7902.</p>
+                    </>
+                  )}
+                </div>
+              )}
 
               {/* Payment */}
               <div style={card}>
