@@ -301,6 +301,16 @@ export async function POST(req: Request) {
       integrations.stripeConfigured && body.stripePaymentMethodId && body.stripeCustomerId
     );
 
+    // Card required (owner decision 2026-10-18): no clean goes out without a
+    // card on file, so the public form can no longer reserve without one. The
+    // quote page blocks this first; this is the backstop.
+    if (integrations.stripeConfigured && !hasCardOnFile) {
+      return NextResponse.json(
+        { error: "A card is required to reserve your clean (it's only charged after the visit). If the card form won't load, try another browser or text us at (914) 863-7902 and we'll send a secure link." },
+        { status: 400 },
+      );
+    }
+
     // ── Authorization hold ─────────────────────────────────────────────────
     // Reserve the full amount on the card now. A card with no funds fails
     // here, before anything is saved, instead of at Job Complete. Only a card

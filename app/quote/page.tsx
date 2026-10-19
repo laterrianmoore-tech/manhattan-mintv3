@@ -348,11 +348,14 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
       return;
     }
 
-    // Attempt card capture only when the Stripe form is usable and the customer
-    // isn't using the no-card fallback. If Stripe.js failed to load entirely
-    // (ad blockers, some in-app browsers), the booking still goes through — the
-    // server texts the customer a secure card setup link instead.
+    // A card is required to reserve (owner decision 2026-10-18): no clean goes
+    // out without one. If Stripe.js failed to load (ad blockers, some in-app
+    // browsers) we stop here and point them to another browser or a text.
     const canUseCard = stripeReady && !skipCard && Boolean(stripe && elements);
+    if (!canUseCard) {
+      setCardError("A card is required to reserve your clean (charged only after the visit). The secure card form didn't load here — try another browser, or text (914) 863-7902 and we'll send you a secure link.");
+      return;
+    }
 
     if (canUseCard && !cardComplete) {
       setCardError("Please finish entering your card details — number, expiry, CVC, and ZIP.");
@@ -744,38 +747,21 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
 
               {!stripeReady && (
                 <div style={{ border: "1px solid rgba(0,0,0,.15)", borderRadius: 8, padding: ".9rem", background: "#fafafa", color: "#555", fontSize: ".86rem" }}>
-                  The secure card form couldn&apos;t load — this can happen with ad blockers or some in-app browsers. You can
-                  still book now: we&apos;ll text you a secure link to add your card, and it&apos;s only charged after your clean.
+                  The secure card form couldn&apos;t load — this can happen with ad blockers or some in-app browsers. A card is
+                  required to reserve a clean, so please try another browser, or text (914) 863-7902 and we&apos;ll send you a
+                  secure link to add it. It&apos;s only charged after your clean.
                 </div>
               )}
 
-              {stripeReady && cardAttempts >= 1 && (
+              {stripeReady && cardAttempts >= 2 && (
                 <div style={{ marginTop: ".75rem", border: "1px solid rgba(29,158,117,.25)", background: "var(--mint-light)", borderRadius: 10, padding: ".8rem .9rem", fontSize: ".85rem", color: "var(--mint-dark)" }}>
-                  <p style={{ margin: "0 0 .55rem" }}>
-                    Having trouble with the card form? You can reserve your booking now — we&apos;ll text you a secure link to
-                    add your card, and it&apos;s only charged after your clean.
-                  </p>
-                  <button
-                    type="button"
-                    disabled={submitting}
-                    onClick={() => submitBooking(true)}
-                    style={{
-                      border: "1px solid var(--mint)",
-                      borderRadius: 8,
-                      background: "#fff",
-                      color: "var(--mint-dark)",
-                      padding: ".5rem .8rem",
-                      fontSize: ".84rem",
-                      cursor: submitting ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    Reserve without card
-                  </button>
+                  Having trouble with the card form? A card is required to reserve a clean. Text us at (914) 863-7902 and
+                  we&apos;ll send you a secure link to add it from your phone.
                 </div>
               )}
 
               <p style={{ marginTop: ".75rem", fontSize: ".82rem", color: "#555", display: "flex", alignItems: "center", gap: ".4rem" }}>
-                <ShieldCheck size={15} color="#1D9E75" /> Hold now, charged AFTER appointment.
+                <ShieldCheck size={15} color="#1D9E75" /> A card is required to reserve. Hold now, charged AFTER appointment.
               </p>
 
               <label style={{ marginTop: ".85rem", display: "flex", alignItems: "center", gap: ".5rem", fontSize: ".88rem" }}>
