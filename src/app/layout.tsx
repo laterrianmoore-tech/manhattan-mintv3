@@ -166,6 +166,8 @@ function Footer() {
               </li>
               <li>
                 <Link href="/brokers">For Brokers &amp; Agents</Link>
+              </li>
+              <li>
                 <Link href="/turnovers">Turnovers for Operators</Link>
               </li>
               <li>
@@ -206,14 +208,17 @@ function Footer() {
       <div className="footer-bottom">
         <p>© {new Date().getFullYear()} Manhattan Mint NYC LLC. All rights reserved.</p>
         <div className="footer-social" aria-label="Manhattan Mint on social media">
-          <a href="https://www.facebook.com/profile.php?id=61592530890151" target="_blank" rel="noopener noreferrer" aria-label="Manhattan Mint on Facebook" title="Facebook">
+          <a href="https://www.facebook.com/profile.php?id=61592530890151" target="_blank" rel="noopener noreferrer" aria-label="Manhattan Mint on Facebook" title="Facebook" className="social-facebook">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 22v-8.2h2.8l.4-3.3h-3.2V8.4c0-.9.3-1.6 1.6-1.6h1.7V3.9c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.4H7.3v3.3h2.8V22h3.4z" /></svg>
           </a>
-          <a href="https://www.linkedin.com/company/manhattan-mint/" target="_blank" rel="noopener noreferrer" aria-label="Manhattan Mint on LinkedIn" title="LinkedIn">
+          <a href="https://www.linkedin.com/company/manhattan-mint/" target="_blank" rel="noopener noreferrer" aria-label="Manhattan Mint on LinkedIn" title="LinkedIn" className="social-linkedin">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.4 21H2.7V8.6h3.7V21zM4.5 6.9a2.2 2.2 0 1 1 0-4.4 2.2 2.2 0 0 1 0 4.4zM21.3 21h-3.7v-6c0-1.4 0-3.3-2-3.3s-2.3 1.6-2.3 3.2V21H9.6V8.6h3.5v1.7h.1c.5-.9 1.7-1.9 3.5-1.9 3.7 0 4.4 2.5 4.4 5.6V21z" /></svg>
           </a>
-          <a href="https://nextdoor.com/page/manhattan-mint/" target="_blank" rel="noopener noreferrer" aria-label="Manhattan Mint on Nextdoor" title="Nextdoor">
+          <a href="https://nextdoor.com/page/manhattan-mint/" target="_blank" rel="noopener noreferrer" aria-label="Manhattan Mint on Nextdoor" title="Nextdoor" className="social-nextdoor">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 3 9.6V21h6.2v-5.6a2.8 2.8 0 0 1 5.6 0V21H21V9.6L12 2.5zm0 2.6 6.9 5.4V19h-2.1v-3.6a4.8 4.8 0 0 0-9.6 0V19H5.1V10.5L12 5.1z" /></svg>
+          </a>
+          <a href="https://www.yelp.com/biz/manhattan-mint-nyc-new-york" target="_blank" rel="noopener noreferrer" aria-label="Manhattan Mint on Yelp" title="Yelp" className="social-yelp">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.16 12.594l-4.995 1.433c-.96.276-1.74-.8-1.176-1.63l2.905-4.308a1.072 1.072 0 0 1 1.596-.206 9.194 9.194 0 0 1 2.364 3.252 1.073 1.073 0 0 1-.694 1.459zm-5.025 3.152l4.942 1.606a1.072 1.072 0 0 1 .636 1.48 9.316 9.316 0 0 1-2.47 3.169 1.073 1.073 0 0 1-1.592-.26l-2.76-4.409c-.528-.847.288-1.894 1.244-1.586zm-4.796-4.368L5.454 2.916a1.072 1.072 0 0 1 .466-1.5A14.973 14.973 0 0 1 11.184.003a1.07 1.07 0 0 1 1.153 1.068v9.768c0 1.096-1.45 1.483-1.998.539zm-.857 3.293l-4.87 1.776a1.072 1.072 0 0 1-1.43-.843 9.291 9.291 0 0 1 .203-3.976 1.072 1.072 0 0 1 1.512-.657l4.736 2.172c.918.42.87 1.688-.15 1.528zm1.72 2.223l-3.004 4.306a1.073 1.073 0 0 1-1.6.19 9.325 9.325 0 0 1-2.27-3.313 1.072 1.072 0 0 1 .73-1.447l5.037-1.3c.96-.248 1.68.807 1.107 1.564z" /></svg>
           </a>
         </div>
         <a href="tel:+19148637902">(914) 863-7902</a>
@@ -528,25 +533,30 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             align-items: center;
             gap: 0.6rem;
           }
+          /* Brand-colored circles (owner 2026-10-20: "the proper color so it stands out"). */
           .footer-social a {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 34px;
-            height: 34px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            color: rgba(255, 255, 255, 0.75);
-            transition: border-color 0.2s, color 0.2s, background 0.2s;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.16);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+            transition: transform 0.2s, filter 0.2s;
           }
           .footer-social a:hover {
-            color: #fff;
-            border-color: var(--mint);
-            background: rgba(29, 158, 117, 0.18);
+            transform: translateY(-2px) scale(1.06);
+            filter: brightness(1.12);
           }
+          .footer-social .social-facebook { background: #1877f2; }
+          .footer-social .social-linkedin { background: #0a66c2; }
+          .footer-social .social-nextdoor { background: #8ed500; color: #0b2b00; }
+          .footer-social .social-yelp { background: #ff1a1a; }
           .footer-social svg {
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             fill: currentColor;
           }
           .footer-bottom a {
@@ -584,6 +594,17 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 
             .book-btn {
               padding-inline: 0.85rem;
+            }
+
+            /* Stack the bottom row so the brand icons get their own line. */
+            .footer-bottom {
+              flex-direction: column;
+              align-items: flex-start;
+              gap: 0.9rem;
+              padding-bottom: 5rem; /* clear the floating Book button */
+            }
+            .footer-bottom > p {
+              margin: 0;
             }
           }
 
