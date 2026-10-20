@@ -67,7 +67,7 @@ export async function collectionForInvoice(bookingId: string): Promise<Collectio
     const found = await stripe.invoices.search({
       query: `metadata["supabase_booking_id"]:"${bookingId}" AND status:"paid"`,
       limit: 1,
-      expand: ["data.payments.data.payment.payment_intent"],
+      expand: ["data.payments"],
     });
     const inv = found.data[0];
     if (!inv) return null;
