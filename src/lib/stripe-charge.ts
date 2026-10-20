@@ -2,7 +2,7 @@ import Stripe from "stripe";
 
 export type ChargeResult =
   | { ok: true; paymentIntentId: string; status: string; amount: number }
-  | { ok: false; error: string };
+  | { ok: false; error: string; /** No card to charge (Job Complete falls back to an invoice). */ noPaymentMethod?: boolean };
 
 // Charges a saved card off-session. Prefers the default payment method,
 // falls back to the most recently added card (cards added via the
@@ -35,7 +35,7 @@ export async function chargeCustomer(opts: {
       });
       defaultPm = pms.data[0]?.id;
     }
-    if (!defaultPm) return { ok: false, error: "No payment method on file for this customer" };
+    if (!defaultPm) return { ok: false, noPaymentMethod: true, error: "No payment method on file for this customer" };
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(opts.amount * 100), // dollars → cents

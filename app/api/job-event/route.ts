@@ -9,6 +9,7 @@ import { ensureReviewToken, reviewUrlFor, stampReview } from "@/lib/review-track
 import { referralCodeFor, referralLink, publicSiteUrl, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT, secondCleanCodeFor, SECOND_PROMO_CODE, SECOND_WINDOW_DAYS } from "@/lib/referral";
 import { accountUrl } from "@/lib/manage-token";
 import { fmtTax, isTaxableBooking, quoteTax, recordTaxTransaction, taxMetadata } from "@/lib/stripe-tax";
+import { createBookingInvoice, hasCardOnFile, invoiceSmsBody, isInvoicePayCustomer, type BookingInvoiceResult, type InvoiceCustomer } from "@/lib/stripe-invoice";
 
 const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 const ORDINALS = ["1st", "2nd", "3rd", "4th"];
@@ -56,8 +57,60 @@ function nextServiceDate(serviceDate: string, frequency: string, notes?: string 
   return d.toISOString().slice(0, 10);
 }
 
+// Invoice-pay fallback (2026-10-20): no usable card → Stripe invoice + card
+// link, texted to the customer. Returns the owner's JOB DONE line and the
+// text to send the customer (sent after the completion texts so the invoice
+// doesn't land before "your clean is complete").
+async function invoiceInsteadOfCharge(opts: {
+  bookingId: string;
+  booking: { service_date: string; service_summary?: string | null; frequency?: string | null; stripe_customer_id?: string | null };
+  customer: InvoiceCustomer;
+  stripeCustomerId: string | null;
+  amountDollars: number; // before tax
+  taxable: boolean;
+  reason: string;
+  dryRun?: boolean;
+}): Promise<{ line: string; sms: string | null; result: BookingInvoiceResult }> {
+  const { booking, customer } = opts;
+  const result = await createBookingInvoice({
+    bookingId: opts.bookingId,
+    customer,
+    stripeCustomerId: opts.stripeCustomerId,
+    amountDollars: opts.amountDollars,
+    serviceDate: booking.service_date,
+    summary: booking.service_summary || booking.frequency || "",
+    taxable: opts.taxable,
+    dryRun: opts.dryRun,
+  });
+  if (!result.ok) {
+    return { line: `⚠️ ${opts.reason} — collect $${opts.amountDollars} manually (invoice failed: ${result.error}).`, sms: null, result };
+  }
+  // The booking may carry no stripe_customer_id while the customer row does;
+  // stamp it so the ledger + next visit find the same Stripe customer.
+  if (!opts.dryRun && result.stripeCustomerId && !booking.stripe_customer_id) {
+    await supabaseAdmin.from("bookings").update({ stripe_customer_id: result.stripeCustomerId }).eq("id", opts.bookingId);
+  }
+  const sms = invoiceSmsBody({
+    firstName: customer.first_name || "there",
+    amount: result.amount,
+    hostedUrl: result.hostedUrl ?? "<hosted invoice link>",
+    cardLink: result.cardLink,
+  });
+  const amt = Number.isInteger(result.amount) ? `$${result.amount}` : `$${result.amount.toFixed(2)}`;
+  const how = [result.emailed ? "emailed" : null, "link texted"].filter(Boolean).join(" + ");
+  const line = result.dryRun
+    ? `🧾 Would create an invoice for ${amt} (${how}${result.hasCard ? "" : ", card-on-file link included"}).`
+    : `🧾 Invoice #${result.number ?? result.invoiceId} for ${amt} ${result.existing ? "already existed," : "sent"} (${how}${result.hasCard ? "" : ", card-on-file link included"}).`;
+  return { line, sms, result };
+}
+
 export async function POST(req: Request) {
-  const { token, bookingId, event } = await req.json();
+  const { token, bookingId, event, dryRun: bodyDryRun } = await req.json();
+  // ?dryRun=1 (or { dryRun: true }) on a "completed" event previews the billing
+  // decision — hold / card / subscription / invoice — without writing anything,
+  // charging, or texting. Skips the order/date guards so an upcoming job can be
+  // checked ahead of time.
+  const dryRun = new URL(req.url).searchParams.get("dryRun") === "1" || bodyDryRun === true;
 
   if (!bookingId || !event) {
     return NextResponse.json({ ok: false }, { status: 400 });
@@ -125,6 +178,55 @@ export async function POST(req: Request) {
 
   const customer = booking.customers as any;
   const now = new Date().toISOString();
+
+  // ── Dry run: preview the billing decision, write nothing ───────────
+  if (dryRun) {
+    if (event !== "completed") {
+      return NextResponse.json({ ok: false, error: "dryRun previews the completed event only" }, { status: 400 });
+    }
+    const stripeCustomerId = booking.stripe_customer_id || customer.stripe_customer_id || null;
+    const price: number = booking.pricing_total ?? 0;
+    const taxable = price > 0 && (await isTaxableBooking({ customerId: booking.customer_id, createdAt: booking.created_at }));
+    const hold = booking.stripe_charge_id ? await inspectHold(booking.stripe_charge_id) : { state: "none" as const };
+    const preview: Record<string, unknown> = {
+      ok: true,
+      dryRun: true,
+      bookingId,
+      customer: `${customer.first_name} ${customer.last_name || ""}`.trim(),
+      serviceDate: booking.service_date,
+      alreadyCompleted: !!booking.completed_at,
+      price,
+      taxable,
+      stripeCustomerId,
+      hold: hold.state,
+    };
+    if (hold.state === "captured") {
+      preview.decision = "already charged earlier";
+    } else if (hold.state === "held") {
+      preview.decision = price > 0 ? `capture hold ($${hold.amount} held)` : "release hold ($0 booking)";
+    } else if (price <= 0) {
+      preview.decision = "$0 booking, nothing to charge";
+    } else if (stripeCustomerId && (await hasActiveSubscription(stripeCustomerId))) {
+      preview.decision = "billed by subscription";
+    } else if (await hasCardOnFile(stripeCustomerId)) {
+      preview.decision = `charge card off-session ($${price}${taxable ? " + tax" : ""})`;
+    } else if (!isInvoicePayCustomer(stripeCustomerId)) {
+      preview.decision = "no card: owner warned to collect manually (not an invoice-pay customer)";
+      preview.ownerLine = stripeCustomerId
+        ? `⚠️ AUTO-CHARGE FAILED ($${price}): No payment method on file for this customer — collect manually via /api/bookings/charge.`
+        : `⚠️ Payment: NO CARD ON FILE — collect $${price} manually.`;
+    } else {
+      const inv = await invoiceInsteadOfCharge({
+        bookingId, booking, customer, stripeCustomerId, amountDollars: price, taxable,
+        reason: "Payment: NO CARD ON FILE", dryRun: true,
+      });
+      preview.decision = "invoice (invoice-pay customer, no card)";
+      preview.ownerLine = inv.line;
+      preview.customerSms = inv.sms;
+      preview.invoice = inv.result;
+    }
+    return NextResponse.json(preview);
+  }
 
   // ── Order + date guards ────────────────────────────────────────────
   // The portal lists every job a cleaner has, so a mis-tap on the wrong card
@@ -247,6 +349,13 @@ export async function POST(req: Request) {
       needFreshCharge = true;
     }
 
+    // Invoice-pay fallback (2026-10-20): ONLY the customers in
+    // INVOICE_PAY_CUSTOMERS (Rebecca, Melissa) get a Stripe invoice + card
+    // link when their charge finds no card. Everyone else keeps the
+    // "collect manually" warning. Full amount only — a shortfall after a
+    // captured hold still means a card existed minutes ago.
+    let invoiceSms: string | null = null;
+
     if (needFreshCharge) {
       if (!stripeCustomerId) {
         chargeLine = `⚠️ Payment: NO CARD ON FILE — collect $${freshAmount} manually.`;
@@ -272,6 +381,12 @@ export async function POST(req: Request) {
           chargeLine = freshAmount < total
             ? `${chargeLine} Plus $${charge.amount} charged for the price increase (${charge.paymentIntentId}).`
             : `💳 Card charged $${charge.amount} automatically (${charge.status}).`;
+        } else if (charge.noPaymentMethod && freshAmount === total && isInvoicePayCustomer(stripeCustomerId)) {
+          const inv = await invoiceInsteadOfCharge({
+            bookingId, booking, customer, stripeCustomerId, amountDollars: price, taxable, reason: "Payment: NO CARD ON FILE",
+          });
+          chargeLine = inv.line;
+          invoiceSms = inv.sms;
         } else {
           chargeLine = freshAmount < total
             ? `${chargeLine} ⚠️ The extra $${freshAmount} FAILED: ${charge.error} — collect manually.`
@@ -432,6 +547,20 @@ export async function POST(req: Request) {
       });
     }
     await supabaseAdmin.from("bookings").update({ complete_sms_sent_at: now }).eq("id", bookingId);
+
+    // Invoice-pay customer: the invoice + card-on-file text goes after the
+    // completion text, so it reads "clean done" → "here's the bill".
+    if (invoiceSms) {
+      const sent = await sendSms({
+        to: customer.phone,
+        body: invoiceSms,
+        cleanerId: cleaner?.id ?? null,
+        bookingId,
+        recipientType: "customer",
+        eventType: "other",
+      });
+      if (!sent.ok) chargeLine += ` ⚠️ Invoice text FAILED (${sent.errorMessage ?? "SMS error"}) — send the link by hand.`;
+    }
     const customerTextLine = skipReviewAndUpsell
       ? "Customer texted a plain completion note (recurring/repeat — no review or upsell)."
       : "Customer texted review link + recurring/referral offers.";
