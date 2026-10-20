@@ -552,17 +552,11 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`,
   }
   console.log(`[reminders] ${tomorrow}: holds`, holdResults.map((r) => `${r.bookingId.slice(0, 8)} ${r.action} ${r.ok ? "ok" : "FAIL"} ${r.detail ?? ""}`).join(" | "));
 
-  // Day-3 review nudge rides the same daily run. Gated by REVIEW_NUDGE_ENABLED
-  // and never allowed to break the reminders above.
-  let reviewNudge: Record<string, unknown> = { enabled: false, skipped: true };
-  if (nudgeEnabled) {
-    try {
-      reviewNudge = await runReviewNudge(false);
-    } catch (err: any) {
-      console.error("[reminders] review nudge step threw:", err?.message ?? err);
-      reviewNudge = { enabled: true, ok: false, error: err?.message ?? "unknown error" };
-    }
-  }
+  // Day-3 review nudge NO LONGER runs automatically (owner 2026-10-20: review
+  // asks are his to-do list on /admin/dispatch, sent by hand per customer via
+  // /api/bookings/review-ask). The manual ?reviewNudge=1 endpoint above still
+  // works for a one-off run; the nightly job never calls it.
+  const reviewNudge: Record<string, unknown> = { enabled: nudgeEnabled, skipped: true, reason: "owner sends review asks by hand" };
 
   // 48-hour "keep my cleaner" follow-up rides the same daily run. Never fatal.
   let keepFollowUp: Record<string, unknown> = { skipped: true };

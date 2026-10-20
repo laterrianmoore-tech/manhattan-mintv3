@@ -119,8 +119,9 @@ Add Supabase, cleaner accounts, and full automation of the post-booking workflow
 | `POST /api/bookings/charge` | Charges a saved card by Stripe Customer ID — call this after each appointment until Phase 2 auto-charges |
 | `POST /api/job-event/` | Cleaner portal / admin taps: on_the_way, arrived, completed. Complete auto-charges, books the next recurring visit, and texts the customer. First-time one-off customers get the review ask (feedback page → tracked Google link) and `review_link_sent_at` is stamped; repeat/recurring customers get one plain completion text |
 | `GET /api/r/[token]/` | Tracked Google review link. Stamps `bookings.review_link_clicked_at` on first tap, always 302s to the Google review URL (`src/lib/google-reviews.ts`) |
-| `GET /api/reminders/` | Daily cron (Netlify `job-reminders.mjs`, 21:00 UTC, `x-cron-secret`). Cleaner texts for tomorrow, recurring-customer reminder emails, and — only when `REVIEW_NUDGE_ENABLED=true` — the day-3 review nudge. `?reviewNudge=1&dryRun=1` previews the nudge without sending; `?remindBooking=<id>` sends one customer reminder |
-| `POST /api/bookings/review-received/` | Admin (cookie): `{ bookingId, received? }` sets/clears `review_received_at`. Used by the Reviews table on `/admin/dispatch` |
+| `GET /api/reminders/` | Daily cron (Netlify `job-reminders.mjs`, 21:00 UTC, `x-cron-secret`). Cleaner texts for tomorrow, recurring-customer reminder emails, card holds for tomorrow. The day-3 review nudge is NOT part of the nightly run any more (owner 2026-10-20: review asks are manual); `?reviewNudge=1&dryRun=1` still previews it for a one-off. `?remindBooking=<id>` sends one customer reminder |
+| `POST /api/bookings/review-received/` | Admin (cookie): `{ bookingId, received? }` sets/clears `review_received_at`. Used by the Reviews to-do list on `/admin/dispatch` |
+| `POST /api/bookings/review-ask/` | Admin (cookie): `{ bookingId }` texts the customer the owner's personal Google-review ask (wording approved 2026-10-20) from the 914 line and stamps `review_nudge_sent_at`, which now means "owner asked by hand". Tapped per customer from the Reviews to-do list; never automatic |
 
 ---
 

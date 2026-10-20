@@ -3,7 +3,8 @@ import { supabaseAdmin } from "@/lib/supabase";
 import AdminLoginForm from "./AdminLoginForm";
 import DispatchRow from "./DispatchRow";
 import AssignedRow from "./AssignedRow";
-import ReviewsTable, { type ReviewRow } from "./ReviewsTable";
+import ReviewActions, { type ReviewActionRow } from "./ReviewActions";
+import { fetchGoogleRating } from "@/lib/google-rating";
 import { computeCleanerPay, payNote } from "@/lib/cleaner-pay";
 
 export const dynamic = "force-dynamic";
@@ -55,23 +56,37 @@ export default async function DispatchPage() {
 
   // Review-link tracking (2026-09-18). Queried on its own so a database that
   // hasn't run the migration yet shows a note here instead of breaking dispatch.
-  const reviewsQuery = await supabaseAdmin
-    .from("bookings")
-    .select(
-      "id, service_date, review_link_sent_at, review_link_clicked_at, review_nudge_sent_at, review_received_at, customers(first_name, last_name)"
-    )
-    .not("review_link_sent_at", "is", null)
-    .order("review_link_sent_at", { ascending: false })
-    .limit(30);
-  const reviewRows: ReviewRow[] = (reviewsQuery.data ?? []).map((b: any) => ({
+  // Owner's to-do list, not a status table (owner 2026-10-20). Open items are
+  // first-time customers whose review link went out in the last 21 days and
+  // who haven't reviewed yet; received rows drop off.
+  const sinceIso = new Date(Date.now() - 21 * 86_400_000).toISOString();
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  const [reviewsQuery, receivedQuery, googleRating] = await Promise.all([
+    supabaseAdmin
+      .from("bookings")
+      .select(
+        "id, service_date, assigned_cleaner_id, review_link_sent_at, review_link_clicked_at, review_nudge_sent_at, review_received_at, customers(first_name, last_name)"
+      )
+      .not("review_link_sent_at", "is", null)
+      .is("review_received_at", null)
+      .gte("review_link_sent_at", sinceIso)
+      .order("service_date", { ascending: false })
+      .limit(30),
+    supabaseAdmin.from("bookings").select("id", { count: "exact", head: true }).gte("review_received_at", monthStart.toISOString()),
+    fetchGoogleRating().catch(() => null),
+  ]);
+  const reviewRows: ReviewActionRow[] = (reviewsQuery.data ?? []).map((b: any) => ({
     id: b.id,
     service_date: b.service_date,
     customer: [b.customers?.first_name, b.customers?.last_name].filter(Boolean).join(" ") || "—",
-    review_link_sent_at: b.review_link_sent_at ?? null,
+    cleaner: cleanerMap.get(b.assigned_cleaner_id)?.first_name ?? null,
     review_link_clicked_at: b.review_link_clicked_at ?? null,
-    review_nudge_sent_at: b.review_nudge_sent_at ?? null,
+    owner_ask_sent_at: b.review_nudge_sent_at ?? null,
     review_received_at: b.review_received_at ?? null,
   }));
+  const receivedThisMonth = receivedQuery.count ?? 0;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -139,9 +154,9 @@ export default async function DispatchPage() {
 
       {/* Google review tracking — first-time customers only (repeat/recurring get no review ask) */}
       <section className="mt-10">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-700 mb-1">Reviews</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-700 mb-1">Reviews — your to-do list</h2>
         <p className="text-xs text-gray-400 mb-4">
-          Who was sent the Google review link, who tapped it, who got the day-3 nudge. Mark a review received when it shows up on Google.
+          Nothing here sends on its own. Text the ask yourself, then mark the review received when it lands on Google.
         </p>
         {reviewsQuery.error ? (
           <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
@@ -149,7 +164,7 @@ export default async function DispatchPage() {
             <code className="text-xs">lib/supabase/migrations/2026-09-18-review-tracking.sql</code> in the Supabase SQL editor.
           </p>
         ) : (
-          <ReviewsTable rows={reviewRows} />
+          <ReviewActions rows={reviewRows} receivedThisMonth={receivedThisMonth} rating={googleRating} />
         )}
       </section>
     </div>
