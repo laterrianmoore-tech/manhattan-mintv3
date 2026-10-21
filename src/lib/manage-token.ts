@@ -63,3 +63,26 @@ export function accountUrl(customerId: string, siteUrl: string): string {
   const params = new URLSearchParams({ c: customerId, t: accountToken(customerId) });
   return `${siteUrl.replace(/\/$/, "")}/account/?${params.toString()}`;
 }
+
+// Card-on-file links (2026-10-21): a short, durable "save your card" URL per
+// Stripe customer. Stripe's setup-mode Checkout URLs are ~400 characters and
+// expire after 24h, which reads badly in a text and goes dead before a slow
+// customer gets to it. /card/?c=cus_…&t=<hmac> mints a fresh Checkout session
+// on every visit and, on the way back, stamps the new card onto the
+// customer's open bookings (there is no Stripe webhook).
+export function cardToken(stripeCustomerId: string): string {
+  return createHmac("sha256", secret()).update(`card:${stripeCustomerId.trim()}`).digest("hex").slice(0, 16);
+}
+
+export function verifyCardToken(stripeCustomerId: string, token: string): boolean {
+  if (!stripeCustomerId || !token) return false;
+  const expected = cardToken(stripeCustomerId);
+  if (token.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(expected), Buffer.from(token));
+}
+
+export function cardUrl(stripeCustomerId: string, siteUrl: string): string {
+  const params = new URLSearchParams({ c: stripeCustomerId, t: cardToken(stripeCustomerId) });
+  // Trailing slash: next.config has trailingSlash on, and the bare path 308s.
+  return `${siteUrl.replace(/\/$/, "")}/card/?${params.toString()}`;
+}

@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { supabaseAdmin } from "./supabase";
 import { isPlaceholderEmail } from "./arrival-window";
 import { publicSiteUrl } from "./referral";
+import { cardUrl } from "./manage-token";
 import { TAX_CODE, taxAddressFor } from "./stripe-tax";
 
 // Auto-invoicing for invoice-pay clients (2026-10-20). Scoped to the
@@ -148,19 +149,10 @@ export async function findBookingInvoice(stripe: Stripe, bookingId: string, stri
   return found.data.find(live) ?? null;
 }
 
-/** Setup-mode Checkout link: saves a card, charges nothing. Same shape as scripts/card-on-file.mjs. */
+/** Short, durable "save your card" link (/card/?c=&t=): saves a card, charges nothing. See app/card/route.ts. */
 export async function createCardSetupLink(stripeCustomerId: string): Promise<string | null> {
-  const stripe = client();
-  if (!stripe) return null;
   try {
-    const s = await stripe.checkout.sessions.create({
-      mode: "setup",
-      customer: stripeCustomerId,
-      payment_method_types: ["card"],
-      success_url: `${siteUrl()}/thank-you?card=saved`,
-      cancel_url: `${siteUrl()}/thank-you`,
-    });
-    return s.url ?? null;
+    return cardUrl(stripeCustomerId, siteUrl());
   } catch (e) {
     console.error("[stripe-invoice] card setup link failed:", stripeCustomerId, (e as Error)?.message);
     return null;

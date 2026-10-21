@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { supabaseAdmin } from "@/lib/supabase";
-import { manageUrl, verifyAccountToken } from "@/lib/manage-token";
+import { cardUrl, manageUrl, verifyAccountToken } from "@/lib/manage-token";
 import { acceptKeepOffer, keepOfferFor } from "@/lib/keep-offer";
 import { sendSms } from "@/lib/openphone";
 import { publicSiteUrl, referralCodeFor, referralLink, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT } from "@/lib/referral";
@@ -84,14 +84,8 @@ export async function GET(req: Request) {
         cardOnFile = true;
         cardLabel = `${pms.data[0].card.brand.replace(/^\w/, (c) => c.toUpperCase())} ending in ${pms.data[0].card.last4}`;
       } else if (!cardOnFile) {
-        const session = await stripe.checkout.sessions.create({
-          mode: "setup",
-          customer: stripeCustomerId,
-          payment_method_types: ["card"],
-          success_url: `${siteUrl}/account/?c=${customerId}&t=${token}&card=saved`,
-          cancel_url: `${siteUrl}/account/?c=${customerId}&t=${token}`,
-        });
-        cardSetupUrl = session.url ?? null;
+        // Short link (app/card/route.ts); n=a brings them back to this page after saving.
+        cardSetupUrl = `${cardUrl(stripeCustomerId, siteUrl)}&n=a`;
       }
     } catch (e) {
       console.error("[account] Stripe lookup failed:", (e as Error)?.message);

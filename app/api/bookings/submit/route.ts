@@ -6,7 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { sendSms } from "@/lib/openphone";
 import { placeHold } from "@/lib/stripe-hold";
 import { isReferralCode, referralCodeFor, referralLink, publicSiteUrl, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT, isSecondCleanCode, secondCleanCodeFor, SECOND_PROMO_CODE, SECOND_PROMO_END, SECOND_WINDOW_DAYS } from "@/lib/referral";
-import { accountUrl } from "@/lib/manage-token";
+import { accountUrl, cardUrl } from "@/lib/manage-token";
 import { isTaxableBooking, quoteTax, taxMetadata } from "@/lib/stripe-tax";
 import { SEASONAL_PROMOS, promoByCode, promoStatus } from "@/lib/promo";
 
@@ -381,14 +381,8 @@ export async function POST(req: Request) {
                 cardCapture: "pending — link sent at booking",
               },
             });
-            const session = await stripe.checkout.sessions.create({
-              mode: "setup",
-              customer: customer.id,
-              payment_method_types: ["card"],
-              success_url: `${siteUrl}/thank-you?card=saved`,
-              cancel_url: `${siteUrl}/thank-you`,
-            });
-            cardSetupUrl = session.url || undefined;
+            // Short, durable link (app/card/route.ts) instead of a 400-char Checkout URL that dies in 24h.
+            cardSetupUrl = cardUrl(customer.id, siteUrl);
             return customer.id;
           })()
         : Promise.resolve(undefined),
