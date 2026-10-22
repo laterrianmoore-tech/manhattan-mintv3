@@ -63,7 +63,7 @@ export async function buildPayrollReport(): Promise<PayrollReport> {
 
   const map = new Map<string, PayrollCleaner>();
   const add = (cleanerId: string, line: PayrollLine) => {
-    const c = map.get(cleanerId) ?? { cleanerId, name: name(cleanerId), hasConnect: !!byId.get(cleanerId)?.stripe_account_id, total: 0, jobs: [] };
+    const c: PayrollCleaner = map.get(cleanerId) ?? { cleanerId, name: name(cleanerId), hasConnect: !!byId.get(cleanerId)?.stripe_account_id, total: 0, jobs: [] };
     c.jobs.push(line);
     c.total += line.amount;
     map.set(cleanerId, c);
