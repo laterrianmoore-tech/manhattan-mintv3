@@ -129,8 +129,11 @@ export async function POST(req: Request) {
     // ── Make-good coupon guard ───────────────────────────────────────────────
     // Personal codes handed to one customer after a bad clean. Each is locked
     // to that customer's email and burns after one non-cancelled booking.
+    // Quoted-total codes (app/quote/page.tsx QUOTED_TOTAL_COUPONS) use the
+    // same lock: one email, one booking.
     const MAKE_GOOD_COUPONS: Record<string, string> = {
       LIAMFREE: "liamschorr@gmail.com",
+      RAVIRESET: "ravi_nyc@yahoo.com", // $450 deep clean quoted 2026-10-26
     };
     if (couponNormalized in MAKE_GOOD_COUPONS) {
       const owner = MAKE_GOOD_COUPONS[couponNormalized];

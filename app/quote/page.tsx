@@ -109,6 +109,15 @@ const FLAT_PRICE_COUPONS: Record<string, number> = {
   LIAMFREE: 0,
 };
 
+// Quoted-total codes: a price the owner agreed with one customer by phone or
+// email. Unlike a flat code this sets the booking to EXACTLY this amount,
+// whatever the form adds up to (it can raise the price as well as lower it),
+// so the customer is charged the number they were quoted. Server-side each
+// one is locked to that customer's email and burns after one booking.
+const QUOTED_TOTAL_COUPONS: Record<string, number> = {
+  RAVIRESET: 450, // Ravi Bhandari, 2BR/2BA deep clean + fridge + windows + closets, quoted 2026-10-26
+};
+
 function couponDiscount(couponCode: string, subtotalAfterFrequency: number, standardPortion: number = subtotalAfterFrequency) {
   const normalized = couponCode.trim().toUpperCase();
   // SECOND: the first clean is full price; the reward is the free second clean
@@ -297,12 +306,15 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
     const extrasTotal = extrasCatalog.reduce((sum, item) => sum + (form.extras[item.key] ? item.price : 0), 0);
     const subtotal = Math.max(0, base + bathsAdd + extrasTotal);
     const frequencyDiscount = Math.round(subtotal * discountRateForFrequency(form.frequency));
-    const coupon = couponDiscount(form.couponCode, subtotal, hourlySelection ? 0 : base + bathsAdd);
+    const quotedTotal = hourlySelection ? undefined : QUOTED_TOTAL_COUPONS[form.couponCode.trim().toUpperCase()];
+    // A quoted-total code pins the price: the "coupon" is whatever gap closes
+    // the subtotal to the quoted number, negative if the form came in under it.
+    const coupon = quotedTotal !== undefined ? subtotal - quotedTotal : couponDiscount(form.couponCode, subtotal, hourlySelection ? 0 : base + bathsAdd);
     // Deep-clean starter: start a weekly or bi-weekly plan and the +$75 deep
     // clean on the first visit is free. Recurring visits after that are
     // standard cleans at the recurring rate, so the extra never carries over.
     const deepIntro =
-      !hourlySelection && form.extras.deepCleaning && (form.frequency === "Weekly" || form.frequency === "Bi-Weekly")
+      quotedTotal === undefined && !hourlySelection && form.extras.deepCleaning && (form.frequency === "Weekly" || form.frequency === "Bi-Weekly")
         ? Math.min(75, Math.max(0, subtotal - coupon))
         : 0;
     const total = Math.max(0, subtotal - coupon - deepIntro);
@@ -826,7 +838,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
                 <div style={{ display: "flex", justifyContent: "space-between" }}><span>{hourlySelection ? "Hourly Base" : "Base"}</span><span>${pricing.base}</span></div>
                 {!!pricing.bathsAdd && <div style={{ display: "flex", justifyContent: "space-between" }}><span>Bathrooms</span><span>+${pricing.bathsAdd}</span></div>}
                 {!!pricing.extrasTotal && <div style={{ display: "flex", justifyContent: "space-between" }}><span>Extras</span><span>+${pricing.extrasTotal}</span></div>}
-                {!!pricing.coupon && <div style={{ display: "flex", justifyContent: "space-between" }}><span>Coupon</span><span>-${pricing.coupon}</span></div>}
+                {!!pricing.coupon && <div style={{ display: "flex", justifyContent: "space-between" }}><span>{pricing.coupon > 0 ? "Coupon" : "Quoted price"}</span><span>{pricing.coupon > 0 ? `-$${pricing.coupon}` : `+$${-pricing.coupon}`}</span></div>}
                 {!!pricing.deepIntro && <div style={{ display: "flex", justifyContent: "space-between", color: "var(--mint-dark)" }}><span>First deep clean free (recurring plan)</span><span>-${pricing.deepIntro}</span></div>}
               </div>
 
