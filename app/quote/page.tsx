@@ -107,6 +107,9 @@ const FLAT_PRICE_COUPONS: Record<string, number> = {
   // Make-good code for one customer after the 2026-09-14 clean. Server-side
   // it's locked to their email and to a single use.
   LIAMFREE: 0,
+  // Make-good after the 2026-10-28 lockout: Mounika's next clean is free
+  // (owner 2026-10-28). Locked to her email, one use, server-side.
+  MOUNIKAFREE: 0,
 };
 
 // Quoted-total codes: a price the owner agreed with one customer by phone or

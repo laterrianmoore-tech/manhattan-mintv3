@@ -134,6 +134,7 @@ export async function POST(req: Request) {
     const MAKE_GOOD_COUPONS: Record<string, string> = {
       LIAMFREE: "liamschorr@gmail.com",
       RAVIRESET: "ravi_nyc@yahoo.com", // $450 deep clean quoted 2026-10-26
+      MOUNIKAFREE: "mounikakandalam@gmail.com", // free next clean after the 2026-10-28 lockout (owner 10/28)
     };
     if (couponNormalized in MAKE_GOOD_COUPONS) {
       const owner = MAKE_GOOD_COUPONS[couponNormalized];
