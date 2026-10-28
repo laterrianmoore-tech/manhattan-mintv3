@@ -38,6 +38,9 @@ type Row = {
   collected_ref: string | null;
   stripe_charge_id: string | null;
   completed_at: string | null;
+  // Lockout (2026-10-28): status 'lockout' rows bill the fee, not the ticket.
+  lockout_fee_cents?: number | null;
+  lockout_resolution?: string | null;
   customers: { first_name: string; last_name: string } | null;
 };
 
@@ -78,7 +81,9 @@ function money(n: number | null | undefined, { cents = false, decimals = false, 
 // Per-job economics. "Collected" is the real number when Stripe has told us;
 // until then the ticket stands in and the row says so.
 function economics(r: Row) {
-  const billed = Number(r.pricing_total ?? 0);
+  // A lockout bills the $119 fee (0 when waived), never the clean's price;
+  // the cleaner's pay on it stands as dispatched.
+  const billed = r.status === "lockout" ? (r.lockout_fee_cents ?? 0) / 100 : Number(r.pricing_total ?? 0);
   const collectedKnown = r.collected_cents != null;
   const collected = collectedKnown ? r.collected_cents! / 100 : billed;
   const fee = (r.stripe_fee_cents ?? 0) / 100;
@@ -129,7 +134,8 @@ export default async function AccountingPage({
   };
   const all = (rows ?? []) as unknown as Row[];
   const migrated = all.length === 0 || "cleaner_pay" in (all[0] as object);
-  const completed = all.filter((r) => r.status === "completed");
+  // Lockouts count as done jobs: the fee is revenue and the cleaner is owed.
+  const completed = all.filter((r) => r.status === "completed" || r.status === "lockout");
 
   // ── Payout list: completed, pay set, not yet paid ──────────────────────
   type Owed = { bookingId: string; slot: "primary" | "second"; cleanerId: string; date: string; customer: string; amount: number; note: string | null };
@@ -489,7 +495,12 @@ export default async function AccountingPage({
                       <td className={td}>{fmtDay(r.service_date, { weekday: "short", day: "numeric" })}</td>
                       <td className={td}>
                         {custName(r.customers)}
-                        <div className="text-[11px] text-gray-400">{r.service_summary}</div>
+                        {r.status === "lockout" && (
+                          <span className="ml-1 text-[10px] font-bold uppercase text-red-600" title="Cleaner couldn't get in; fee per the site terms">
+                            lockout{r.lockout_resolution === "waived" ? " · waived" : ""}
+                          </span>
+                        )}
+                        <div className="text-[11px] text-gray-400">{r.status === "lockout" ? "Lockout fee" : r.service_summary}</div>
                       </td>
                       <td className={td}>
                         {cleanerName(r.assigned_cleaner_id)}{r.second_cleaner_id ? ` + ${cleanerName(r.second_cleaner_id)}` : ""}

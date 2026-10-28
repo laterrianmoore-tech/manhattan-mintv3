@@ -39,7 +39,7 @@ export async function GET(req: Request) {
 
   const { data: rows } = await supabaseAdmin
     .from("bookings")
-    .select("id, service_date, status, frequency, service_summary, preferred_time_ranges, pricing_total, cleaning_notes, stripe_payment_method_id, stripe_customer_id, completed_at, cleaners!bookings_assigned_cleaner_id_fkey(first_name)")
+    .select("*, cleaners!bookings_assigned_cleaner_id_fkey(first_name)")
     .eq("customer_id", customerId)
     .neq("status", "cancelled")
     .order("service_date", { ascending: true });
@@ -47,7 +47,7 @@ export async function GET(req: Request) {
   const today = nyToday();
 
   const upcoming = bookings
-    .filter((b) => b.service_date >= today && b.status !== "completed")
+    .filter((b) => b.service_date >= today && b.status !== "completed" && b.status !== "lockout")
     .map((b) => ({
       id: b.id,
       date: b.service_date,
@@ -59,11 +59,27 @@ export async function GET(req: Request) {
       status: b.status,
       manageUrl: manageUrl(b.id, siteUrl),
     }));
+  // History includes lockouts (2026-10-28): the visit the cleaner couldn't
+  // get in for, shown with the fee that was charged (or that it was waived)
+  // instead of the clean's price.
   const past = bookings
-    .filter((b) => b.status === "completed")
+    .filter((b) => b.status === "completed" || b.status === "lockout")
     .sort((a, b) => (a.service_date < b.service_date ? 1 : -1))
     .slice(0, 12)
-    .map((b) => ({ id: b.id, date: b.service_date, dateLabel: fmt(b.service_date, { month: "short", day: "numeric", year: "numeric" }), summary: b.service_summary, price: b.pricing_total, cleaner: b.cleaners?.first_name ?? null }));
+    .map((b) => {
+      const lockout = b.status === "lockout";
+      const feeDollars = lockout ? Math.round((b.lockout_fee_cents ?? 0) / 100) : null;
+      return {
+        id: b.id,
+        date: b.service_date,
+        dateLabel: fmt(b.service_date, { month: "short", day: "numeric", year: "numeric" }),
+        summary: lockout ? "Couldn't get in" : b.service_summary,
+        price: lockout ? feeDollars ?? 0 : b.pricing_total,
+        cleaner: b.cleaners?.first_name ?? null,
+        status: b.status,
+        note: lockout ? (feeDollars ? `$${feeDollars} lockout fee` : "lockout fee waived") : null,
+      };
+    });
 
   // Plan = the frequency on the newest booking that isn't one-time.
   const latest = bookings[bookings.length - 1];

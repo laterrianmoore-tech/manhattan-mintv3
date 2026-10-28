@@ -86,3 +86,22 @@ export function cardUrl(stripeCustomerId: string, siteUrl: string): string {
   // Trailing slash: next.config has trailingSlash on, and the bare path 308s.
   return `${siteUrl.replace(/\/$/, "")}/card/?${params.toString()}`;
 }
+
+// Lockout resolution links (2026-10-28): the owner's "LOCKOUT" text carries a
+// signed /lockout/?b=<booking>&t=<hmac> link so the three outcomes (let in,
+// charge $119, waive) are one tap from the phone, no admin login needed.
+export function lockoutToken(bookingId: string): string {
+  return createHmac("sha256", secret()).update(`lockout:${bookingId.trim()}`).digest("hex").slice(0, 32);
+}
+
+export function verifyLockoutToken(bookingId: string, token: string): boolean {
+  if (!bookingId || !token) return false;
+  const expected = lockoutToken(bookingId);
+  if (token.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(expected), Buffer.from(token));
+}
+
+export function lockoutUrl(bookingId: string, siteUrl: string): string {
+  const params = new URLSearchParams({ b: bookingId, t: lockoutToken(bookingId) });
+  return `${siteUrl.replace(/\/$/, "")}/lockout/?${params.toString()}`;
+}

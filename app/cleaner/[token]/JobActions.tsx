@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-type EventType = "on_the_way" | "arrived" | "completed";
+type EventType = "on_the_way" | "arrived" | "completed" | "locked_out";
 
 interface Props {
   token: string;
@@ -11,6 +11,10 @@ interface Props {
   arrivedAt: string | null;
   completedAt: string | null;
   isFuture: boolean;
+  /** "Can't get in" (2026-10-28). Undefined on a database without the lockout columns: the button is hidden. */
+  lockedOutAt?: string | null;
+  lockoutResolvedAt?: string | null;
+  lockoutEnabled?: boolean;
 }
 
 export default function JobActions({
@@ -20,14 +24,22 @@ export default function JobActions({
   arrivedAt,
   completedAt,
   isFuture,
+  lockedOutAt,
+  lockoutResolvedAt,
+  lockoutEnabled = false,
 }: Props) {
   const [onWay, setOnWay] = useState(!!onTheWayAt);
   const [arrived, setArrived] = useState(!!arrivedAt);
   const [completed, setCompleted] = useState(!!completedAt);
+  // Timer running: tapped and the owner hasn't resolved it yet.
+  const [lockedOut, setLockedOut] = useState(!!lockedOutAt && !lockoutResolvedAt);
   const [loading, setLoading] = useState<EventType | null>(null);
   const [error, setError] = useState("");
 
   async function tap(event: EventType) {
+    if (event === "locked_out" && !window.confirm("Can't get in? This texts the customer a 10-minute final warning and alerts the owner. Only tap it once you've knocked, called and texted.")) {
+      return;
+    }
     setLoading(event);
     setError("");
 
@@ -43,6 +55,7 @@ export default function JobActions({
       if (event === "on_the_way") setOnWay(true);
       if (event === "arrived") setArrived(true);
       if (event === "completed") setCompleted(true);
+      if (event === "locked_out") setLockedOut(true);
     } else {
       // The API refuses out-of-order or too-early taps with a plain reason —
       // show that rather than a generic error.
@@ -77,6 +90,23 @@ export default function JobActions({
         onClick={() => tap("completed")}
         primaryColor="#085041"
       />
+      {lockoutEnabled && arrived && !completed && (
+        <>
+          <ActionButton
+            label={lockedOut ? "Can't get in — owner notified" : "Can't get in"}
+            done={lockedOut}
+            loading={loading === "locked_out"}
+            disabled={lockedOut || loading !== null}
+            onClick={() => tap("locked_out")}
+            primaryColor="#b45309"
+          />
+          {lockedOut && (
+            <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+              The customer has 10 minutes to let you in. Wait by the door; the owner will text you whether to go in or head home. If they open up, just carry on and tap Mark complete when you&apos;re done.
+            </p>
+          )}
+        </>
+      )}
       {isFuture && !completed && (
         <p className="text-xs text-gray-400 pt-1">Buttons unlock on the day of the job.</p>
       )}

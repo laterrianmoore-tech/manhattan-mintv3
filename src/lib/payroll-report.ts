@@ -54,7 +54,8 @@ export async function buildPayrollReport(): Promise<PayrollReport> {
       .from("bookings")
       .select("id, service_date, status, assigned_cleaner_id, cleaner_pay, cleaner_pay_note, cleaner_paid_at, second_cleaner_id, second_cleaner_pay, second_cleaner_paid_at, customers(first_name, last_name)")
       .gte("service_date", LEDGER_SINCE)
-      .eq("status", "completed")
+      // Lockouts (2026-10-28) are owed like completed jobs.
+      .in("status", ["completed", "lockout"])
       .order("service_date", { ascending: true }),
   ]);
   if (error) throw new Error(`bookings: ${error.message}`);

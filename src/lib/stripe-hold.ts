@@ -175,7 +175,12 @@ export type CaptureResult =
 // Captures the hold for the final total. Captures at most what was held;
 // `shortfall` is what still needs a separate charge when the price went up
 // after booking (add-ons found on site).
-export async function captureHold(opts: { paymentIntentId: string; amount: number }): Promise<CaptureResult> {
+export async function captureHold(opts: {
+  paymentIntentId: string;
+  amount: number;
+  /** Merged onto the PaymentIntent at capture. A lockout fee rewrites the tax keys the hold was placed with; an empty string clears a key. */
+  metadata?: Record<string, string>;
+}): Promise<CaptureResult> {
   const stripe = client();
   if (!stripe) return { ok: false, gone: false, error: "Missing STRIPE_SECRET_KEY" };
   try {
@@ -188,7 +193,10 @@ export async function captureHold(opts: { paymentIntentId: string; amount: numbe
     }
     const wantCents = Math.round(opts.amount * 100);
     const captureCents = Math.min(wantCents, pi.amount);
-    const captured = await stripe.paymentIntents.capture(pi.id, { amount_to_capture: captureCents });
+    const captured = await stripe.paymentIntents.capture(pi.id, {
+      amount_to_capture: captureCents,
+      ...(opts.metadata && Object.keys(opts.metadata).length ? { metadata: opts.metadata } : {}),
+    });
     return {
       ok: true,
       paymentIntentId: captured.id,

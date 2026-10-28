@@ -1,7 +1,7 @@
 // Database type definitions for Manhattan Mint
 // These mirror the tables defined in schema.sql
 
-export type BookingStatus = "pending" | "confirmed" | "in_progress" | "completed" | "cancelled";
+export type BookingStatus = "pending" | "confirmed" | "in_progress" | "completed" | "cancelled" | "lockout";
 export type CleanerStatus = "active" | "inactive" | "pending_onboarding";
 
 export interface Database {

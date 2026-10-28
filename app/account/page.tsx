@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 // /account/?c=<customer>&t=<token>.
 
 type Visit = { id: string; date: string; dateLabel: string; summary: string | null; window: string; price: number; cleaner: string | null; status: string; manageUrl: string };
-type Past = { id: string; date: string; dateLabel: string; summary: string | null; price: number; cleaner: string | null };
+type Past = { id: string; date: string; dateLabel: string; summary: string | null; price: number; cleaner: string | null; status?: string; note?: string | null };
 type KeepOffer = { cleanerName: string | null; price: number; nextDate: string; frequency: string; window: string[] };
 type Account = {
   keepOffer: KeepOffer | null;
@@ -213,8 +213,12 @@ export default function AccountPage() {
                       {account.past.map((p) => (
                         <tr key={p.id} style={{ borderTop: "1px solid rgba(0,0,0,.06)" }}>
                           <td style={{ padding: ".5rem 0", whiteSpace: "nowrap" }}>{p.dateLabel}</td>
-                          <td style={{ padding: ".5rem .5rem", color: "#666" }}>{p.summary ?? ""}{p.cleaner ? ` · ${p.cleaner}` : ""}</td>
-                          <td style={{ padding: ".5rem 0", textAlign: "right", whiteSpace: "nowrap" }}>${p.price}</td>
+                          <td style={{ padding: ".5rem .5rem", color: p.status === "lockout" ? "#b45309" : "#666" }}>
+                            {p.summary ?? ""}
+                            {p.cleaner ? ` · ${p.cleaner}` : ""}
+                            {p.note ? ` · ${p.note}` : ""}
+                          </td>
+                          <td style={{ padding: ".5rem 0", textAlign: "right", whiteSpace: "nowrap" }}>{p.status === "lockout" && !p.price ? "$0" : `$${p.price}`}</td>
                         </tr>
                       ))}
                     </tbody>

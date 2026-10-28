@@ -32,12 +32,18 @@ type Booking = {
   second_cleaner_pay?: number | null;
   cleaner_pay_source?: "auto" | "manual" | "estimate" | null;
   cleaner_pay_note?: string | null;
+  // Lockout (2026-10-28) — undefined until that migration has run.
+  locked_out_at?: string | null;
+  lockout_resolved_at?: string | null;
+  lockout_resolution?: "let_in" | "charged" | "waived" | null;
   customers: {
     first_name: string;
     last_name: string;
     address: string;
   };
 };
+
+type LockoutAction = "let_in" | "charge" | "waive";
 
 // Payment state at a glance. stripe_charge_id is the card hold until Job
 // Complete captures it, so before completion it reads as "hold".
@@ -52,7 +58,7 @@ function HoldBadge({ booking }: { booking: Pick<Booking, "stripe_charge_id" | "s
   return <span className="ml-1 text-[11px] font-semibold text-red-600" title="No card on file">no card</span>;
 }
 
-type JobEvent = "on_the_way" | "arrived" | "completed";
+type JobEvent = "on_the_way" | "arrived" | "completed" | "locked_out";
 type Slot = "primary" | "second";
 
 export default function AssignedRow({
@@ -79,6 +85,12 @@ export default function AssignedRow({
   const [arrivedAt, setArrivedAt] = useState(booking.arrived_at);
   const [completedAt, setCompletedAt] = useState(booking.completed_at);
   const [stepBusy, setStepBusy] = useState<JobEvent | null>(null);
+  const lockoutEnabled = "locked_out_at" in booking;
+  const [lockedOutAt, setLockedOutAt] = useState(booking.locked_out_at ?? null);
+  const [lockoutResolvedAt, setLockoutResolvedAt] = useState(booking.lockout_resolved_at ?? null);
+  const [lockoutResolution, setLockoutResolution] = useState(booking.lockout_resolution ?? null);
+  const [lockoutBusy, setLockoutBusy] = useState<LockoutAction | null>(null);
+  const lockoutOpen = !!lockedOutAt && !lockoutResolvedAt;
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
@@ -103,6 +115,7 @@ export default function AssignedRow({
       on_the_way: `Text ${customer?.first_name} that the cleaner is on the way?`,
       arrived: `Text ${customer?.first_name} that the cleaner has arrived?`,
       completed: `Mark ${customer?.first_name}'s job complete? This charges the card $${booking.pricing_total}, texts the review link, and books the next recurring visit.`,
+      locked_out: `${cleanerName ?? "The cleaner"} can't get in at ${customer?.first_name}'s? This texts ${customer?.first_name} the 10-minute final warning ($119 lockout fee) and starts the timer.`,
     };
     if (!window.confirm(confirmText[event])) return;
 
@@ -135,6 +148,42 @@ export default function AssignedRow({
           : "Job complete — card charged, customer texted."
       );
     }
+    if (event === "locked_out") {
+      setLockedOutAt(data.lockedOutAt ?? now);
+      setLockoutResolvedAt(null);
+      setLockoutResolution(null);
+    }
+    router.refresh();
+  }
+
+  // Owner's call on a lockout: let in (job continues), charge $119 from the
+  // hold, or waive. Same /api/lockout the signed link in the owner text uses.
+  async function handleLockout(action: LockoutAction) {
+    const first = customer?.first_name ?? "the customer";
+    const who = cleanerName ?? "the cleaner";
+    const confirmText: Record<LockoutAction, string> = {
+      let_in: `${first} let ${who} in? The lockout clears and the job carries on as normal.`,
+      charge: `Release ${who} and charge ${first} the $119 lockout fee (+ NY sales tax if this booking is taxable)? $119 is captured from the hold and the rest released. ${first} gets a text and an email; ${who} is texted to head home and keeps her pay.`,
+      waive: `Release ${who} and WAIVE the fee? The hold is released in full. ${first} gets a no-fee text; ${who} is texted to head home and keeps her pay.`,
+    };
+    if (!window.confirm(confirmText[action])) return;
+    setLockoutBusy(action);
+    setError("");
+    const res = await fetch("/api/lockout/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingId: booking.id, action }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setLockoutBusy(null);
+    if (!res.ok || !data.ok) {
+      setError(data.error ?? "Could not resolve the lockout. Try again.");
+      return;
+    }
+    const now = new Date().toISOString();
+    setLockoutResolvedAt(now);
+    setLockoutResolution(action === "let_in" ? "let_in" : action === "charge" ? "charged" : "waived");
+    if (action !== "let_in") setNotice(data.summary ?? "Lockout resolved.");
     router.refresh();
   }
 
@@ -269,8 +318,17 @@ export default function AssignedRow({
           <div className="font-medium text-gray-900 truncate">
             {customer?.first_name} {customer?.last_name} &middot; {dateStr}
             {timeRange && <span className="text-gray-500 font-normal"> &middot; {timeRange}</span>}
-            {!completedAt && arrivedAt && (
+            {lockoutOpen ? (
+              <span className="ml-2 text-xs font-bold text-red-600" title={`Cleaner tapped "Can't get in" at ${fmtTime(lockedOutAt)}`}>
+                🚪 LOCKED OUT {fmtTime(lockedOutAt)}
+              </span>
+            ) : !completedAt && arrivedAt ? (
               <span className="ml-2 text-xs font-semibold text-amber-600">IN PROGRESS</span>
+            ) : null}
+            {!lockoutOpen && lockedOutAt && lockoutResolution === "let_in" && !completedAt && (
+              <span className="ml-2 text-[11px] font-medium text-gray-500" title={`Locked out ${fmtTime(lockedOutAt)}, let in ${fmtTime(lockoutResolvedAt)}`}>
+                let in {fmtTime(lockoutResolvedAt)}
+              </span>
             )}
             {!completedAt && !arrivedAt && onWayAt && (
               <span className="ml-2 text-xs font-semibold text-blue-600">ON THE WAY</span>
@@ -348,7 +406,51 @@ export default function AssignedRow({
           onClick={() => handleStep("completed")}
           emphasis
         />
+        {lockoutEnabled && !!arrivedAt && !completedAt && !lockoutOpen && (
+          <button
+            onClick={() => handleStep("locked_out")}
+            disabled={busy || stepBusy !== null}
+            title="Cleaner is at the door and can't get in — texts the customer the 10-minute warning and starts the timer"
+            className="px-3 py-1 rounded-lg text-xs font-medium border border-amber-300 bg-amber-50 text-amber-800 hover:border-amber-400 disabled:opacity-40"
+          >
+            {stepBusy === "locked_out" ? "Sending…" : "Can't get in"}
+          </button>
+        )}
       </div>
+
+      {lockoutOpen && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 space-y-2">
+          <p className="text-xs text-red-800">
+            <strong>{cleanerName ?? "The cleaner"} can&apos;t get in.</strong> {customer?.first_name} was texted the 10-minute warning at {fmtTime(lockedOutAt)}. Call them, then pick one:
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => handleLockout("let_in")}
+              disabled={busy || lockoutBusy !== null}
+              className="px-3 py-1 rounded-lg text-white text-xs font-medium disabled:opacity-50"
+              style={{ backgroundColor: "#1d9e75" }}
+            >
+              {lockoutBusy === "let_in" ? "Saving…" : "Customer let her in"}
+            </button>
+            <button
+              onClick={() => handleLockout("charge")}
+              disabled={busy || lockoutBusy !== null}
+              className="px-3 py-1 rounded-lg bg-red-600 text-white text-xs font-medium disabled:opacity-50"
+              title="Status → lockout. $119 captured from the hold, remainder released; customer texted + emailed; cleaner texted to head home and keeps her pay"
+            >
+              {lockoutBusy === "charge" ? "Charging…" : "Release cleaner + charge $119"}
+            </button>
+            <button
+              onClick={() => handleLockout("waive")}
+              disabled={busy || lockoutBusy !== null}
+              className="px-3 py-1 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:border-gray-400 disabled:opacity-50"
+              title="Status → lockout. Hold released in full, no charge; customer texted; cleaner keeps her pay"
+            >
+              {lockoutBusy === "waive" ? "Releasing…" : "Release cleaner, waive fee"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {rescheduling ? (
         <ScheduleEditor

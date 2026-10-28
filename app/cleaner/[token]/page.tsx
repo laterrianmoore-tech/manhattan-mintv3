@@ -69,8 +69,10 @@ export default async function CleanerPortal({ params }: Props) {
     return { ...b, teammate_first_name: teammate?.first_name ?? null, my_pay: myPay };
   });
 
+  // A resolved lockout (released + charged or waived) is closed like a
+  // completed job; while the timer runs it stays open under Today.
   const isOpen = (b: (typeof bookings)[number]) =>
-    !["completed", "cancelled"].includes(b.status ?? "");
+    !["completed", "cancelled", "lockout"].includes(b.status ?? "");
   const isStarted = (b: (typeof bookings)[number]) => !!(b.on_the_way_at || b.arrived_at);
 
   // A job the cleaner has started stays under Today until it's marked complete,
@@ -228,6 +230,9 @@ function JobCard({
         arrivedAt={booking.arrived_at}
         completedAt={booking.completed_at}
         isFuture={isFuture}
+        lockedOutAt={booking.locked_out_at ?? null}
+        lockoutResolvedAt={booking.lockout_resolved_at ?? null}
+        lockoutEnabled={"locked_out_at" in booking}
       />
     </div>
   );

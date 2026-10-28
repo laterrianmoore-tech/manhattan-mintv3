@@ -10,6 +10,7 @@ import { referralCodeFor, referralLink, publicSiteUrl, REFERRAL_FRIEND_DISCOUNT,
 import { accountUrl } from "@/lib/manage-token";
 import { fmtTax, isTaxableBooking, quoteTax, recordTaxTransaction, taxMetadata } from "@/lib/stripe-tax";
 import { createBookingInvoice, hasCardOnFile, invoiceSmsBody, isInvoicePayCustomer, type BookingInvoiceResult, type InvoiceCustomer } from "@/lib/stripe-invoice";
+import { isOpenLockout, lockoutAlertFor, lockoutColumnsPresent, lockoutWarningSms, ownerPhones } from "@/lib/lockout";
 
 const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 const ORDINALS = ["1st", "2nd", "3rd", "4th"];
@@ -181,8 +182,31 @@ export async function POST(req: Request) {
 
   // ── Dry run: preview the billing decision, write nothing ───────────
   if (dryRun) {
+    if (event === "locked_out") {
+      // Lockout preview: the two texts "Can't get in" would send.
+      const alert = lockoutAlertFor({
+        bookingId,
+        customerName: `${customer.first_name} ${customer.last_name || ""}`.trim(),
+        address: [String(customer.address ?? "").trim(), customer.apt_no ? `Apt ${String(customer.apt_no).trim()}` : ""].filter(Boolean).join(" "),
+        cleanerName: cleaner?.first_name ?? "Your cleaner",
+        lockedOutAt: now,
+      });
+      return NextResponse.json({
+        ok: true,
+        dryRun: true,
+        event,
+        bookingId,
+        customer: `${customer.first_name} ${customer.last_name || ""}`.trim(),
+        serviceDate: booking.service_date,
+        migrated: lockoutColumnsPresent(booking),
+        alreadyLockedOut: lockoutColumnsPresent(booking) && isOpenLockout(booking),
+        customerSms: lockoutWarningSms({ firstName: customer.first_name, cleanerName: cleaner?.first_name ?? "Your cleaner" }),
+        ownerSms: alert.sms,
+        resolveUrl: alert.url,
+      });
+    }
     if (event !== "completed") {
-      return NextResponse.json({ ok: false, error: "dryRun previews the completed event only" }, { status: 400 });
+      return NextResponse.json({ ok: false, error: "dryRun previews the completed and locked_out events only" }, { status: 400 });
     }
     const stripeCustomerId = booking.stripe_customer_id || customer.stripe_customer_id || null;
     const price: number = booking.pricing_total ?? 0;
@@ -251,6 +275,12 @@ export async function POST(req: Request) {
   if (event === "completed" && isFuture) {
     return refuse(`This job is on ${booking.service_date} — it can't be completed yet.`);
   }
+  if (event === "locked_out" && (!booking.arrived_at || isFuture)) {
+    return refuse(`Tap "Arrived" first — "Can't get in" is for a cleaner standing at the door.`);
+  }
+  if (event === "locked_out" && (booking.completed_at || booking.status === "completed" || booking.status === "lockout" || booking.status === "cancelled")) {
+    return refuse(`This job is already ${booking.status === "lockout" ? "resolved as a lockout" : booking.status}.`);
+  }
 
   if (event === "on_the_way") {
     await supabaseAdmin.from("bookings").update({ on_the_way_at: now }).eq("id", bookingId);
@@ -277,6 +307,54 @@ export async function POST(req: Request) {
       eventType: "arrived",
     });
     await supabaseAdmin.from("bookings").update({ arrival_sms_sent_at: now }).eq("id", bookingId);
+  } else if (event === "locked_out") {
+    // ── Can't get in (2026-10-28) ──────────────────────────────────────
+    // Stamp the timer, give the customer the 10-minute final warning, and
+    // hand the owner a signed link to resolve it. A second tap while the
+    // timer is running does nothing (no second warning text).
+    if (!lockoutColumnsPresent(booking)) {
+      return NextResponse.json(
+        { ok: false, error: "Lockouts aren't set up in the database yet — run lib/supabase/migrations/2026-10-28-lockout.sql." },
+        { status: 503 },
+      );
+    }
+    if (isOpenLockout(booking)) {
+      return NextResponse.json({ ok: true, alreadyLockedOut: true, lockedOutAt: booking.locked_out_at });
+    }
+    const { error: lockErr } = await supabaseAdmin
+      .from("bookings")
+      .update({ locked_out_at: now, lockout_resolved_at: null, lockout_resolution: null })
+      .eq("id", bookingId);
+    if (lockErr) {
+      return NextResponse.json({ ok: false, error: lockErr.message }, { status: 500 });
+    }
+    const cleanerName = cleaner?.first_name ?? "Your cleaner";
+    const warning = await sendSms({
+      to: customer.phone,
+      body: lockoutWarningSms({ firstName: customer.first_name, cleanerName }),
+      cleanerId: cleaner?.id ?? null,
+      bookingId,
+      recipientType: "customer",
+      eventType: "other",
+    });
+    const alert = lockoutAlertFor({
+      bookingId,
+      customerName: `${customer.first_name} ${customer.last_name || ""}`.trim(),
+      address: [String(customer.address ?? "").trim(), customer.apt_no ? `Apt ${String(customer.apt_no).trim()}` : ""].filter(Boolean).join(" "),
+      cleanerName,
+      lockedOutAt: now,
+    });
+    for (const phone of ownerPhones()) {
+      await sendSms({
+        to: phone,
+        body: warning.ok ? alert.sms : `${alert.sms} ⚠️ The customer's warning text FAILED (${warning.errorMessage ?? "SMS error"}) — call them.`,
+        cleanerId: cleaner?.id ?? null,
+        bookingId,
+        recipientType: "customer",
+        eventType: "other",
+      });
+    }
+    return NextResponse.json({ ok: true, lockedOutAt: now, customerTexted: warning.ok });
   } else if (event === "completed") {
     // Idempotency: a second "Job Complete" tap must not re-charge the card
     // or re-send the follow-up texts.

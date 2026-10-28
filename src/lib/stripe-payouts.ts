@@ -86,7 +86,8 @@ export async function reconcileCleanerPayouts(): Promise<ReconcileResult> {
     const { data: rows, error } = await supabaseAdmin
       .from("bookings")
       .select("id, service_date, completed_at, assigned_cleaner_id, second_cleaner_id, cleaner_pay, cleaner_paid_at, second_cleaner_pay, second_cleaner_paid_at")
-      .eq("status", "completed")
+      // A lockout (2026-10-28) is paid like a completed job: the cleaner gave up the slot.
+      .in("status", ["completed", "lockout"])
       .gte("service_date", "2026-08-01")
       .order("service_date", { ascending: true });
     if (error) return { ...result, ok: false, error: error.message };
