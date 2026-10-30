@@ -289,11 +289,18 @@ export async function createBookingInvoice(input: BookingInvoiceInput): Promise<
           withTax = false;
         }
       }
+      // Stripe refuses `send_invoice` for a customer with no email ("The
+      // customer needs a valid email when collection_method=send_invoice"),
+      // which is exactly the placeholder-email case (Rebecca, Melissa; failed
+      // 2026-10-30). Those invoices go out by text, so bill them
+      // `charge_automatically` with auto_advance off: Stripe never emails or
+      // retries, the hosted link still takes a card, and the invoice stays
+      // open until paid. Real-email customers keep the emailed 7-day invoice.
       const base: Stripe.InvoiceCreateParams = {
         customer: sid,
-        collection_method: "send_invoice",
-        days_until_due: INVOICE_DAYS_UNTIL_DUE,
-        auto_advance: true,
+        ...(realEmail
+          ? { collection_method: "send_invoice" as const, days_until_due: INVOICE_DAYS_UNTIL_DUE, auto_advance: true }
+          : { collection_method: "charge_automatically" as const, auto_advance: false }),
         description,
         pending_invoice_items_behavior: "exclude",
         metadata: { supabase_booking_id: input.bookingId, kind: "job_complete_auto_invoice", service_date: input.serviceDate },
@@ -327,7 +334,7 @@ export async function createBookingInvoice(input: BookingInvoiceInput): Promise<
     }
 
     if (inv.status === "draft") {
-      inv = await stripe.invoices.finalizeInvoice(inv.id, { auto_advance: true });
+      inv = await stripe.invoices.finalizeInvoice(inv.id, { auto_advance: realEmail });
     }
 
     // ── Card-on-file link (owner rule: every invoice also collects a card) ──
