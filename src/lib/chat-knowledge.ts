@@ -17,6 +17,14 @@ export const PRICING = {
   hourlyRate: 65, // per cleaner per hour
 };
 
+// Recurring housekeeping (2026-10-30): 2-5 short visits a week, quoted by
+// the owner per home from /housekeeping, never booked on /quote.
+export const HOUSEKEEPING = {
+  fromPerVisit: 80,
+  firstVisitFrom: 175,
+  path: '/housekeeping',
+};
+
 export const SERVICE_AREA = {
   covered: 'all of Manhattan, plus select Brooklyn and Queens neighborhoods on request',
   notCovered: ['the Bronx', 'Staten Island'],

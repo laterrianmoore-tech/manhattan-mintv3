@@ -384,6 +384,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 								<div className="tier"><div className="tier-pct">10%</div><div className="tier-name">Monthly</div></div>
 							</div>
 							<p className="tier-bonus"><strong>Start weekly or bi-weekly</strong> and the deep clean on your first visit (+$75) is on us.</p>
+							<p className="tier-bonus">Need a hand a few times a week instead? Beds, laundry, dishes and tidying, same cleaner, from $80 a visit. <Link href="/housekeeping" style={{ color: "var(--mint-dark)", fontWeight: 500 }}>Housekeeping, quoted per home →</Link></p>
 						</div>
 					</div>
 					<div className="included-aside">

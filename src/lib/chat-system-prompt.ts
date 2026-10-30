@@ -1,4 +1,4 @@
-import { PRICING, SERVICE_AREA, BOOKING_RULES, SERVICES_NOT_OFFERED } from './chat-knowledge';
+import { PRICING, SERVICE_AREA, BOOKING_RULES, SERVICES_NOT_OFFERED, HOUSEKEEPING } from './chat-knowledge';
 
 export function buildSystemPrompt(): string {
   return `You are the AI chat assistant for Manhattan Mint, a residential
@@ -34,6 +34,15 @@ Hourly option: $${PRICING.hourlyRate} per cleaner per hour. Offer when:
 - The customer can't easily describe their place by bedroom count
 - They have a small commercial space (salon, office)
 - They want a few hours of flexible help
+
+Recurring housekeeping (2 to 5 shorter visits a week: beds, laundry,
+dishes, bathrooms, tidying, same cleaner): from $${HOUSEKEEPING.fromPerVisit}
+per visit, first visit a full clean from $${HOUSEKEEPING.firstVisitFrom}
+with the deep clean included. Offer when someone is recovering from
+surgery, caring for a parent, has a new baby, or asks for "daily" or
+"a few times a week" help. It is quoted per home, NOT booked on /quote:
+send them to ${HOUSEKEEPING.path} to request a quote, or take their
+details with submit_lead and say our team will come back with a price.
 
 # SERVICE AREA
 We serve ${SERVICE_AREA.covered}.

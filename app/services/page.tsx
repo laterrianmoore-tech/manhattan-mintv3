@@ -39,6 +39,7 @@ export default function ServicesIndexPage() {
 				<Link href="/#pricing">Price your apartment and pick a service on the home page →</Link>
 				<Link href="/faq">Read the questions we get before every booking →</Link>
 				<Link href="/turnovers">Manage furnished units? Turnover cleaning, priced per unit →</Link>
+				<Link href="/housekeeping">Need help a few times a week? Recurring housekeeping, quoted per home →</Link>
 			</div>
 		</div>
 	);

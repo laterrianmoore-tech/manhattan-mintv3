@@ -108,6 +108,9 @@ const FLAT_PRICE_COUPONS: Record<string, number> = {
   // Make-good code for one customer after the 2026-09-14 clean. Server-side
   // it's locked to their email and to a single use.
   LIAMFREE: 0,
+  // Make-good after the 2026-10-28 lockout: Mounika's next clean is free
+  // (owner 2026-10-28). Locked to her email, one use, server-side.
+  MOUNIKAFREE: 0,
 };
 
 // Quoted-total codes: a price the owner agreed with one customer by phone or
@@ -576,6 +579,10 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
                 {form.frequency === "One-Time"
                   ? "A single visit at the flat rate. Prefer the same cleaner on a schedule? Bi-Weekly saves 15% on every visit after the first."
                   : `Visit one is at the flat rate. From visit two, ${form.frequency === "Weekly" ? "20%" : form.frequency === "Bi-Weekly" ? "15%" : "10%"} off every clean, same cleaner, no contract. Prefer a single visit? Choose One-Time.`}
+              </p>
+              <p style={{ marginTop: ".5rem", fontSize: ".78rem", color: "#666", lineHeight: 1.5 }}>
+                Need shorter visits two to five times a week (beds, laundry, dishes, tidying)? That is quoted per home rather than booked here:{" "}
+                <Link href="/housekeeping" style={{ color: "var(--mint-dark)", fontWeight: 500 }}>request a housekeeping quote</Link>.
               </p>
 
 

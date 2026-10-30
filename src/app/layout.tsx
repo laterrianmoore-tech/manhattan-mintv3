@@ -135,6 +135,9 @@ function Footer() {
                 <Link href="/services/move-in-move-out-cleaning">Move In / Move Out</Link>
               </li>
               <li>
+                <Link href="/housekeeping">Housekeeping</Link>
+              </li>
+              <li>
                 <Link href="/#pricing">Pricing</Link>
               </li>
               <li>
