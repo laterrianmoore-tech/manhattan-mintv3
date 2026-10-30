@@ -40,11 +40,11 @@ export default async function PartnersAdminPage() {
           <a href="/admin/accounting/" className="hover:underline" style={{ color: "#1d9e75" }}>Accounting</a>
         </div>
       </div>
-      <p className="text-xs text-gray-400 mb-6">Brokers who send clients. Each fee is once per client: $40 on their first completed, paid clean and $75 on their first recurring visit. Paid Fridays by Zelle or Venmo; the Thursday payroll text lists them.</p>
+      <p className="text-xs text-gray-400 mb-6">Brokers who send clients. Each fee is once per client: $40 on their first completed, paid clean and $75 on their first weekly or bi-weekly visit (monthly doesn&apos;t count). Paid Fridays by Zelle, Venmo or bank; the Thursday payroll text lists them.</p>
 
       {(source === "seed" || error) && (
         <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6">
-          Partner tracking isn&apos;t in the database yet — run <code className="text-xs">lib/supabase/migrations/2026-10-30-broker-partners.sql</code> in the Supabase SQL editor. Until then the links below work, but clicks and bookings aren&apos;t being recorded.
+          Partner tracking isn&apos;t readable in the database yet — run <code className="text-xs">lib/supabase/migrations/2026-10-30-broker-partners.sql</code> in the Supabase SQL editor, including the grant lines at the end. Until then the links below work, but clicks and bookings aren&apos;t being recorded.
         </p>
       )}
 

@@ -77,9 +77,9 @@ export default function BrokersPage() {
 							<h2>Referral fee on every client you send</h2>
 							<p>
 								${REFERRAL_FEE_PER_JOB} for every new client you send, paid once their first clean is done. Plus a
-								one-time ${REFERRAL_FEE_RECURRING} bonus when that client completes their first visit on a recurring
-								plan. Each fee is paid once per client. Paid every Friday by Zelle or Venmo, with a private page where
-								you can watch clicks, bookings and fees as they happen.
+								one-time ${REFERRAL_FEE_RECURRING} bonus when that client completes their first visit on a weekly or
+								bi-weekly plan. Each fee is paid once per client. Paid every Friday for the prior week by Zelle, Venmo
+								or bank transfer, with a private page where you can watch clicks, bookings and fees as they happen.
 							</p>
 						</div>
 						<div className="bk-card">
@@ -125,7 +125,7 @@ export default function BrokersPage() {
 
 					<p className="bk-fine">
 						Referral fees are paid once per client, on their first completed, paid clean (and once more if they start a
-						recurring plan), where you made the introduction. Your free clean is a standard
+						weekly or bi-weekly plan), where you made the introduction. Your free clean is a standard
 						clean of a Manhattan apartment up to three bedrooms; larger homes and deep cleans are quoted at a partner rate.
 						See our <Link href="/terms" style={{ color: "var(--mint)" }}>terms</Link> for the re-clean guarantee and
 						cancellation policy.

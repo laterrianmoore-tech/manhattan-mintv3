@@ -43,14 +43,17 @@ assert.deepEqual([s.newClients, s.recurringConversions, s.feesEarned, s.feesPaid
 assert.equal(s.jobs.find((j) => j.bookingId === "l")!.fee, 0, "lockout earns nothing");
 assert.equal(s.jobs.find((j) => j.bookingId === "f")!.fee, 0, "$0 clean earns nothing");
 
-// 3b. One-time client who later goes recurring: $40 on the first clean, $75 on the later recurring visit, nothing on the third.
+// 3b. One-time client who later goes weekly: $40 on the first clean, $75 on the later weekly visit, nothing on the third. Monthly never earns the bonus.
 s = b.computeBrokerStats(osur, [
   row({ id: "o1", customer_id: "c8", service_date: "2026-11-01", status: "completed", collected_cents: 20000 }),
-  row({ id: "o2", customer_id: "c8", service_date: "2026-11-15", status: "completed", frequency: "Monthly", collected_cents: 17000 }),
-  row({ id: "o3", customer_id: "c8", service_date: "2026-12-15", status: "completed", frequency: "Monthly", collected_cents: 17000 }),
+  row({ id: "o2", customer_id: "c8", service_date: "2026-11-15", status: "completed", frequency: "Weekly", collected_cents: 17000 }),
+  row({ id: "o3", customer_id: "c8", service_date: "2026-12-15", status: "completed", frequency: "Weekly", collected_cents: 17000 }),
+  row({ id: "m1", customer_id: "c9", service_date: "2026-11-02", status: "completed", frequency: "Monthly", collected_cents: 20000 }),
+  row({ id: "m2", customer_id: "c9", service_date: "2026-12-02", status: "completed", frequency: "Monthly", collected_cents: 20000 }),
 ], 0);
-assert.deepEqual(s.jobs.map((j) => [j.bookingId, j.fee]).sort(), [["o1", 40], ["o2", 75], ["o3", 0]]);
-assert.deepEqual([s.newClients, s.recurringConversions, s.feesEarned], [1, 1, 115]);
+assert.deepEqual(s.jobs.map((j) => [j.bookingId, j.fee]).sort(), [["m1", 40], ["m2", 0], ["o1", 40], ["o2", 75], ["o3", 0]]);
+assert.deepEqual([s.newClients, s.recurringConversions, s.feesEarned], [2, 1, 155]);
+assert.ok(b.earnsRecurringBonus("Weekly") && b.earnsRecurringBonus("Bi-Weekly") && !b.earnsRecurringBonus("Monthly") && !b.earnsRecurringBonus("One-Time"));
 
 // 4. Code shape.
 assert.ok(b.looksLikeBrokerCode("osur") && b.looksLikeBrokerCode("OSUR"));

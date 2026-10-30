@@ -27,7 +27,7 @@ create table if not exists public.broker_partners (
   contact_name   text,
   contact_email  text,
   payout_handle  text,                                -- Zelle / Venmo handle the fee goes to
-  payout_method  text check (payout_method in ('zelle', 'venmo')),
+  payout_method  text check (payout_method in ('zelle', 'venmo', 'bank')),
   fee_per_job    integer not null default 40,         -- whole dollars, once per client, on their first completed paid clean
   fee_recurring  integer not null default 75,         -- once per client, on their first completed recurring-plan visit
   active         boolean not null default true,
@@ -63,3 +63,12 @@ create index if not exists customers_broker_code_idx on public.customers(broker_
 insert into public.broker_partners (code, name, contact_name, contact_email)
 values ('OSUR', 'The Osur Team', 'Brandon Kalusa', 'brandon@livingny.com')
 on conflict (code) do nothing;
+
+-- Tables created from the SQL editor in this project do not get the usual
+-- grants (dispatch_log had the same problem), so the site's service-role key
+-- is refused with "permission denied for table". Grant it explicitly, and
+-- turn on RLS so nothing else can read them (service_role bypasses RLS).
+grant select, insert, update, delete on table public.broker_partners to service_role;
+grant select, insert, update, delete on table public.broker_link_clicks to service_role;
+alter table public.broker_partners enable row level security;
+alter table public.broker_link_clicks enable row level security;

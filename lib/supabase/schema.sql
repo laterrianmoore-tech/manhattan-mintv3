@@ -199,7 +199,7 @@ create table if not exists broker_partners (
   contact_name   text,
   contact_email  text,
   payout_handle  text,
-  payout_method  text check (payout_method in ('zelle', 'venmo')),
+  payout_method  text check (payout_method in ('zelle', 'venmo', 'bank')),
   fee_per_job    integer not null default 40,
   fee_recurring  integer not null default 75,
   active         boolean not null default true,
@@ -221,3 +221,7 @@ alter table bookings
   add column if not exists broker_fee_ref      text;
 create index if not exists bookings_broker_code_idx on bookings(broker_code) where broker_code is not null;
 create index if not exists customers_broker_code_idx on customers(broker_code) where broker_code is not null;
+grant select, insert, update, delete on table public.broker_partners to service_role;
+grant select, insert, update, delete on table public.broker_link_clicks to service_role;
+alter table broker_partners enable row level security;
+alter table broker_link_clicks enable row level security;

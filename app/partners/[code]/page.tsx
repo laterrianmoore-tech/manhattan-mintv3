@@ -93,7 +93,7 @@ export default function PartnerPage() {
           <>
             <h1 style={{ fontFamily: "'DM Serif Display', serif", fontWeight: 400, fontSize: "clamp(1.8rem,4vw,2.5rem)", margin: "0 0 .4rem", lineHeight: 1.1 }}>{stats.name}</h1>
             <p style={{ ...muted, marginBottom: "1.25rem" }}>
-              Your code is <strong style={{ color: MINT_DARK, letterSpacing: ".04em" }}>{stats.code}</strong>. ${stats.feePerJob} for each new client you send, paid once their first clean is done, plus a one-time ${stats.feeRecurring} bonus when that client completes their first visit on a recurring plan. Each fee is paid once per client. Paid every Friday by Zelle or Venmo.
+              Your code is <strong style={{ color: MINT_DARK, letterSpacing: ".04em" }}>{stats.code}</strong>. ${stats.feePerJob} for each new client you send, paid once their first clean is done, plus a one-time ${stats.feeRecurring} bonus when that client completes their first visit on a weekly or bi-weekly plan. Each fee is paid once per client. Paid every Friday for the prior week.
             </p>
 
             {!stats.dbReady && (

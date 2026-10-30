@@ -5,10 +5,11 @@ import { supabaseAdmin } from "./supabase";
 // client nothing off; it records who made the introduction. Both fees are
 // ONCE PER CLIENT (owner 2026-10-30): feePerJob when a client the broker
 // introduced completes their first paid clean, and feeRecurring the first
-// time that client completes a visit on a recurring plan (the same visit, if
-// their first clean is on a plan: $40 + $75 = $115). Later visits earn
-// nothing. Fees are paid Fridays by Zelle/Venmo: the Thursday payroll text
-// lists them and /admin/partners stamps them paid.
+// time that client completes a visit on a weekly or bi-weekly plan (the same
+// visit, if their first clean is on a plan: $40 + $75 = $115). Monthly does
+// not earn the bonus (owner's email to Brandon: "weekly or bi-weekly").
+// Later visits earn nothing. Fees are paid Fridays by Zelle, Venmo or bank:
+// the Thursday payroll text lists them and /admin/partners stamps them paid.
 //
 // Attribution is two-layered. bookings.broker_code is the booking that came
 // through the link. customers.broker_code marks a NEW client as the broker's,
@@ -25,7 +26,7 @@ export type BrokerPartner = {
   contactName: string | null;
   contactEmail: string | null;
   payoutHandle: string | null;
-  payoutMethod: "zelle" | "venmo" | null;
+  payoutMethod: "zelle" | "venmo" | "bank" | null;
   feePerJob: number;
   feeRecurring: number;
   active: boolean;
@@ -71,7 +72,7 @@ function fromRow(r: PartnerRow): BrokerPartner {
     contactName: r.contact_name,
     contactEmail: r.contact_email,
     payoutHandle: r.payout_handle,
-    payoutMethod: r.payout_method === "zelle" || r.payout_method === "venmo" ? r.payout_method : null,
+    payoutMethod: r.payout_method === "zelle" || r.payout_method === "venmo" || r.payout_method === "bank" ? r.payout_method : null,
     feePerJob: Number(r.fee_per_job ?? 40),
     feeRecurring: Number(r.fee_recurring ?? 75),
     active: r.active !== false,
@@ -110,6 +111,12 @@ export async function logBrokerClick(code: string, meta: { referrer?: string | n
 export function isRecurringFrequency(frequency: string | null | undefined): boolean {
   const f = String(frequency ?? "").toLowerCase();
   return Boolean(f) && !/one/.test(f);
+}
+
+/** Plans that earn the recurring bonus: weekly or bi-weekly, per the owner's offer to Brandon. Monthly does not. */
+export function earnsRecurringBonus(frequency: string | null | undefined): boolean {
+  const f = String(frequency ?? "").toLowerCase().replace(/[^a-z]/g, "");
+  return f === "weekly" || f === "biweekly";
 }
 
 // ── Stats ──────────────────────────────────────────────────────────────────
@@ -200,7 +207,7 @@ export function computeBrokerStats(partner: BrokerPartner, rows: BrokerJobRow[],
         fee += partner.feePerJob;
         firstClean = true;
       }
-      if (recurring && !bonusGiven.has(r.customer_id)) {
+      if (earnsRecurringBonus(r.frequency) && !bonusGiven.has(r.customer_id)) {
         bonusGiven.add(r.customer_id);
         fee += partner.feeRecurring;
         recurringBonus = true;
@@ -258,16 +265,18 @@ export async function brokerJobRows(code: string): Promise<{ rows: BrokerJobRow[
   return { rows: [...byId.values()], error };
 }
 
-export async function brokerClickCount(code: string): Promise<number> {
-  const { count, error } = await supabaseAdmin.from("broker_link_clicks").select("id", { count: "exact", head: true }).eq("code", normalizeBrokerCode(code));
-  if (error) return 0;
-  return count ?? 0;
+export async function brokerClickCount(code: string): Promise<{ count: number; error: string | null }> {
+  const { count, error } = await supabaseAdmin.from("broker_link_clicks").select("id" as string, { count: "exact", head: true }).eq("code", normalizeBrokerCode(code));
+  if (error) return { count: 0, error: error.message || "broker_link_clicks not readable" };
+  return { count: count ?? 0, error: null };
 }
 
+/** Everything the tracking page needs. dbReady is false until all three sources (partners, clicks, bookings) read cleanly. */
 export async function brokerStatsFor(partner: BrokerPartner): Promise<BrokerStats> {
-  const [{ rows, error }, clicks] = await Promise.all([brokerJobRows(partner.code), brokerClickCount(partner.code)]);
-  if (error) console.error("[brokers] stats incomplete (run migrations/2026-10-30-broker-partners.sql):", error);
-  return computeBrokerStats(partner, rows, clicks, !error);
+  const [{ rows, error }, clicks, partners] = await Promise.all([brokerJobRows(partner.code), brokerClickCount(partner.code), listBrokerPartners()]);
+  const problem = error ?? clicks.error ?? partners.error;
+  if (problem) console.error("[brokers] stats incomplete (run migrations/2026-10-30-broker-partners.sql, incl. the grants):", problem);
+  return computeBrokerStats(partner, rows, clicks.count, !problem);
 }
 
 // ── Attribution writes (all tolerant of the migration not having run) ──────
@@ -308,7 +317,7 @@ export type BrokerPayout = {
   code: string;
   name: string;
   payoutHandle: string | null;
-  payoutMethod: "zelle" | "venmo" | null;
+  payoutMethod: "zelle" | "venmo" | "bank" | null;
   total: number;
   jobs: Array<{ bookingId: string; date: string; client: string; amount: number; firstClean: boolean; recurringBonus: boolean }>;
 };
