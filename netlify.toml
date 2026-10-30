@@ -5,6 +5,9 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  # next build ran out of the default ~2GB heap on 2026-10-30 (and nearly on
+  # 2026-10-22). Netlify build containers have more; let Node use it.
+  NODE_OPTIONS = "--max-old-space-size=4096"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"

@@ -80,9 +80,9 @@ function fromRow(r: PartnerRow): BrokerPartner {
 
 /** All partners, database first, seed list when the table isn't there yet. */
 export async function listBrokerPartners(): Promise<{ partners: BrokerPartner[]; source: "db" | "seed"; error: string | null }> {
-  const { data, error } = await supabaseAdmin.from("broker_partners").select("*").order("created_at", { ascending: true });
+  const { data, error } = await supabaseAdmin.from("broker_partners").select("*" as string).order("created_at", { ascending: true });
   if (error) return { partners: SEED_PARTNERS, source: "seed", error: error.message };
-  const partners = ((data ?? []) as PartnerRow[]).map(fromRow);
+  const partners = ((data ?? []) as unknown as PartnerRow[]).map(fromRow);
   for (const s of SEED_PARTNERS) if (!partners.some((p) => p.code === s.code)) partners.push(s);
   return { partners, source: "db", error: null };
 }
@@ -240,14 +240,17 @@ export function computeBrokerStats(partner: BrokerPartner, rows: BrokerJobRow[],
   };
 }
 
-const JOB_COLUMNS = "id, customer_id, service_date, status, frequency, bedrooms, bathrooms, service_summary, collected_cents, pricing_total, completed_at, broker_code, broker_fee_paid_at, broker_fee_ref, customers(first_name, last_name, broker_code)";
+// Typed as plain strings on purpose: supabase-js parses select literals at the
+// type level, and the Netlify build is close to its memory limit already.
+const JOB_COLUMNS: string = "id, customer_id, service_date, status, frequency, bedrooms, bathrooms, service_summary, collected_cents, pricing_total, completed_at, broker_code, broker_fee_paid_at, broker_fee_ref, customers(first_name, last_name, broker_code)";
+const JOB_COLUMNS_INNER: string = JOB_COLUMNS.replace("customers(", "customers!inner(");
 
 /** Every booking attributed to a partner: through the link, or by a client the partner introduced. */
 export async function brokerJobRows(code: string): Promise<{ rows: BrokerJobRow[]; error: string | null }> {
   const c = normalizeBrokerCode(code);
   const [viaBooking, viaCustomer] = await Promise.all([
     supabaseAdmin.from("bookings").select(JOB_COLUMNS).eq("broker_code", c),
-    supabaseAdmin.from("bookings").select(JOB_COLUMNS.replace("customers(", "customers!inner(")).eq("customers.broker_code", c),
+    supabaseAdmin.from("bookings").select(JOB_COLUMNS_INNER).eq("customers.broker_code", c),
   ]);
   const error = viaBooking.error?.message ?? viaCustomer.error?.message ?? null;
   const byId = new Map<string, BrokerJobRow>();
