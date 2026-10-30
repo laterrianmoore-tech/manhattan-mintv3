@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "./supabase";
 import { reconcileCleanerPayouts } from "./stripe-payouts";
+import { brokerFeesOwed, type BrokerPayout } from "./brokers";
 
 // Thursday payroll text to the owner (2026-10-22): who to pay, how much, for
 // which jobs. Same definition of "owed" as /admin/accounting: completed jobs
@@ -17,6 +18,9 @@ export type PayrollReport = {
   /** Completed jobs with no pay recorded: the owner has to set pay before these can be paid. */
   payMissing: Array<{ date: string; customer: string; cleaner: string }>;
   reconcileError: string | null;
+  /** Broker referral fees owed (2026-10-30): paid Fridays by Zelle/Venmo, stamped on /admin/partners. */
+  brokerFees: BrokerPayout[];
+  brokerError: string | null;
 };
 
 type Row = {
@@ -48,6 +52,7 @@ function mmdd(ymd: string): string {
 
 export async function buildPayrollReport(): Promise<PayrollReport> {
   const reconcile = await reconcileCleanerPayouts().catch((e: Error) => ({ ok: false, error: e.message }) as { ok: boolean; error?: string });
+  const brokers = await brokerFeesOwed().catch((e: Error) => ({ payouts: [] as BrokerPayout[], error: e.message }));
   const [{ data: cleaners }, { data: rows, error }] = await Promise.all([
     supabaseAdmin.from("cleaners").select("id, first_name, stripe_account_id"),
     supabaseAdmin
@@ -86,12 +91,15 @@ export async function buildPayrollReport(): Promise<PayrollReport> {
     cleaners: list,
     payMissing,
     reconcileError: reconcile.ok ? null : (reconcile as { error?: string }).error ?? "reconcile failed",
+    brokerFees: brokers.payouts,
+    brokerError: brokers.error,
   };
 }
 
 export function formatPayrollSms(r: PayrollReport): string {
   const head = `Payroll ${mmdd(r.asOf)}`;
-  if (r.cleaners.length === 0 && r.payMissing.length === 0) return `${head}: nothing owed. Everyone is paid up.`;
+  const brokerFees = r.brokerFees ?? [];
+  if (r.cleaners.length === 0 && r.payMissing.length === 0 && brokerFees.length === 0) return `${head}: nothing owed. Everyone is paid up.`;
   const lines: string[] = [];
   for (const c of r.cleaners) {
     const jobs = c.jobs.map((j) => `${j.customer} ${mmdd(j.date)} $${j.amount}`).join(", ");
@@ -103,5 +111,12 @@ export function formatPayrollSms(r: PayrollReport): string {
   }
   if (r.reconcileError) out.push(`(Stripe transfer check failed, list may include something already sent)`);
   out.push(`Send transfers in Stripe; the ledger marks them paid on its own. manhattanmintnyc.com/admin/accounting`);
+  // Broker referral fees: Zelle/Venmo by hand on Friday, then Mark paid on /admin/partners.
+  for (const b of brokerFees) {
+    const to = b.payoutHandle ? `${b.payoutMethod ? b.payoutMethod[0].toUpperCase() + b.payoutMethod.slice(1) : "Pay"} ${b.payoutHandle}` : "Zelle/Venmo, handle not on file";
+    const jobs = b.jobs.map((j) => `${j.client} ${mmdd(j.date)} $${j.amount}${j.firstClean && j.recurringBonus ? " (first clean + recurring)" : j.recurringBonus ? " (recurring)" : " (first clean)"}`).join(", ");
+    out.push(`Broker fee: ${b.name} $${b.total} (${to}): ${jobs}. Then Mark paid at manhattanmintnyc.com/admin/partners`);
+  }
+  if (r.brokerError) out.push(`(Broker fee check failed: run the 2026-10-30 broker migration)`);
   return out.join("\n");
 }

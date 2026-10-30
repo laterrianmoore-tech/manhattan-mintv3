@@ -9,6 +9,7 @@ import { isReferralCode, referralCodeFor, referralLink, publicSiteUrl, REFERRAL_
 import { accountUrl, cardUrl } from "@/lib/manage-token";
 import { isTaxableBooking, quoteTax, taxMetadata } from "@/lib/stripe-tax";
 import { SEASONAL_PROMOS, promoByCode, promoStatus } from "@/lib/promo";
+import { attributeBooking, attributeCustomer, getBrokerPartner, looksLikeBrokerCode } from "@/lib/brokers";
 
 export const maxDuration = 30;
 
@@ -43,6 +44,8 @@ type SubmittedBooking = {
   stripeCustomerId?: string;
   cardChargeTiming?: string;
   preferredTimeRanges?: string[];
+  /** Broker referral code the quote page picked up from /quote/?code=OSUR (attribution only, no discount). */
+  brokerCode?: string;
 };
 
 function getGoogleCredentials() {
@@ -124,7 +127,20 @@ export async function POST(req: Request) {
     // so the discount can't be reused on repeat cleans. MINTFREE makes the
     // whole first clean $0, so it especially must not be reusable.
     const FIRST_CLEAN_COUPONS = ["MINT25", "WELCOME15", "MINTFREE", "FB25", "LI25", ...SEASONAL_PROMOS.map((p) => p.code), SECOND_PROMO_CODE];
-    const couponNormalized = (body.couponCode || "").trim().toUpperCase();
+    let couponNormalized = (body.couponCode || "").trim().toUpperCase();
+
+    // ── Broker referral code (2026-10-30) ───────────────────────────────────
+    // /quote/?code=OSUR sends the code as brokerCode; someone who types it into
+    // the coupon box instead is treated the same way. It is attribution only:
+    // no discount, and it is never stored as the coupon. See src/lib/brokers.ts.
+    let brokerPartner = await getBrokerPartner(body.brokerCode);
+    if (!brokerPartner && looksLikeBrokerCode(couponNormalized) && !FIRST_CLEAN_COUPONS.includes(couponNormalized)) {
+      brokerPartner = await getBrokerPartner(couponNormalized);
+      if (brokerPartner) {
+        couponNormalized = "";
+        body.couponCode = "";
+      }
+    }
 
     // ── Make-good coupon guard ───────────────────────────────────────────────
     // Personal codes handed to one customer after a bad clean. Each is locked
@@ -500,6 +516,13 @@ export async function POST(req: Request) {
         } else {
           supabaseBookingId = booking.id;
           console.log("Supabase booking saved:", supabaseBookingId);
+          // Broker attribution, written after the insert so a database that
+          // hasn't run the 2026-10-30 migration still saves the booking.
+          if (brokerPartner) {
+            await attributeBooking(booking.id, brokerPartner.code);
+            const outcome = await attributeCustomer(customer.id, brokerPartner.code, booking.id);
+            console.log(`[brokers] ${brokerPartner.code} booking ${booking.id}: customer ${outcome}`);
+          }
         }
       }
     } catch (supabaseError) {
@@ -529,6 +552,7 @@ export async function POST(req: Request) {
       `Access Notes: ${body.accessNotes || "-"}`,
       `Cleaning Notes: ${body.cleaningNotes || "-"}`,
       `Coupon: ${body.couponCode || "None"}`,
+      ...(brokerPartner ? [`Referred by: ${brokerPartner.name} (broker code ${brokerPartner.code}, fee on completion)`] : []),
       `Payment Method: card`,
       `Card On File: ${hasCardOnFile ? "Yes" : "NO — setup link sent"}`,
       `Card Hold: ${holdNote}${holdId ? ` (${holdId})` : ""}`,
@@ -595,7 +619,7 @@ export async function POST(req: Request) {
             ownerPhones.map((phone) =>
               sendSms({
                 to: phone,
-                body: `NEW BOOKING${hasCardOnFile ? (holdId ? " (hold ✓)" : " (⚠️ NO HOLD)") : " (NO CARD!)"}: ${fullName}, ${body.serviceDate}, ${serviceLabel}, $${body.pricing.total}${tax && tax.taxCents > 0 ? ` + $${taxDollars.toFixed(2)} tax` : ""}, ${fullAddress}. Ph: ${body.phone}`,
+                body: `NEW BOOKING${hasCardOnFile ? (holdId ? " (hold ✓)" : " (⚠️ NO HOLD)") : " (NO CARD!)"}: ${fullName}, ${body.serviceDate}, ${serviceLabel}, $${body.pricing.total}${tax && tax.taxCents > 0 ? ` + $${taxDollars.toFixed(2)} tax` : ""}, ${fullAddress}. Ph: ${body.phone}${brokerPartner ? ` Referred by ${brokerPartner.name} (${brokerPartner.code}).` : ""}`,
                 bookingId: supabaseBookingId ?? null,
                 cleanerId: null,
                 recipientType: "customer",
