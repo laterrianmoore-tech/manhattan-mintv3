@@ -185,3 +185,39 @@ alter table bookings
   add column if not exists collected_at              timestamptz,
   add column if not exists collected_ref             text;
 create index if not exists bookings_cleaner_unpaid_idx on bookings(assigned_cleaner_id) where cleaner_pay is not null and cleaner_paid_at is null;
+
+-- ============================================================
+-- BROKER REFERRAL PARTNERS (added 2026-10-30)
+-- See migrations/2026-10-30-broker-partners.sql for an existing database.
+-- Codes like OSUR attribute a client to a broker (no discount); fees are
+-- computed in src/lib/brokers.ts and paid Fridays.
+-- ============================================================
+create table if not exists broker_partners (
+  id             uuid primary key default uuid_generate_v4(),
+  code           text not null unique,
+  name           text not null,
+  contact_name   text,
+  contact_email  text,
+  payout_handle  text,
+  payout_method  text check (payout_method in ('zelle', 'venmo')),
+  fee_per_job    integer not null default 40,
+  fee_recurring  integer not null default 75,
+  active         boolean not null default true,
+  notes          text,
+  created_at     timestamptz not null default now()
+);
+create table if not exists broker_link_clicks (
+  id          uuid primary key default uuid_generate_v4(),
+  code        text not null,
+  referrer    text,
+  user_agent  text,
+  created_at  timestamptz not null default now()
+);
+create index if not exists broker_link_clicks_code_idx on broker_link_clicks(code, created_at);
+alter table customers add column if not exists broker_code text;
+alter table bookings
+  add column if not exists broker_code         text,
+  add column if not exists broker_fee_paid_at  timestamptz,
+  add column if not exists broker_fee_ref      text;
+create index if not exists bookings_broker_code_idx on bookings(broker_code) where broker_code is not null;
+create index if not exists customers_broker_code_idx on customers(broker_code) where broker_code is not null;

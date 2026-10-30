@@ -7,6 +7,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { CardElement, Elements, useElements, useStripe } from "@stripe/react-stripe-js";
 import { isReferralCode, isSecondCleanCode, REFERRAL_FRIEND_DISCOUNT, REFERRAL_REFERRER_CREDIT, SECOND_PROMO_CODE } from "@/lib/referral";
 import { isSeasonalPromoCode, promoByCode } from "@/lib/promo";
+import { looksLikeBrokerCode } from "@/lib/broker-code";
 
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
@@ -242,6 +243,10 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
   const [sourceSelection, setSourceSelection] = useState("");
   const [hourlySelection, setHourlySelection] = useState<{ hours: number; cleaners: number } | null>(null);
   const [referralBanner, setReferralBanner] = useState("");
+  // Broker referral (2026-10-30): /quote/?code=OSUR. No discount, only
+  // attribution; the code never goes in the coupon box so a promo can still
+  // be used on top. Remembered for 30 days in case they leave and come back.
+  const [broker, setBroker] = useState<{ code: string; name: string } | null>(null);
   const minServiceDate = useMemo(() => getMinServiceDate(), []);
 
   useEffect(() => {
@@ -263,8 +268,51 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
     setHourlySelection(parsedHourly);
 
     // A friend's referral link lands here as /quote/?code=MINTxxxxxx.
-    const urlCode = (new URLSearchParams(window.location.search).get("code") || "").trim().toUpperCase();
+    let urlCode = (new URLSearchParams(window.location.search).get("code") || "").trim().toUpperCase();
     if (urlCode && (isReferralCode(urlCode) || isSecondCleanCode(urlCode) || isSeasonalPromoCode(urlCode) || urlCode === SECOND_PROMO_CODE)) setReferralBanner(urlCode);
+
+    // A broker's link lands here as /quote/?code=OSUR. Ask the server whether
+    // the code is a partner's: if so, log the click once per browser session,
+    // show "Referred by …", and keep the coupon box free.
+    const BROKER_KEY = "mm_broker";
+    const knownCoupon =
+      !urlCode || isReferralCode(urlCode) || isSecondCleanCode(urlCode) || isSeasonalPromoCode(urlCode) || urlCode === SECOND_PROMO_CODE || couponDiscount(urlCode, 1000) > 0 || QUOTED_TOTAL_COUPONS[urlCode] !== undefined;
+    const brokerCandidate = !knownCoupon && looksLikeBrokerCode(urlCode) ? urlCode : "";
+    if (brokerCandidate) {
+      // One click per browser session: the flag is set before the request so
+      // React's dev double-mount (and a fast reload) can't log it twice.
+      const sessionKey = `mm_broker_click_${brokerCandidate}`;
+      const alreadyLogged = sessionStorage.getItem(sessionKey) === "1";
+      sessionStorage.setItem(sessionKey, "1");
+      fetch("/api/partners/click/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: brokerCandidate, referrer: document.referrer || null, log: !alreadyLogged }),
+      })
+        .then((r) => r.json())
+        .then((j) => {
+          if (!j?.partner) {
+            sessionStorage.removeItem(sessionKey);
+            return;
+          }
+          setBroker(j.partner);
+          try {
+            localStorage.setItem(BROKER_KEY, JSON.stringify({ ...j.partner, at: Date.now() }));
+          } catch {
+            /* ignore */
+          }
+        })
+        .catch(() => {});
+      // Not a coupon: keep it out of the coupon box.
+      urlCode = "";
+    } else {
+      try {
+        const saved = JSON.parse(localStorage.getItem(BROKER_KEY) || "null") as { code: string; name: string; at: number } | null;
+        if (saved?.code && Date.now() - saved.at < 30 * 86400000) setBroker({ code: saved.code, name: saved.name });
+      } catch {
+        /* ignore */
+      }
+    }
 
     setForm((prev) => ({
       ...prev,
@@ -440,6 +488,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
           stripePaymentMethodId,
           stripeCustomerId,
           cardChargeTiming: "AFTER appointment",
+          brokerCode: broker?.code ?? "",
         }),
       });
 
@@ -711,6 +760,14 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
             <div>
               <h2 style={{ fontSize: "1.15rem", marginBottom: ".85rem" }}>Section 3 - Payment</h2>
 
+              {broker ? (
+                <div style={{ marginBottom: ".75rem", border: "1px solid rgba(29,158,117,.25)", background: "var(--mint-light)", color: "var(--mint-dark)", borderRadius: 10, padding: ".8rem .9rem", fontSize: ".85rem", display: "flex", gap: ".6rem", alignItems: "center" }}>
+                  <span aria-hidden="true" style={{ display: "inline-flex", width: 22, height: 22, borderRadius: 999, background: "var(--mint)", color: "#fff", alignItems: "center", justifyContent: "center", fontSize: ".8rem", flexShrink: 0 }}>✓</span>
+                  <span>
+                    <strong>Referred by {broker.name}.</strong> Thanks for coming through them. No code needed, just book as usual below.
+                  </span>
+                </div>
+              ) : null}
               {referralBanner ? (
                 <div style={{ marginBottom: ".75rem", border: "1px solid rgba(29,158,117,.25)", background: "var(--mint-light)", color: "var(--mint-dark)", borderRadius: 10, padding: ".8rem .9rem", fontSize: ".85rem" }}>
                   {referralBanner === "FALL50"
