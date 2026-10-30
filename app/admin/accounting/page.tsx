@@ -220,9 +220,14 @@ export default async function AccountingPage({
           <span style={{ color: "#1d9e75" }}>Manhattan Mint</span>
           <span className="text-gray-400 font-normal"> — Accounting</span>
         </h1>
-        <a href="/admin/dispatch/" className="text-sm font-medium hover:underline" style={{ color: "#1d9e75" }}>
-          ← Dispatch
-        </a>
+        <div className="flex gap-4">
+          <a href="/admin/dispatch/" className="text-sm font-medium hover:underline" style={{ color: "#1d9e75" }}>
+            ← Dispatch
+          </a>
+          <a href="/admin/partners/" className="text-sm font-medium hover:underline" style={{ color: "#1d9e75" }}>
+            Partners
+          </a>
+        </div>
       </div>
       <p className="text-xs text-gray-400 mb-8">
         Weeks run Monday to Sunday by service date. Pay is set at dispatch from the pay table (or by you); collected amounts and fees come from Stripe once the money moves.

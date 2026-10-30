@@ -105,3 +105,23 @@ export function lockoutUrl(bookingId: string, siteUrl: string): string {
   const params = new URLSearchParams({ b: bookingId, t: lockoutToken(bookingId) });
   return `${siteUrl.replace(/\/$/, "")}/lockout/?${params.toString()}`;
 }
+
+// Broker partner tracking links (2026-10-30): /partners/<CODE>/?t=<hmac> is
+// the private page a referring broker (The Osur Team, code OSUR) opens to see
+// clicks, bookings, completed cleans and fees. Same no-login idea as the
+// customer account link; the code is public, the token is not.
+export function partnerToken(code: string): string {
+  return createHmac("sha256", secret()).update(`partner:${code.trim().toUpperCase()}`).digest("hex").slice(0, 32);
+}
+
+export function verifyPartnerToken(code: string, token: string): boolean {
+  if (!code || !token) return false;
+  const expected = partnerToken(code);
+  if (token.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(expected), Buffer.from(token));
+}
+
+export function partnerUrl(code: string, siteUrl: string): string {
+  const params = new URLSearchParams({ t: partnerToken(code) });
+  return `${siteUrl.replace(/\/$/, "")}/partners/${encodeURIComponent(code.trim().toUpperCase())}/?${params.toString()}`;
+}
