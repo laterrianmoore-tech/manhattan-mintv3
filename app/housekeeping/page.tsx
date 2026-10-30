@@ -7,8 +7,9 @@ import HousekeepingForm from "./HousekeepingForm";
 // elderly parent. Quoted by the owner per home, never booked straight from
 // the site: the form posts to /api/housekeeping/request, which emails and
 // texts him. The first visit is a standard clean at the flat rate with the
-// deep clean included; follow-ups start at FROM_PER_VISIT. Change the
-// numbers here and in 01_Foundational_Docs/DECISIONS-LOG.md.
+// deep clean included; follow-ups start at FROM_PER_VISIT. Both numbers
+// are the studio / 1-bedroom price (owner 2026-10-30); bigger homes are
+// quoted by hand. Change them here and in 01_Foundational_Docs/DECISIONS-LOG.md.
 const FROM_PER_VISIT = 80;
 const FIRST_VISIT_FROM = 175;
 
@@ -99,18 +100,18 @@ export default function HousekeepingPage() {
 						<div>
 							<div className="hk-price-row">
 								<div className="hk-price">
-									<div className="sz">Each housekeeping visit</div>
+									<div className="sz">Each housekeeping visit · studio / 1 bedroom</div>
 									<div className="amt"><span className="from">from</span>${FROM_PER_VISIT}<small>per visit</small></div>
-									<div className="note">Usually one to two hours. Two visits a week from ${FROM_PER_VISIT * 2}, three from ${FROM_PER_VISIT * 3}.</div>
+									<div className="note">Usually one to two hours. Two visits a week from ${FROM_PER_VISIT * 2}, three from ${FROM_PER_VISIT * 3}. Larger homes quoted per visit.</div>
 								</div>
 								<div className="hk-price">
-									<div className="sz">First visit · full reset</div>
+									<div className="sz">First visit · full reset · studio / 1 bedroom</div>
 									<div className="amt"><span className="from">from</span>${FIRST_VISIT_FROM}<small>flat</small></div>
-									<div className="note">A proper clean of the whole apartment so the visits that follow only have to keep it that way. Deep clean included for first-time clients.</div>
+									<div className="note">A proper clean of the whole apartment so the visits that follow only have to keep it that way. Deep clean included for first-time clients. 2 bedrooms from $225, 3 from $275.</div>
 								</div>
 							</div>
 							<p className="hk-fine">
-								Final price depends on the size of the home and what each visit covers. No contract; stop or change the days whenever you like.
+								Prices shown are for a studio or one-bedroom. Final price depends on the size of the home and what each visit covers. No contract; stop or change the days whenever you like.
 								Manhattan only.
 							</p>
 

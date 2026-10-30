@@ -37,8 +37,9 @@ Hourly option: $${PRICING.hourlyRate} per cleaner per hour. Offer when:
 
 Recurring housekeeping (2 to 5 shorter visits a week: beds, laundry,
 dishes, bathrooms, tidying, same cleaner): from $${HOUSEKEEPING.fromPerVisit}
-per visit, first visit a full clean from $${HOUSEKEEPING.firstVisitFrom}
-with the deep clean included. Offer when someone is recovering from
+per visit for a studio or 1BR, first visit a full clean from
+$${HOUSEKEEPING.firstVisitFrom} (studio/1BR; 2BR $225, 3BR $275) with the
+deep clean included. Bigger homes are quoted per visit. Offer when someone is recovering from
 surgery, caring for a parent, has a new baby, or asks for "daily" or
 "a few times a week" help. It is quoted per home, NOT booked on /quote:
 send them to ${HOUSEKEEPING.path} to request a quote, or take their
