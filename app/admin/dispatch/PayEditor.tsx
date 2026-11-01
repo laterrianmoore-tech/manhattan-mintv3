@@ -3,9 +3,10 @@
 import { useState } from "react";
 
 // Inline editor for what the cleaner is paid on a job (2026-10-08). Dispatch
-// fills this from the pay table; the owner uses this to override it. If the
-// cleaner already has the job text, saving a different number texts them a
-// one-line pay update.
+// fills this from the pay table; the owner uses this to override it. Pay
+// changes are internal only — the cleaner is never texted a pay update.
+// "No pay line" (2026-11-01, primary slot): the owner settles this job's pay
+// by hand, so dispatch computes nothing and the job text carries no Pay line.
 export default function PayEditor({
   bookingId,
   initialAmount,
@@ -56,6 +57,24 @@ export default function PayEditor({
     }
   }
 
+  async function handleNoPay() {
+    setBusy(true);
+    setError("");
+    const res = await fetch("/api/bookings/update-pay/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingId, amount: null, slot: "primary", note }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      const who = cleanerName ?? "cleaner";
+      onDone(`${who}: no pay line — settle this one by hand. Dispatch won't text a number.`);
+    } else {
+      setError(data.error ?? "Something went wrong. Try again.");
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <span className="text-xs text-gray-500">{slot === "second" ? "2nd cleaner pay" : "Cleaner pay"}</span>
@@ -88,6 +107,16 @@ export default function PayEditor({
       >
         {busy ? "Saving…" : "Save pay"}
       </button>
+      {slot === "primary" && (
+        <button
+          onClick={handleNoPay}
+          disabled={busy}
+          className="px-3 py-1 rounded-lg border border-gray-300 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          title="Leave pay empty on purpose: dispatch skips the table and the job text has no Pay line. You settle it by hand."
+        >
+          No pay line
+        </button>
+      )}
       <button
         onClick={onClose}
         disabled={busy}

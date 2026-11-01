@@ -295,7 +295,10 @@ export default function AssignedRow({
                   ${booking.cleaner_pay}
                 </span>
               )}
-              {booking.cleaner_pay == null && booking.dispatch_sms_sent_at && (
+              {booking.cleaner_pay == null && booking.cleaner_pay_source === "manual" && (
+                <span className="ml-1 text-gray-500" title={booking.cleaner_pay_note ?? "No pay line — settled by hand"}>no pay line</span>
+              )}
+              {booking.cleaner_pay == null && booking.cleaner_pay_source !== "manual" && booking.dispatch_sms_sent_at && (
                 <span className="ml-1 text-amber-600" title="No pay recorded for this job — use Edit pay">no pay set</span>
               )}
               {secondCleanerName && (

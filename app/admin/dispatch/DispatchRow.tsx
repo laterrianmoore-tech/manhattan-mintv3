@@ -75,8 +75,11 @@ export default function DispatchRow({
 
   // What dispatch will text: the owner's number if one is saved, else the table.
   const manualPay = booking.cleaner_pay != null && booking.cleaner_pay_source === "manual";
-  const payShown = manualPay ? booking.cleaner_pay : suggestedPay?.amount ?? null;
-  const payWarnings = manualPay ? [] : suggestedPay?.warnings ?? [];
+  // "No pay line" (2026-11-01): the owner took the pay in hand with no number,
+  // so dispatch texts nothing and the table estimate is not shown.
+  const payByHand = booking.cleaner_pay == null && booking.cleaner_pay_source === "manual";
+  const payShown = manualPay ? booking.cleaner_pay : payByHand ? null : suggestedPay?.amount ?? null;
+  const payWarnings = manualPay || payByHand ? [] : suggestedPay?.warnings ?? [];
 
   const dateStr = new Date(booking.service_date + "T12:00:00").toLocaleDateString("en-US", {
     weekday: "short",
@@ -118,6 +121,7 @@ export default function DispatchRow({
       // What the cleaner was told they'll earn.
       const payBits: string[] = [];
       if (data.pay != null) payBits.push(`${name?.first_name ?? "cleaner"} $${data.pay}${data.paySource === "manual" ? " (your number)" : ""}`);
+      else if (data.payByHand) payBits.push(`${name?.first_name ?? "cleaner"}: no pay line (you settle it by hand)`);
       else payBits.push(`${name?.first_name ?? "cleaner"}: no pay texted — set it with Edit pay`);
       if (Array.isArray(data.payWarnings) && data.payWarnings.length) payBits.push(data.payWarnings.join(" "));
 
@@ -247,6 +251,19 @@ export default function DispatchRow({
             >
               pay ${payShown}
               <span className="font-normal text-gray-400"> {manualPay ? "set by you" : "table"}</span>
+            </span>
+          </>
+        )}
+        {payByHand && (
+          <>
+            <span className="mx-2 text-gray-300">·</span>
+            <span
+              className="text-xs font-semibold"
+              style={{ color: "#085041" }}
+              title={booking.cleaner_pay_note ?? "No pay line — settled by hand"}
+            >
+              no pay line
+              <span className="font-normal text-gray-400"> by hand</span>
             </span>
           </>
         )}

@@ -17,10 +17,14 @@ export async function POST(req: Request) {
 
   const { bookingId, amount, slot: rawSlot, note } = await req.json();
   const slot: "primary" | "second" = rawSlot === "second" ? "second" : "primary";
-  if (!bookingId || typeof amount !== "number" || !Number.isInteger(amount)) {
-    return NextResponse.json({ ok: false, error: "bookingId and a whole-dollar amount are required" }, { status: 400 });
+  // amount null (primary slot, 2026-11-01) = "No pay line": the owner settles
+  // this job's pay by hand. The pay stays empty but the source is "manual", so
+  // dispatch computes nothing from the table and texts no Pay line.
+  const noPay = amount === null && slot === "primary";
+  if (!bookingId || (!noPay && (typeof amount !== "number" || !Number.isInteger(amount)))) {
+    return NextResponse.json({ ok: false, error: "bookingId and a whole-dollar amount (or null for no pay line) are required" }, { status: 400 });
   }
-  if (amount < 0 || amount > 1000) {
+  if (!noPay && (amount < 0 || amount > 1000)) {
     return NextResponse.json({ ok: false, error: "Pay must be between $0 and $1,000" }, { status: 400 });
   }
 
@@ -45,10 +49,11 @@ export async function POST(req: Request) {
   }
   const payColumn = slot === "second" ? "second_cleaner_pay" : "cleaner_pay";
   const previous: number | null = b[payColumn] ?? null;
-  const update: Record<string, unknown> = { [payColumn]: amount };
+  const update: Record<string, unknown> = { [payColumn]: noPay ? null : amount };
   if (slot === "primary") {
     update.cleaner_pay_source = "manual";
     if (typeof note === "string" && note.trim()) update.cleaner_pay_note = note.trim().slice(0, 200);
+    else if (noPay) update.cleaner_pay_note = "No pay line — settled by hand";
   }
   const { error: updateErr } = await supabaseAdmin.from("bookings").update(update).eq("id", bookingId);
   if (updateErr) {
@@ -59,5 +64,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: updateErr.message + hint }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, slot, previous, amount });
+  return NextResponse.json({ ok: true, slot, previous, amount: noPay ? null : amount, noPay });
 }

@@ -155,13 +155,18 @@ export async function POST(req: Request) {
   }
 
   // ── Cleaner pay (2026-10-08) ──────────────────────────────────────────
-  // Set from the pay table unless the owner already typed a number for this
-  // slot (source "manual"), and texted with the job so the rate is known
-  // before the cleaner goes. Stored in a separate update that is allowed to
-  // fail: a database without the pay columns still dispatches normally.
+  // Set from the pay table unless the owner has taken this job's pay in hand
+  // (source "manual"): a number they typed, texted with the job so the rate is
+  // known before the cleaner goes, or — since 2026-11-01 — no number at all
+  // ("No pay line" on Edit pay), in which case nothing is computed and the job
+  // text carries no Pay line; the owner settles that pay by hand. Stored in a
+  // separate update that is allowed to fail: a database without the pay
+  // columns still dispatches normally.
   const payColumn = slot === "second" ? "second_cleaner_pay" : "cleaner_pay";
   const existingPay: number | null = booking[payColumn] ?? null;
-  const manualPay = existingPay != null && booking.cleaner_pay_source === "manual";
+  // The source column belongs to the primary slot, so there "manual" alone is
+  // the owner's call even with no amount; the second slot needs a saved number.
+  const manualPay = booking.cleaner_pay_source === "manual" && (slot === "primary" || existingPay != null);
   let pay: PayResult | null = null;
   let payAmount: number | null = manualPay ? existingPay : null;
   let payNeedsOwner = false;
@@ -256,6 +261,7 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`;
     smsError: smsResult.ok ? null : smsResult.errorMessage,
     pay: payAmount,
     paySource: manualPay ? "manual" : payAmount != null ? "auto" : null,
+    payByHand: manualPay && payAmount == null,
     payNote: pay ? payNote(pay) : null,
     payWarnings: pay ? [...pay.warnings, ...pay.assumptions] : [],
     payNeedsOwner,
