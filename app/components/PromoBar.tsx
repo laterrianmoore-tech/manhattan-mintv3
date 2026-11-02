@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { activePromo, todayISO } from "@/lib/promo";
 
 // Site-wide promo strip. Through Oct 31 it carries "Second Clean on Us"
@@ -11,13 +11,27 @@ import { activePromo, todayISO } from "@/lib/promo";
 // and hides itself on the right day without a deploy, and stays off the
 // landing page, cleaner portal and admin.
 //
+// `fallback` (the trust ticker) renders whenever no promo bar is showing, so
+// the header carries ONE strip above the nav, never two (owner 2026-11-02:
+// three stacked strips ate a quarter of a phone screen).
+//
 // Base styles live in src/app/layout.tsx (.promo-bar*). A season may add a
 // `variant` class; its overrides live in the <style> block below so the bar
 // matches that season's popup (EmailCaptureModal.tsx) instead of inheriting
 // whatever color the last season used.
 const SECOND_END = "2026-10-31";
 
-type Bar = { href: string; tag: string; strong: string; text: string; cta: string; label: string; variant?: "holiday" };
+type Bar = {
+  href: string;
+  tag: string;
+  strong: string; // hidden on phones
+  text: string; // always shown, must stand alone
+  more?: string; // hidden on phones
+  cta: string;
+  ctaShort?: string; // phones
+  label: string;
+  variant?: "holiday";
+};
 
 function barForToday(today: string): Bar | null {
   if (today <= SECOND_END) {
@@ -27,6 +41,7 @@ function barForToday(today: string): Bar | null {
       strong: "Second clean on us.",
       text: " Book your first clean by Oct 31 and the second one is free.",
       cta: "See how it works →",
+      ctaShort: "How it works →",
       label: "Second clean on us: book your first clean by October 31 and the second is free",
     };
   }
@@ -36,8 +51,10 @@ function barForToday(today: string): Bar | null {
       href: `/quote/?code=${p.code}`,
       tag: "Holiday offer",
       strong: "Guest Room Emergency.",
-      text: ` $${p.amount} off your first clean with code ${p.code}, through Dec 23.`,
+      text: ` $${p.amount} off your first clean, code ${p.code}`,
+      more: ", through Dec 23",
       cta: "Book before they land →",
+      ctaShort: "Book →",
       label: `Guest Room Emergency: $${p.amount} off your first clean with code ${p.code} through December 23`,
       variant: "holiday",
     };
@@ -45,13 +62,14 @@ function barForToday(today: string): Bar | null {
   return null;
 }
 
-export default function PromoBar() {
+export default function PromoBar({ fallback }: { fallback?: ReactNode }) {
   const pathname = usePathname();
   const [bar, setBar] = useState<Bar | null>(null);
   useEffect(() => {
     setBar(barForToday(todayISO()));
   }, []);
-  if (!bar || pathname?.startsWith("/second-clean") || pathname?.startsWith("/cleaner") || pathname?.startsWith("/admin")) return null;
+  const hidden = pathname?.startsWith("/second-clean") || pathname?.startsWith("/cleaner") || pathname?.startsWith("/admin");
+  if (!bar || hidden) return <>{fallback ?? null}</>;
   const className = bar.variant ? `promo-bar promo-bar--${bar.variant}` : "promo-bar";
   return (
     <>
@@ -65,9 +83,14 @@ export default function PromoBar() {
       <Link href={bar.href} className={className} aria-label={bar.label}>
         <span className="promo-bar-tag">{bar.tag}</span>
         <span className="promo-bar-text">
-          <strong>{bar.strong}</strong>{bar.text}
+          <strong className="promo-bar-more">{bar.strong}</strong>
+          {bar.text}
+          {bar.more && <span className="promo-bar-more">{bar.more}</span>}.
         </span>
-        <span className="promo-bar-cta">{bar.cta}</span>
+        <span className="promo-bar-cta">
+          <span className="promo-bar-cta-long">{bar.cta}</span>
+          <span className="promo-bar-cta-short">{bar.ctaShort ?? bar.cta}</span>
+        </span>
       </Link>
     </>
   );

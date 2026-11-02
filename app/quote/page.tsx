@@ -402,7 +402,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
     }
 
     if (!form.serviceDate || !form.firstName || !form.lastName || !form.email || !form.phone || !form.address) {
-      setError("Please complete all required fields in Section 2.");
+      setError("Please complete all required fields under Your schedule and details.");
       return;
     }
 
@@ -525,10 +525,10 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
   };
 
   return (
-    <main style={{ background: "var(--soft)", minHeight: "100vh", fontFamily: "DM Sans, sans-serif" }}>
+    <main className="quote-main" style={{ background: "var(--soft)", minHeight: "100vh", fontFamily: "DM Sans, sans-serif" }}>
       <section style={{ maxWidth: 1280, margin: "0 auto", padding: "2.25rem 1rem 4rem" }}>
         <p style={{ color: "var(--mint)", letterSpacing: "0.12em", textTransform: "uppercase", fontSize: "0.72rem", marginBottom: "0.65rem" }}>
-          Step 2 of 3
+          Book online · about two minutes
         </p>
         <h1 style={{ color: "var(--dark)", fontFamily: "DM Serif Display, serif", fontWeight: 400, fontSize: "clamp(2rem,4vw,3rem)", margin: "0 0 0.55rem" }}>
           Complete your booking.
@@ -550,7 +550,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
         <div style={{ display: "grid", gap: "1rem", alignItems: "start", gridTemplateColumns: "minmax(0,1fr)" }} className="lg:grid-cols-[1.2fr,0.8fr]">
           <form onSubmit={handleSubmit} style={{ background: "#fff", border: "1px solid rgba(0,0,0,.08)", borderRadius: 14, padding: "1rem" }}>
             <div style={{ borderBottom: "1px solid rgba(0,0,0,.08)", paddingBottom: "1rem", marginBottom: "1rem" }}>
-              <h2 style={{ fontSize: "1.15rem", marginBottom: ".85rem" }}>Section 1 - Service Details</h2>
+              <h2 style={{ fontSize: "1.15rem", marginBottom: ".85rem" }}>Your apartment</h2>
 
               <div style={{ display: "grid", gap: ".6rem", gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }} className="md:grid-cols-4">
                 {frequencies.map((f) => (
@@ -663,7 +663,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
             </div>
 
             <div style={{ borderBottom: "1px solid rgba(0,0,0,.08)", paddingBottom: "1rem", marginBottom: "1rem" }}>
-              <h2 style={{ fontSize: "1.15rem", marginBottom: ".85rem" }}>Section 2 - Date &amp; Customer Info</h2>
+              <h2 style={{ fontSize: "1.15rem", marginBottom: ".85rem" }}>Your schedule and details</h2>
 
               <label style={{ display: "grid", gap: ".3rem", marginBottom: ".75rem" }}>
                 <span style={{ fontSize: ".75rem", color: "#666" }}>Date</span>
@@ -762,7 +762,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
             </div>
 
             <div>
-              <h2 style={{ fontSize: "1.15rem", marginBottom: ".85rem" }}>Section 3 - Payment</h2>
+              <h2 style={{ fontSize: "1.15rem", marginBottom: ".85rem" }}>Your card, charged after the clean</h2>
 
               {broker ? (
                 <div style={{ marginBottom: ".75rem", border: "1px solid rgba(29,158,117,.25)", background: "var(--mint-light)", color: "var(--mint-dark)", borderRadius: 10, padding: ".8rem .9rem", fontSize: ".85rem", display: "flex", gap: ".6rem", alignItems: "center" }}>
@@ -884,8 +884,8 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
             </div>
           </form>
 
-          <aside style={{ background: "#fff", border: "1px solid rgba(0,0,0,.08)", borderRadius: 14, padding: "1rem", position: "sticky", top: 16 }}>
-            <h3 style={{ fontSize: "1.1rem", marginBottom: ".8rem" }}>Live Booking Summary</h3>
+          <aside id="quote-summary" style={{ background: "#fff", border: "1px solid rgba(0,0,0,.08)", borderRadius: 14, padding: "1rem", position: "sticky", top: 16 }}>
+            <h3 style={{ fontSize: "1.1rem", marginBottom: ".8rem" }}>Your booking</h3>
             <div style={{ display: "grid", gap: ".55rem", fontSize: ".88rem", color: "#333" }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}><span>Frequency</span><strong>{form.frequency}</strong></div>
               {sourceSelection ? <div style={{ display: "flex", justifyContent: "space-between", gap: ".75rem" }}><span>From Home Page</span><strong style={{ textAlign: "right" }}>{sourceSelection}</strong></div> : null}
@@ -932,6 +932,35 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
             </div>
           </aside>
         </div>
+
+        {/* Phones: the summary sits below the form, so the running total rides
+            along in a pinned bar until they get there. Hidden on wide screens,
+            where the summary aside is already sticky. */}
+        <div className="quote-total-bar" aria-live="polite">
+          <div>
+            <span className="qtb-label">Your price</span>
+            <strong className="qtb-total">${pricing.total}</strong>
+            {form.frequency !== "One-Time" && <span className="qtb-next">then ${pricing.nextCleanTotal} a visit</span>}
+          </div>
+          <button
+            type="button"
+            className="qtb-btn"
+            onClick={() => document.getElementById("quote-summary")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+          >
+            See summary ↓
+          </button>
+        </div>
+        <style>{`
+          .quote-total-bar{display:none;}
+          @media (max-width:960px){
+            .quote-main{padding-bottom:5.5rem;}
+            .quote-total-bar{position:fixed;left:0;right:0;bottom:0;z-index:500;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.65rem 1rem calc(.65rem + env(safe-area-inset-bottom));background:rgba(255,255,255,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid rgba(0,0,0,.08);box-shadow:0 -8px 30px rgba(0,0,0,.08);}
+            .qtb-label{display:block;font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;color:#777;}
+            .qtb-total{font-family:'DM Serif Display',serif;font-size:1.5rem;line-height:1;color:var(--mint-dark);}
+            .qtb-next{display:block;font-size:.7rem;color:#777;margin-top:.1rem;}
+            .qtb-btn{background:var(--mint);color:#fff;border:none;border-radius:999px;padding:.8rem 1.1rem;font:inherit;font-size:.85rem;font-weight:500;white-space:nowrap;cursor:pointer;}
+          }
+        `}</style>
       </section>
     </main>
   );
