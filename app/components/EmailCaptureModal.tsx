@@ -10,6 +10,20 @@ type Status = "idle" | "loading" | "success" | "error";
 // bookings). Between seasons it falls back to the evergreen $25 welcome-offer
 // email capture, no redeploy needed. Each season's words live here; a code
 // without an entry below falls back to the welcome popup.
+// Each season owns its look. Nothing here is shared between seasons, so a new
+// promo never inherits the last one's colors (the holiday popup shipped in the
+// fall popup's amber by mistake on Nov 1, 2026).
+type PromoTheme = {
+  bg: string; // modal background
+  accent: string; // kicker, italic headline, clock labels, CTA top
+  accentDeep: string; // CTA gradient bottom
+  accentRgb: string; // "r,g,b" for translucent tints of the accent
+  ink: string; // text on the CTA
+  decor: "leaf" | "lights" | "none"; // the one graphic flourish
+  ticket: "dashed" | "tag"; // how the code is shown after signup: dashed coupon or luggage tag
+  clockLabel?: string; // word before the live countdown, e.g. "Landing in"
+};
+
 type PromoCopy = {
   kicker: string;
   line1: string; // headline, white
@@ -18,9 +32,32 @@ type PromoCopy = {
   successSub: string;
   successCta: string;
   fine: string;
-  leaf: boolean; // the fall leaf graphic
   clock: boolean; // live countdown (days · hours · minutes · seconds) instead of "N days left"
   dismissKey: string; // own key so people who dismissed the last popup see this one once
+  theme: PromoTheme;
+};
+
+const FALL_THEME: PromoTheme = {
+  bg: "radial-gradient(120% 90% at 100% 0%, #3a2413 0%, #1c1512 45%, #121110 100%)",
+  accent: "#f0a24a",
+  accentDeep: "#d97f2b",
+  accentRgb: "240,162,74",
+  ink: "#1a1208",
+  decor: "leaf",
+  ticket: "dashed",
+};
+
+// Evergreen and gold: holiday without the tinsel. The string lights along the
+// top edge and the luggage-tag code tie to the "they land Thursday" copy.
+const HOLIDAY_THEME: PromoTheme = {
+  bg: "radial-gradient(120% 90% at 100% 0%, #143d2d 0%, #0a2419 45%, #061710 100%)",
+  accent: "#e8c47c",
+  accentDeep: "#c9a256",
+  accentRgb: "232,196,124",
+  ink: "#13241b",
+  decor: "lights",
+  ticket: "tag",
+  clockLabel: "Landing in",
 };
 
 // Ticks once a second until the promo's last moment (local time, end of day).
@@ -42,7 +79,7 @@ function useCountdown(end: string | null) {
   };
 }
 
-function Countdown({ end }: { end: string }) {
+function Countdown({ end, label }: { end: string; label?: string }) {
   const t = useCountdown(end);
   const two = (n: number) => String(n).padStart(2, "0");
   const cells: [string, string][] = [
@@ -52,7 +89,8 @@ function Countdown({ end }: { end: string }) {
     [two(t.seconds), "sec"],
   ];
   return (
-    <div className="fp-clock" role="timer" aria-label={`${t.days} days ${t.hours} hours ${t.minutes} minutes left`}>
+    <div className="fp-clock" role="timer" aria-label={`${label ? `${label} ` : ""}${t.days} days ${t.hours} hours ${t.minutes} minutes`}>
+      {label && <span className="fp-clock-pre">{label}</span>}
       {cells.map(([v, l], i) => (
         <span key={l} className="fp-clock-cell">
           <span className="fp-clock-num">{v}</span>
@@ -61,6 +99,42 @@ function Countdown({ end }: { end: string }) {
         </span>
       ))}
     </div>
+  );
+}
+
+// A sagging wire of eleven bulbs across the top edge of the modal. Gold and
+// warm white with a mint bulb every so often (the brand color), each twinkling
+// on its own rhythm. Pure SVG, no images; respects prefers-reduced-motion.
+function StringLights() {
+  const P = [
+    [0, 6],
+    [130, 40],
+    [390, 40],
+    [520, 6],
+  ] as const;
+  const at = (t: number) => {
+    const u = 1 - t;
+    const x = u * u * u * P[0][0] + 3 * u * u * t * P[1][0] + 3 * u * t * t * P[2][0] + t * t * t * P[3][0];
+    const y = u * u * u * P[0][1] + 3 * u * u * t * P[1][1] + 3 * u * t * t * P[2][1] + t * t * t * P[3][1];
+    return [x, y] as const;
+  };
+  const colors = ["#e8c47c", "#fff3d6", "#7ed9b8", "#e8c47c", "#fff3d6", "#e8c47c", "#7ed9b8", "#fff3d6", "#e8c47c", "#fff3d6", "#e8c47c"];
+  return (
+    <svg className="fp-lights" viewBox="0 0 520 60" preserveAspectRatio="none" aria-hidden="true">
+      <path d={`M${P[0][0]} ${P[0][1]} C${P[1][0]} ${P[1][1]} ${P[2][0]} ${P[2][1]} ${P[3][0]} ${P[3][1]}`} stroke="rgba(255,255,255,.22)" strokeWidth="1.2" fill="none" />
+      {colors.map((c, i) => {
+        const [x, y] = at((i + 0.5) / colors.length);
+        const dur = 2.2 + ((i * 7) % 5) * 0.35;
+        const delay = -((i * 11) % 7) * 0.4;
+        return (
+          <g key={i} className="fp-bulb" style={{ animationDuration: `${dur}s`, animationDelay: `${delay}s` }}>
+            <rect x={x - 2} y={y - 1} width="4" height="5" rx="1" fill="rgba(255,255,255,.35)" />
+            <circle cx={x} cy={y + 9} r="7.5" fill={c} opacity=".16" />
+            <circle cx={x} cy={y + 9} r="3.6" fill={c} />
+          </g>
+        );
+      })}
+    </svg>
   );
 }
 
@@ -73,9 +147,9 @@ const PROMO_COPY: Record<string, PromoCopy> = {
     successSub: "Use it on the booking page before October 31. Card is only charged after the clean.",
     successCta: "Book my fall clean",
     fine: "First clean only · Manhattan apartments · book by Oct 31, 2026",
-    leaf: true,
     clock: false,
     dismissKey: "mm_modal_dismissed_fall",
+    theme: FALL_THEME,
   },
   INLAWS: {
     kicker: "Guest Room Emergency",
@@ -85,9 +159,9 @@ const PROMO_COPY: Record<string, PromoCopy> = {
     successSub: "Use it on the booking page before December 23. Card is only charged after the clean.",
     successCta: "Book before they land",
     fine: "First clean only · Manhattan apartments · book by Dec 23, 2026",
-    leaf: false,
     clock: true,
     dismissKey: "mm_modal_dismissed_inlaws",
+    theme: HOLIDAY_THEME,
   },
 };
 
@@ -197,7 +271,7 @@ export default function EmailCaptureModal() {
       left: "50%",
       transform: "translateX(-50%)",
       zIndex: 1001,
-      background: promo ? "radial-gradient(120% 90% at 100% 0%, #3a2413 0%, #1c1512 45%, #121110 100%)" : "#1A1A1A",
+      background: promo && copy ? copy.theme.bg : "#1A1A1A",
       borderRadius: "16px 16px 0 0",
       padding: promo ? "2.6rem 2rem 2.4rem" : "2.5rem 2rem 3rem",
       overflow: "hidden",
@@ -344,44 +418,75 @@ export default function EmailCaptureModal() {
     </form>
   );
 
+  // The season's palette, handed to the CSS below as custom properties.
+  const fpStyle = copy
+    ? ({
+        "--fp-accent": copy.theme.accent,
+        "--fp-accent-deep": copy.theme.accentDeep,
+        "--fp-accent-rgb": copy.theme.accentRgb,
+        "--fp-ink": copy.theme.ink,
+      } as React.CSSProperties)
+    : undefined;
+  const fpClass = copy ? `fp fp--${copy.theme.decor}` : "fp";
+  const decor = copy?.theme.decor === "lights" ? <StringLights /> : null;
+
   return (
     <>
       <style>{`
-        .fp{position:relative;font-family:'DM Sans',sans-serif;}
+        .fp{position:relative;font-family:'DM Sans',sans-serif;--fp-accent:#f0a24a;--fp-accent-deep:#d97f2b;--fp-accent-rgb:240,162,74;--fp-ink:#1a1208;}
         .fp-leaf{position:absolute;right:-46px;top:-78px;width:132px;height:132px;opacity:.55;transform:rotate(18deg);pointer-events:none;z-index:0;}
-        .fp > *:not(.fp-leaf){position:relative;z-index:1;}
+        .fp-lights{position:absolute;left:-2rem;right:-2rem;top:-2.6rem;height:60px;pointer-events:none;z-index:0;overflow:visible;}
+        .fp--lights{padding-top:1.1rem;}
+        .fp-bulb{animation:fpTwinkle 2.6s ease-in-out infinite;transform-origin:center;}
+        @keyframes fpTwinkle{0%,100%{opacity:1}50%{opacity:.4}}
+        @media (prefers-reduced-motion:reduce){.fp-bulb{animation:none}.fp-kicker-dot{animation:none}}
+        .fp > *:not(.fp-leaf):not(.fp-lights){position:relative;z-index:1;}
         .fp-title{padding-right:.5rem;}
-        .fp-kicker{display:inline-flex;align-items:center;gap:.5rem;color:#f0a24a;font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;font-weight:500;margin-bottom:1.1rem;}
-        .fp-kicker-dot{width:7px;height:7px;border-radius:50%;background:#f0a24a;box-shadow:0 0 0 4px rgba(240,162,74,.18);animation:fpPulse 1.8s ease-in-out infinite;}
-        @keyframes fpPulse{0%,100%{box-shadow:0 0 0 3px rgba(240,162,74,.18)}50%{box-shadow:0 0 0 7px rgba(240,162,74,.06)}}
+        .fp-kicker{display:inline-flex;align-items:center;gap:.5rem;color:var(--fp-accent);font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;font-weight:500;margin-bottom:1.1rem;}
+        .fp-kicker-dot{width:7px;height:7px;border-radius:50%;background:var(--fp-accent);box-shadow:0 0 0 4px rgba(var(--fp-accent-rgb),.18);animation:fpPulse 1.8s ease-in-out infinite;}
+        @keyframes fpPulse{0%,100%{box-shadow:0 0 0 3px rgba(var(--fp-accent-rgb),.18)}50%{box-shadow:0 0 0 7px rgba(var(--fp-accent-rgb),.06)}}
         .fp-title{font-family:'DM Serif Display',serif;font-weight:400;color:#fff;font-size:clamp(1.85rem,6vw,2.45rem);line-height:1.08;letter-spacing:-.02em;margin:0 0 .85rem;}
-        .fp-title em{font-style:italic;color:#f0a24a;}
+        .fp-title em{font-style:italic;color:var(--fp-accent);}
         .fp-sub{color:rgba(255,255,255,.62);font-size:.86rem;line-height:1.65;font-weight:300;margin:0 0 1.35rem;max-width:34ch;}
-        .fp-clock{display:inline-flex;align-items:baseline;gap:.15rem;margin:-.15rem 0 1.1rem;padding:.45rem .8rem;background:rgba(240,162,74,.08);border:1px solid rgba(240,162,74,.3);border-radius:8px;font-variant-numeric:tabular-nums;}
+        .fp-clock{display:inline-flex;align-items:baseline;gap:.15rem;margin:-.15rem 0 1.1rem;padding:.45rem .8rem;background:rgba(var(--fp-accent-rgb),.08);border:1px solid rgba(var(--fp-accent-rgb),.3);border-radius:8px;font-variant-numeric:tabular-nums;}
+        .fp-clock-pre{color:rgba(255,255,255,.55);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;margin-right:.7rem;padding-right:.7rem;border-right:1px solid rgba(var(--fp-accent-rgb),.3);}
         .fp-clock-cell{display:inline-flex;align-items:baseline;gap:.3rem;}
         .fp-clock-num{font-family:'DM Serif Display',serif;color:#fff;font-size:1.25rem;line-height:1;min-width:1.3ch;text-align:right;}
-        .fp-clock-lbl{color:#f0a24a;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;}
-        .fp-clock-sep{color:rgba(240,162,74,.6);font-family:'DM Serif Display',serif;font-size:1.1rem;margin:0 .35rem 0 .45rem;}
+        .fp-clock-lbl{color:var(--fp-accent);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;}
+        .fp-clock-sep{color:rgba(var(--fp-accent-rgb),.6);font-family:'DM Serif Display',serif;font-size:1.1rem;margin:0 .35rem 0 .45rem;}
         .fp-sub strong{color:#fff;font-weight:500;}
-        .fp-ticket{width:100%;display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;align-items:center;gap:0 1rem;text-align:left;background:rgba(255,255,255,.05);border:1px dashed rgba(240,162,74,.55);border-radius:10px;padding:.8rem 1rem;cursor:pointer;font-family:inherit;color:#fff;transition:background .2s,border-color .2s;}
-        .fp-ticket:hover{background:rgba(240,162,74,.08);border-color:#f0a24a;}
+        .fp-ticket{width:100%;display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto;align-items:center;gap:0 1rem;text-align:left;background:rgba(255,255,255,.05);border:1px dashed rgba(var(--fp-accent-rgb),.55);border-radius:10px;padding:.8rem 1rem;cursor:pointer;font-family:inherit;color:#fff;transition:background .2s,border-color .2s;}
+        .fp-ticket:hover{background:rgba(var(--fp-accent-rgb),.08);border-color:var(--fp-accent);}
         .fp-ticket-label{grid-column:1;color:rgba(255,255,255,.5);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;}
         .fp-ticket-code{grid-column:1;font-size:1.55rem;letter-spacing:.16em;font-weight:500;line-height:1.1;}
-        .fp-ticket-copy{grid-column:2;grid-row:1/3;color:#f0a24a;font-size:.72rem;white-space:nowrap;}
-        .fp-cta{display:flex;align-items:center;justify-content:center;gap:.6rem;width:100%;margin-top:.7rem;padding:.95rem 1rem;background:linear-gradient(180deg,#f0a24a,#d97f2b);color:#1a1208;border-radius:10px;font-weight:600;font-size:.92rem;text-decoration:none;box-shadow:0 8px 24px rgba(240,162,74,.28);transition:transform .15s,box-shadow .15s;}
-        .fp-cta:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(240,162,74,.36);}
+        .fp-ticket-copy{grid-column:2;grid-row:1/3;color:var(--fp-accent);font-size:.72rem;white-space:nowrap;}
+        .fp-ticket--tag{grid-template-columns:auto 1fr auto;border:none;border-radius:6px 12px 12px 6px;padding:.85rem 1rem .85rem .9rem;background:linear-gradient(135deg,rgba(var(--fp-accent-rgb),.22),rgba(var(--fp-accent-rgb),.08));clip-path:polygon(0 50%,22px 0,100% 0,100% 100%,22px 100%);}
+        .fp-ticket--tag:hover{background:linear-gradient(135deg,rgba(var(--fp-accent-rgb),.3),rgba(var(--fp-accent-rgb),.12));}
+        .fp-tag-hole{grid-column:1;grid-row:1/3;width:10px;height:10px;border-radius:50%;background:rgba(0,0,0,.6);box-shadow:0 0 0 2px rgba(var(--fp-accent-rgb),.75);margin:0 .4rem 0 .9rem;}
+        .fp-ticket--tag .fp-ticket-label,.fp-ticket--tag .fp-ticket-code{grid-column:2;}
+        .fp-ticket--tag .fp-ticket-label{color:rgba(var(--fp-accent-rgb),.85);}
+        .fp-ticket--tag .fp-ticket-copy{grid-column:3;color:rgba(255,255,255,.7);}
+        .fp-cta{display:flex;align-items:center;justify-content:center;gap:.6rem;width:100%;margin-top:.7rem;padding:.95rem 1rem;background:linear-gradient(180deg,var(--fp-accent),var(--fp-accent-deep));color:var(--fp-ink);border-radius:10px;font-weight:600;font-size:.92rem;text-decoration:none;box-shadow:0 8px 24px rgba(var(--fp-accent-rgb),.28);transition:transform .15s,box-shadow .15s;}
+        .fp-cta:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(var(--fp-accent-rgb),.36);}
         .fp-form{display:flex;flex-direction:column;gap:.55rem;}
         .fp-input{padding:.85rem 1rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:10px;color:#fff;font-size:.9rem;font-family:inherit;outline:none;width:100%;}
         .fp-input::placeholder{color:rgba(255,255,255,.4);}
-        .fp-input:focus{border-color:#f0a24a;background:rgba(240,162,74,.06);}
+        .fp-input:focus{border-color:var(--fp-accent);background:rgba(var(--fp-accent-rgb),.06);}
         .fp-cta-btn{border:none;cursor:pointer;font-family:inherit;margin-top:.25rem;}
         .fp-cta-btn:disabled{opacity:.7;cursor:wait;transform:none;}
         .fp-under{color:rgba(255,255,255,.45);font-size:.74rem;line-height:1.5;margin:.7rem 0 0;}
         .fp-link{display:block;margin:.85rem auto 0;background:none;border:none;color:rgba(255,255,255,.5);font-size:.78rem;text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-family:inherit;padding:0;}
         .fp-link:hover{color:rgba(255,255,255,.8);}
         .fp-fine{color:rgba(255,255,255,.28);font-size:.64rem;line-height:1.6;margin:1rem 0 0;text-align:center;}
+        @media (max-width:639px){
+          .fp-clock{display:flex;flex-wrap:wrap;max-width:100%;padding:.5rem .7rem;}
+          .fp-clock-pre{flex-basis:100%;border-right:none;margin:0 0 .35rem;padding:0;}
+          .fp-clock-num{font-size:1.15rem;}
+          .fp-clock-sep{margin:0 .25rem 0 .35rem;}
+        }
         @media (min-width:640px){
           .mm-modal-promo{bottom:auto !important;top:50% !important;transform:translate(-50%,-50%) !important;border-radius:18px !important;max-width:500px !important;padding:2.8rem 2.4rem 2.5rem !important;}
+          .fp-lights{left:-2.4rem;right:-2.4rem;top:-2.8rem;}
         }
       `}</style>
       <div style={s.overlay} onClick={dismiss} />
@@ -389,11 +494,13 @@ export default function EmailCaptureModal() {
         <button style={s.dismiss} onClick={dismiss} aria-label="Close">✕</button>
 
         {status === "success" && promo && copy ? (
-          <div className="fp">
+          <div className={fpClass} style={fpStyle}>
+            {decor}
             <div className="fp-kicker"><span className="fp-kicker-dot" />You&apos;re in</div>
             <h2 className="fp-title">Here&apos;s your code.<br /><em>It&apos;s in your inbox too.</em></h2>
             <p className="fp-sub">{copy.successSub}</p>
-            <button type="button" className="fp-ticket" onClick={copyCode} aria-label={`Copy code ${PROMO_CODE}`}>
+            <button type="button" className={copy.theme.ticket === "tag" ? "fp-ticket fp-ticket--tag" : "fp-ticket"} onClick={copyCode} aria-label={`Copy code ${PROMO_CODE}`}>
+              {copy.theme.ticket === "tag" && <span className="fp-tag-hole" aria-hidden="true" />}
               <span className="fp-ticket-label">Your code</span>
               <span className="fp-ticket-code">{PROMO_CODE}</span>
               <span className="fp-ticket-copy">{copied ? "Copied ✓" : "Tap to copy"}</span>
@@ -408,8 +515,9 @@ export default function EmailCaptureModal() {
             <div style={s.sub}>Your $25 discount code is on its way.</div>
           </div>
         ) : promo && copy ? (
-          <div className="fp">
-            {copy.leaf && (
+          <div className={fpClass} style={fpStyle}>
+            {decor}
+            {copy.theme.decor === "leaf" && (
               <svg className="fp-leaf" viewBox="0 0 120 120" aria-hidden="true">
                 <path d="M96 14C60 18 30 40 22 78c-2 9-2 18 0 28 10 2 19 2 28 0 38-8 60-38 64-74 1-6 1-12-2-18h-8z" fill="url(#fpg)" />
                 <path d="M24 104C44 76 66 54 96 22" stroke="rgba(255,255,255,.22)" strokeWidth="2" fill="none" strokeLinecap="round" />
@@ -427,7 +535,7 @@ export default function EmailCaptureModal() {
               <em>{copy.line2}</em>
             </h2>
 
-            {copy.clock && season && <Countdown end={season.end} />}
+            {copy.clock && season && <Countdown end={season.end} label={copy.theme.clockLabel} />}
 
             <p className="fp-sub">
               Take <strong>${PROMO_AMOUNT} off your first clean</strong> {copy.sub}
@@ -441,7 +549,7 @@ export default function EmailCaptureModal() {
                 {status === "loading" ? null : <span aria-hidden="true">→</span>}
               </button>
             </form>
-            <p className="fp-under">The code lands in your inbox and on this screen. No spam, just the occasional note from a small Manhattan company.</p>
+            <p className="fp-under">The code lands in your inbox and on this screen. No spam, just the occasional note from Manhattan Mint.</p>
 
             {status === "error" && (
               <div style={{ color: "#ff8f7a", fontSize: "0.75rem", marginTop: "0.75rem", textAlign: "center" }}>
