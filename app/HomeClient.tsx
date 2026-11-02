@@ -85,12 +85,6 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 	const [hourlyHours, setHourlyHours] = useState(3);
 	const [hourlyCleaners, setHourlyCleaners] = useState(2);
 
-	// The hero's ten-second price: size + service, one visit, no frequency.
-	const heroPrice = (() => {
-		if (selectedTier.amount === null) return "Custom";
-		return `$${selectedTier.amount + (serviceAdjustments[pricingServiceType] ?? 0)}`;
-	})();
-
 	const effectiveFlatPrice = (() => {
 		if (selectedTier.amount === null) return "Custom";
 		const adjustment = serviceAdjustments[pricingServiceType];
@@ -183,43 +177,18 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 					<div className="hero-micro">Studio and 1-bedroom homes from <span>$175</span> &nbsp;·&nbsp; <Link href="/quote">Flat-rate pricing</Link> &nbsp;·&nbsp; Next-day slots, same-day by text</div>
 				</div>
 				<div className="hero-r" id="booking" ref={heroRef}>
+					{/* Photograph only. Owner 2026-11-02: no price in the hero; it is a premium
+					    service and the number up front turns people away before they read. */}
 					<Image src="/home/why.jpg" alt="Sunlit, freshly cleaned Manhattan living room with tall windows and a chandelier" fill priority sizes="(max-width: 960px) 100vw, 50vw" className="hero-photo" />
-					<div className="hero-card">
-						<div className="hero-card-eye">Your price in ten seconds</div>
-						<div className="hero-card-row">
-							<select
-								className="hero-select"
-								aria-label="Apartment size"
-								value={selectedTier.name}
-								onChange={(e) => {
-									const tier = tiers.find((t) => t.name === e.target.value);
-									if (tier) setSelectedTier(tier);
-								}}
-							>
-								{tiers.map((tier) => (
-									<option key={tier.name} value={tier.name}>{tier.name}</option>
-								))}
-							</select>
-							<select className="hero-select" aria-label="Type of clean" value={pricingServiceType} onChange={(e) => setPricingServiceType(e.target.value)}>
-								<option>Standard clean</option>
-								<option>Deep clean (+$75)</option>
-								<option>Move-in / Move-out (+$100)</option>
-							</select>
-						</div>
-						<div className="hero-card-bottom">
-							<div>
-								<div className="hero-card-from">{heroPrice === "Custom" ? "Quoted per home" : "Flat rate, supplies included"}</div>
-								<div className="hero-card-price">{heroPrice}</div>
-							</div>
-							<button className="btn-primary hero-card-btn" onClick={bookAtRate}>Book at this rate →</button>
-						</div>
-						<div className="hero-card-fine">Charged only after the clean · Free re-clean guarantee · Recurring saves up to 20%</div>
+					<div className="hero-caption">
+						<span className="hero-caption-eye">The Mint Mark</span>
+						<span className="hero-caption-text">Up to 59 details. Every room. Every visit.</span>
 					</div>
 				</div>
 			</div>
 
 			{/* STATS BAND */}
-			<div className="stats-band sky-bg">
+			<div className="stats-band">
 				<div className="stat-item"><div className="stat-n">Owner-run</div><div className="stat-d">Every job&apos;s photos reviewed by the owner</div></div>
 				{googleRating ? (
 					<div className="stat-item">
