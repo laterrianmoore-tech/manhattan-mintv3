@@ -73,6 +73,7 @@ export interface Database {
           phone: string;
           status: CleanerStatus;
           zones: string[];
+          available_days: string[] | null;
           rating: number | null;
           pay_rate_pct: number;
           stripe_account_id: string | null;

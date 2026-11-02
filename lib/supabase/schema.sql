@@ -40,6 +40,7 @@ create table if not exists cleaners (
   status              text not null default 'pending_onboarding'
                         check (status in ('active', 'inactive', 'pending_onboarding')),
   zones               text[] not null default '{}',
+  available_days      text[],              -- days she usually works, e.g. '{mon,wed,fri}'; null = any (2026-11-02)
   rating              numeric(3,2),
   pay_rate_pct        numeric(5,2) not null default 57,
   stripe_account_id   text unique,

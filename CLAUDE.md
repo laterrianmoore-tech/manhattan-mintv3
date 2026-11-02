@@ -129,6 +129,7 @@ Add Supabase, cleaner accounts, and full automation of the post-booking workflow
 ---
 
 ## Environment Variables (all required)
+| `POST /api/cleaners/availability/` | Admin (cookie): `{ cleanerId, days }` saves the days a cleaner usually works (`mon`..`sun`) to `cleaners.available_days`; empty = any day. Toggled from the week board on `/admin/dispatch` (2026-11-02): cleaners x next 7 days, each cell a job / free / off, open jobs on top, cleaner pickers say "free Wed" / "booked: Rebecca AM" / "off Wednesdays". Nothing texted. Needs `lib/supabase/migrations/2026-11-02-cleaner-available-days.sql` |
 
 Set these in Netlify → Site settings → Environment variables for production. Locally they live in `.env.local` (gitignored).
 
