@@ -79,8 +79,10 @@ function Nav() {
 
   return (
     <header className="site-header">
-      {/* One strip above the nav: the seasonal promo bar when one is running, the trust ticker otherwise. */}
-      <PromoBar fallback={<TrustTicker />} />
+      {/* Promo bar (one line, only while a promo runs) above the side-to-side trust
+          banner. Owner 2026-11-02: the banner stays, always. */}
+      <PromoBar />
+      <TrustTicker />
       <nav className="site-nav" aria-label="Main navigation">
         <div className="site-nav-inner">
           <Link href="/" className="brand" aria-label="Manhattan Mint home">
@@ -100,7 +102,7 @@ function Nav() {
             <a className="phone-btn" href="tel:+19148637902">
               (914) 863-7902
             </a>
-            <Link className="book-btn" href="/#booking">
+            <Link className="book-btn" href="/quote">
               Book a clean
             </Link>
           </div>
