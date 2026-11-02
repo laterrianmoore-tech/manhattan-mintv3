@@ -177,6 +177,7 @@ alter table bookings
   add column if not exists second_cleaner_pay        integer,
   add column if not exists cleaner_pay_source        text check (cleaner_pay_source in ('auto', 'manual', 'estimate')),
   add column if not exists cleaner_pay_note          text,
+  add column if not exists cleaner_pay_hidden        boolean not null default false, -- 2026-11-02: pay recorded but kept off the job text
   add column if not exists cleaner_paid_at           timestamptz,
   add column if not exists cleaner_payout_ref        text,
   add column if not exists second_cleaner_paid_at    timestamptz,

@@ -27,6 +27,7 @@ type Booking = {
   cleaner_pay?: number | null;
   cleaner_pay_source?: "auto" | "manual" | "estimate" | null;
   cleaner_pay_note?: string | null;
+  cleaner_pay_hidden?: boolean | null;
   customers: {
     first_name: string;
     last_name: string;
@@ -177,7 +178,7 @@ export default function DispatchRow({
 
       // What the cleaner was told they'll earn.
       const payBits: string[] = [];
-      if (data.pay != null) payBits.push(`${name?.first_name ?? "cleaner"} $${data.pay}${data.paySource === "manual" ? " (your number)" : ""}`);
+      if (data.pay != null) payBits.push(`${name?.first_name ?? "cleaner"} $${data.pay}${data.paySource === "manual" ? " (your number)" : ""}${data.payHidden ? " — recorded, not on the text" : ""}`);
       else if (data.payByHand) payBits.push(`${name?.first_name ?? "cleaner"}: no pay line (you settle it by hand)`);
       else payBits.push(`${name?.first_name ?? "cleaner"}: no pay texted — set it with Edit pay`);
       if (Array.isArray(data.payWarnings) && data.payWarnings.length) payBits.push(data.payWarnings.join(" "));
@@ -307,7 +308,7 @@ export default function DispatchRow({
               title={manualPay ? booking.cleaner_pay_note ?? "Set by you" : suggestedPay?.note ?? "Pay table"}
             >
               pay ${payShown}
-              <span className="font-normal text-gray-400"> {manualPay ? "set by you" : "table"}</span>
+              <span className="font-normal text-gray-400"> {manualPay ? (booking.cleaner_pay_hidden ? "set by you · not on the text" : "set by you") : "table"}</span>
             </span>
           </>
         )}
@@ -346,6 +347,7 @@ export default function DispatchRow({
         <PayEditor
           bookingId={booking.id}
           initialAmount={manualPay ? booking.cleaner_pay ?? null : null}
+          initialHidden={booking.cleaner_pay_hidden === true}
           suggested={suggestedPay?.amount ?? null}
           onDone={(message) => {
             setEditingPay(false);

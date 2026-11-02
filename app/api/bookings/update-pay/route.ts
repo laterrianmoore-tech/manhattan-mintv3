@@ -15,8 +15,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
 
-  const { bookingId, amount, slot: rawSlot, note } = await req.json();
+  const { bookingId, amount, slot: rawSlot, note, hideFromText } = await req.json();
   const slot: "primary" | "second" = rawSlot === "second" ? "second" : "primary";
+  // hideFromText (primary slot, 2026-11-02): keep the number for accounting and
+  // payroll but leave the Pay line off the dispatch text.
+  const hidden = slot === "primary" && hideFromText === true;
   // amount null (primary slot, 2026-11-01) = "No pay line": the owner settles
   // this job's pay by hand. The pay stays empty but the source is "manual", so
   // dispatch computes nothing from the table and texts no Pay line.
@@ -52,6 +55,10 @@ export async function POST(req: Request) {
   const update: Record<string, unknown> = { [payColumn]: noPay ? null : amount };
   if (slot === "primary") {
     update.cleaner_pay_source = "manual";
+    // Only touch the flag when the owner asked for it or is clearing pay, so a
+    // database without the column still takes an ordinary pay edit.
+    if (hidden) update.cleaner_pay_hidden = true;
+    else if (noPay || b.cleaner_pay_hidden === true) update.cleaner_pay_hidden = false;
     if (typeof note === "string" && note.trim()) update.cleaner_pay_note = note.trim().slice(0, 200);
     else if (noPay) update.cleaner_pay_note = "No pay line — settled by hand";
   }
@@ -59,10 +66,12 @@ export async function POST(req: Request) {
   if (updateErr) {
     console.error("[update-pay] UPDATE failed:", updateErr);
     const hint = /column .* does not exist/i.test(updateErr.message)
-      ? " Run lib/supabase/migrations/2026-10-08-cleaner-pay.sql in the Supabase SQL editor first."
+      ? /cleaner_pay_hidden/.test(updateErr.message)
+        ? " Run lib/supabase/migrations/2026-11-02-cleaner-pay-hidden.sql in the Supabase SQL editor first."
+        : " Run lib/supabase/migrations/2026-10-08-cleaner-pay.sql in the Supabase SQL editor first."
       : "";
     return NextResponse.json({ ok: false, error: updateErr.message + hint }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, slot, previous, amount: noPay ? null : amount, noPay });
+  return NextResponse.json({ ok: true, slot, previous, amount: noPay ? null : amount, noPay, hidden });
 }

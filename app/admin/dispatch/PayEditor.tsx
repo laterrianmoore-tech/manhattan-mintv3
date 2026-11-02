@@ -7,9 +7,13 @@ import { useState } from "react";
 // changes are internal only — the cleaner is never texted a pay update.
 // "No pay line" (2026-11-01, primary slot): the owner settles this job's pay
 // by hand, so dispatch computes nothing and the job text carries no Pay line.
+// "Don't put the pay on the job text" (2026-11-02, primary slot): the number
+// is recorded for accounting and payroll but the dispatch text has no Pay line
+// (pay combined across visits, say).
 export default function PayEditor({
   bookingId,
   initialAmount,
+  initialHidden = false,
   suggested,
   slot = "primary",
   cleanerName,
@@ -18,6 +22,8 @@ export default function PayEditor({
 }: {
   bookingId: string;
   initialAmount: number | null;
+  /** Current cleaner_pay_hidden (primary slot). */
+  initialHidden?: boolean;
   /** Table estimate shown as a hint when nothing is set yet. */
   suggested?: number | null;
   slot?: "primary" | "second";
@@ -26,6 +32,7 @@ export default function PayEditor({
   onClose: () => void;
 }) {
   const [value, setValue] = useState(initialAmount != null ? String(initialAmount) : suggested != null ? String(suggested) : "");
+  const [hidden, setHidden] = useState(initialHidden);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -41,15 +48,16 @@ export default function PayEditor({
     const res = await fetch("/api/bookings/update-pay/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bookingId, amount, slot, note }),
+      body: JSON.stringify({ bookingId, amount, slot, note, hideFromText: slot === "primary" && hidden }),
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
       const who = cleanerName ?? (slot === "second" ? "2nd cleaner" : "cleaner");
+      const tail = data.hidden ? " Recorded for accounting; the job text won't show it." : "";
       onDone(
-        data.previous != null && data.previous !== amount
+        (data.previous != null && data.previous !== amount
           ? `${who}'s pay: $${data.previous} → $${amount}.`
-          : `${who}'s pay set to $${amount}.`,
+          : `${who}'s pay set to $${amount}.`) + tail,
       );
     } else {
       setError(data.error ?? "Something went wrong. Try again.");
@@ -124,6 +132,15 @@ export default function PayEditor({
       >
         Back
       </button>
+      {slot === "primary" && (
+        <label
+          className="w-full flex items-center gap-2 text-xs text-gray-600 cursor-pointer"
+          title="The number still counts in Accounting and the Thursday payroll text. The dispatch text just has no Pay line."
+        >
+          <input type="checkbox" checked={hidden} onChange={(e) => setHidden(e.target.checked)} className="h-3.5 w-3.5" />
+          Don&apos;t put the pay on the job text (still counts in Accounting)
+        </label>
+      )}
       {suggested != null && initialAmount == null && (
         <p className="w-full text-[11px] text-gray-400">Table rate: ${suggested}. Dispatch uses it unless you save a number here.</p>
       )}

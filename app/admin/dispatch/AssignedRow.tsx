@@ -32,6 +32,7 @@ type Booking = {
   second_cleaner_pay?: number | null;
   cleaner_pay_source?: "auto" | "manual" | "estimate" | null;
   cleaner_pay_note?: string | null;
+  cleaner_pay_hidden?: boolean | null;
   customers: {
     first_name: string;
     last_name: string;
@@ -293,6 +294,9 @@ export default function AssignedRow({
                   title={booking.cleaner_pay_note ?? (booking.cleaner_pay_source === "manual" ? "Set by you" : "Pay table")}
                 >
                   ${booking.cleaner_pay}
+                  {booking.cleaner_pay_hidden && (
+                    <span className="font-normal text-gray-400" title="Recorded for accounting; not on the job text"> not on text</span>
+                  )}
                 </span>
               )}
               {booking.cleaner_pay == null && booking.cleaner_pay_source === "manual" && (
@@ -387,6 +391,7 @@ export default function AssignedRow({
           bookingId={booking.id}
           slot={editingPay}
           initialAmount={editingPay === "second" ? booking.second_cleaner_pay ?? null : booking.cleaner_pay ?? null}
+          initialHidden={editingPay === "primary" && booking.cleaner_pay_hidden === true}
           cleanerName={editingPay === "second" ? secondCleanerName ?? null : cleanerName}
           onDone={(message) => {
             setNotice(message);

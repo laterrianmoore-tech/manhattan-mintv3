@@ -167,6 +167,10 @@ export async function POST(req: Request) {
   // The source column belongs to the primary slot, so there "manual" alone is
   // the owner's call even with no amount; the second slot needs a saved number.
   const manualPay = booking.cleaner_pay_source === "manual" && (slot === "primary" || existingPay != null);
+  // Pay recorded but kept off the text (2026-11-02, primary slot): the owner
+  // set a number for accounting and payroll but does not want the cleaner to
+  // see it on the job text (e.g. pay combined across two visits).
+  const payHidden = slot === "primary" && manualPay && booking.cleaner_pay_hidden === true;
   let pay: PayResult | null = null;
   let payAmount: number | null = manualPay ? existingPay : null;
   let payNeedsOwner = false;
@@ -203,7 +207,7 @@ export async function POST(req: Request) {
       }
     }
   }
-  const payTextLine = payAmount != null ? `\nPay: $${payAmount}` : "";
+  const payTextLine = payAmount != null && !payHidden ? `\nPay: $${payAmount}` : "";
 
   const body = `New job — ${serviceDate} ${timeRange}
 ${customer?.first_name} · ${customer?.address}${aptSuffix}
@@ -262,6 +266,7 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`;
     pay: payAmount,
     paySource: manualPay ? "manual" : payAmount != null ? "auto" : null,
     payByHand: manualPay && payAmount == null,
+    payHidden,
     payNote: pay ? payNote(pay) : null,
     payWarnings: pay ? [...pay.warnings, ...pay.assumptions] : [],
     payNeedsOwner,
