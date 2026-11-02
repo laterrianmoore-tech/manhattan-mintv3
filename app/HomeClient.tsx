@@ -1,19 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import CleanChecklist from "./components/CleanChecklist";
 import EmailCaptureModal from "./components/EmailCaptureModal";
-import EmailCaptureSection from "./components/EmailCaptureSection";
-import { caseStudies } from "./case-studies/data";
 import { reviews, REVIEW_SOURCES, type Review } from "./reviews";
 import type { GoogleRating } from "@/lib/google-rating";
 import "./home.css";
 
 // The homepage body. Rendered by app/page.tsx (a server component) which
 // fetches the live Google rating; null means "couldn't fetch — hide the number".
+//
+// Trimmed 2026-11-02 (owner: "make it the best as possible"): the page ran
+// about 20 screens with 14 headlines and 11 booking buttons. The hero form,
+// credentials, guarantee, case-study and email-capture sections are gone;
+// their one-of-a-kind lines moved into "Why" and the FAQ. The hero now leads
+// with a photograph and a ten-second price instead of a form.
 function GoogleMark({ className = "rev-g" }: { className?: string }) {
 	return (
 		<svg className={className} viewBox="0 0 24 24" aria-label="Google">
@@ -78,18 +82,14 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 	const [pricingMode, setPricingMode] = useState<"flat" | "hourly">("flat");
 	const [pricingServiceType, setPricingServiceType] = useState("Standard clean");
 	const [pricingFrequency, setPricingFrequency] = useState("One-time");
-	const [weeklyBookings, setWeeklyBookings] = useState(17);
 	const [hourlyHours, setHourlyHours] = useState(3);
 	const [hourlyCleaners, setHourlyCleaners] = useState(2);
-	const [form, setForm] = useState({
-		fullName: "",
-		phone: "",
-		email: "",
-		address: "",
-		apartmentSize: "Studio / 1BR — $175",
-		serviceType: "Standard clean",
-		notes: "",
-	});
+
+	// The hero's ten-second price: size + service, one visit, no frequency.
+	const heroPrice = (() => {
+		if (selectedTier.amount === null) return "Custom";
+		return `$${selectedTier.amount + (serviceAdjustments[pricingServiceType] ?? 0)}`;
+	})();
 
 	const effectiveFlatPrice = (() => {
 		if (selectedTier.amount === null) return "Custom";
@@ -101,18 +101,26 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 
 	const effectiveHourlyPrice = `$${hourlyHours * hourlyCleaners * hourlyRates.ratePerCleaner}`;
 
-
+	// The floating "Book a clean" pill (phones only, see home.css) appears once
+	// the hero's own price card has scrolled away, so there is never more than
+	// one booking button on screen at a time.
+	const heroRef = useRef<HTMLDivElement>(null);
+	const [floatVisible, setFloatVisible] = useState(false);
 	useEffect(() => {
-		const intervalId = window.setInterval(() => {
-			setWeeklyBookings((prev) => {
-				const delta = Math.random() > 0.5 ? 1 : -1;
-				const next = prev + delta;
-				if (next < 14) return 15;
-				if (next > 20) return 19;
-				return next;
-			});
-		}, 4000);
-		return () => window.clearInterval(intervalId);
+		const el = heroRef.current;
+		if (!el) return;
+		// One rect read per scroll event; React ignores same-value updates.
+		const check = () => {
+			const r = el.getBoundingClientRect();
+			setFloatVisible(r.bottom < 0 || r.top > window.innerHeight);
+		};
+		check();
+		window.addEventListener("scroll", check, { passive: true });
+		window.addEventListener("resize", check);
+		return () => {
+			window.removeEventListener("scroll", check);
+			window.removeEventListener("resize", check);
+		};
 	}, []);
 
 	const scrollToSection = (id: string) => {
@@ -122,49 +130,31 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 		}
 	};
 
-	const handleRequestBooking = () => {
-		const isHourlyBooking = form.serviceType.startsWith("Hourly clean");
-		localStorage.setItem("mm_name", form.fullName);
-		localStorage.setItem("mm_email", form.email);
-		localStorage.setItem("mm_phone", form.phone);
-		localStorage.setItem("mm_address", form.address);
-		localStorage.setItem("mm_size", isHourlyBooking ? "Hourly booking" : form.apartmentSize);
-		localStorage.setItem("mm_service", form.serviceType);
-		localStorage.setItem("mm_date", form.notes);
-
-		router.push("/quote");
-	};
-
-	const applyPricingSelectionToBookingForm = () => {
+	// Carry the size, service and frequency they priced into the quote page,
+	// which reads these keys on load.
+	const bookAtRate = () => {
 		if (pricingMode === "flat") {
-			setForm((prev) => ({
-				...prev,
-				apartmentSize: `${selectedTier.name} — ${selectedTier.price}`,
-				serviceType: pricingServiceType,
-			}));
-			// The quote page picks this up so the frequency they priced is the one they book.
-			// Only a recurring choice is carried over; a one-time price check leaves the
-			// quote page on its own default (Bi-Weekly, the plan we recommend).
+			localStorage.setItem("mm_size", `${selectedTier.name} — ${selectedTier.price}`);
+			localStorage.setItem("mm_service", pricingServiceType);
+			// Only a recurring choice is carried over; a one-time price check
+			// leaves the quote page on its own default (Bi-Weekly, the plan we recommend).
 			const quoteFrequency = frequencyDiscounts[pricingFrequency]?.quoteValue ?? "One-Time";
 			if (quoteFrequency === "One-Time") localStorage.removeItem("mm_frequency");
 			else localStorage.setItem("mm_frequency", quoteFrequency);
-			return;
+		} else {
+			localStorage.setItem("mm_size", "Hourly booking");
+			localStorage.setItem("mm_service", `Hourly clean (${hourlyHours}h, ${hourlyCleaners} cleaner${hourlyCleaners === 1 ? "" : "s"})`);
+			localStorage.removeItem("mm_frequency");
 		}
-
-		setForm((prev) => ({
-			...prev,
-			apartmentSize: "Hourly booking",
-			serviceType: `Hourly clean (${hourlyHours}h, ${hourlyCleaners} cleaner${hourlyCleaners === 1 ? "" : "s"})`,
-		}));
+		router.push("/quote");
 	};
 
 	return (
 		<>
 			<EmailCaptureModal />
 
-
-			{/* FLOATING BOOK BUTTON */}
-			<button className="float-cta" onClick={() => scrollToSection("booking")}>
+			{/* FLOATING BOOK BUTTON (phones, after the hero) */}
+			<button className={`float-cta${floatVisible ? " is-visible" : ""}`} onClick={bookAtRate} aria-hidden={!floatVisible} tabIndex={floatVisible ? 0 : -1}>
 				<svg viewBox="0 0 24 24">
 					<rect x="3" y="4" width="18" height="18" rx="2" />
 					<line x1="3" y1="10" x2="21" y2="10" />
@@ -187,103 +177,43 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 						<li>Free re-clean guarantee</li>
 					</ul>
 					<div className="hero-btns">
-						<button className="btn-primary" onClick={() => scrollToSection("booking")}>Book your first clean</button>
-						<button className="btn-secondary" onClick={() => scrollToSection("pricing")}>View pricing</button>
+						<button className="btn-primary" onClick={bookAtRate}>Book your first clean</button>
+						<button className="btn-secondary" onClick={() => scrollToSection("pricing")}>See pricing</button>
 					</div>
 					<div className="hero-micro">Studio and 1-bedroom homes from <span>$175</span> &nbsp;·&nbsp; <Link href="/quote">Flat-rate pricing</Link> &nbsp;·&nbsp; Next-day slots, same-day by text</div>
 				</div>
-				<div className="hero-r" id="booking">
-					<div className="form-head">Get a fast quote</div>
-					<div className="form-sub">Tell us a few details and we&apos;ll confirm your booking same day.</div>
-					<div className="form-grid">
-						<div className="form-row">
-							<div className="form-field">
-								<label className="form-label">Full name</label>
-								<input
-									className="form-input"
-									type="text"
-									placeholder="Jane Smith"
-									value={form.fullName}
-									onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
-								/>
+				<div className="hero-r" id="booking" ref={heroRef}>
+					<Image src="/home/why.jpg" alt="Sunlit, freshly cleaned Manhattan living room with tall windows and a chandelier" fill priority sizes="(max-width: 960px) 100vw, 50vw" className="hero-photo" />
+					<div className="hero-card">
+						<div className="hero-card-eye">Your price in ten seconds</div>
+						<div className="hero-card-row">
+							<select
+								className="hero-select"
+								aria-label="Apartment size"
+								value={selectedTier.name}
+								onChange={(e) => {
+									const tier = tiers.find((t) => t.name === e.target.value);
+									if (tier) setSelectedTier(tier);
+								}}
+							>
+								{tiers.map((tier) => (
+									<option key={tier.name} value={tier.name}>{tier.name}</option>
+								))}
+							</select>
+							<select className="hero-select" aria-label="Type of clean" value={pricingServiceType} onChange={(e) => setPricingServiceType(e.target.value)}>
+								<option>Standard clean</option>
+								<option>Deep clean (+$75)</option>
+								<option>Move-in / Move-out (+$100)</option>
+							</select>
+						</div>
+						<div className="hero-card-bottom">
+							<div>
+								<div className="hero-card-from">{heroPrice === "Custom" ? "Quoted per home" : "Flat rate, supplies included"}</div>
+								<div className="hero-card-price">{heroPrice}</div>
 							</div>
-							<div className="form-field">
-								<label className="form-label">Phone</label>
-								<input
-									className="form-input"
-									type="tel"
-									placeholder="(212) 555-0100"
-									value={form.phone}
-									onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
-								/>
-							</div>
+							<button className="btn-primary hero-card-btn" onClick={bookAtRate}>Book at this rate →</button>
 						</div>
-						<div className="form-field">
-							<label className="form-label">Email</label>
-							<input
-								className="form-input"
-								type="email"
-								placeholder="jane@email.com"
-								value={form.email}
-								onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-							/>
-						</div>
-						<div className="form-field">
-							<label className="form-label">Address (building + unit)</label>
-							<input
-								className="form-input"
-								type="text"
-								placeholder="123 W 57th St, Apt 4B"
-								value={form.address}
-								onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
-							/>
-						</div>
-						<div className="form-row">
-							<div className="form-field">
-								<label className="form-label">Apartment size</label>
-								<select
-									className="form-select"
-									value={form.apartmentSize}
-									onChange={(e) => setForm((prev) => ({ ...prev, apartmentSize: e.target.value }))}
-								>
-									<option>Hourly booking</option>
-									<option>Studio / 1BR — $175</option>
-									<option>2 Bedroom — $225</option>
-									<option>3 Bedroom — $275</option>
-									<option>4+ Bedroom — Custom</option>
-								</select>
-							</div>
-							<div className="form-field">
-								<label className="form-label">Service type</label>
-								<select
-									className="form-select"
-									value={form.serviceType}
-									onChange={(e) => setForm((prev) => ({ ...prev, serviceType: e.target.value }))}
-								>
-									<option>Standard clean</option>
-									<option>Deep clean (+$75)</option>
-									<option>Move-in / Move-out (+$100)</option>
-									<option>Recurring — save up to 20%</option>
-								</select>
-							</div>
-						</div>
-						<div className="form-field">
-							<label className="form-label">Preferred date &amp; notes</label>
-							<input
-								className="form-input"
-								type="text"
-								placeholder="ASAP / weekdays preferred / dog at home…"
-								value={form.notes}
-								onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
-							/>
-						</div>
-						<button className="btn-form" onClick={handleRequestBooking}>Request booking confirmation →</button>
-						<div className="form-trust">
-							<span className="ftrust">Charged only after your clean</span>
-							<span className="ftrust">Same-day response</span>
-							<span className="ftrust">COI available</span>
-							<span className="ftrust"><span className="booking-count">{weeklyBookings}</span> bookings this week</span>
-						</div>
+						<div className="hero-card-fine">Charged only after the clean · Free re-clean guarantee · Recurring saves up to 20%</div>
 					</div>
 				</div>
 			</div>
@@ -304,51 +234,51 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 				<div className="stat-item"><div className="stat-n">100%</div><div className="stat-d">Satisfaction guarantee</div></div>
 			</div>
 
-			{/* FEATURES */}
+			{/* WHY (absorbs the old credentials section: founder card + guarantee line) */}
 			<section className="section section-white why" id="services">
 				<div className="why-grid">
-					<figure className="why-photo">
-						<Image src="/home/why.jpg" alt="Sunlit, freshly cleaned living room with plants and tall windows" fill sizes="(max-width: 960px) 100vw, 46vw" />
-						<figcaption className="why-caption">
-							<span className="why-caption-eye">The Mint Mark</span>
-							<span className="why-caption-text">Up to 59 details. Every room. Every visit.</span>
-						</figcaption>
-					</figure>
-					<div className="why-copy">
+					<div className="why-intro">
 						<div className="sect-eye">Why Manhattan Mint</div>
 						<h2>Built for the way<br /><em>New Yorkers live.</em></h2>
 						<p className="sect-sub why-sub">Your schedule is packed, your space is tight, and your standards are high. Every part of Manhattan Mint was built around that.</p>
-						<ol className="why-list">
-							<li>
-								<span className="why-n">01</span>
-								<div>
-									<h3>Vetted, then trained.</h3>
-									<p>Every cleaner is background-checked through Certn, interviewed in person by the founder, and trained on the Mint Mark checklist before their first booking. On a recurring plan, the same person comes back every time.</p>
-								</div>
-							</li>
-							<li>
-								<span className="why-n">02</span>
-								<div>
-									<h3>Priced in 60 seconds, charged after.</h3>
-									<p>See your exact flat rate before you enter a single detail. Book online with instant confirmation, and your card is only charged once the clean is done and the photos are in.</p>
-								</div>
-							</li>
-							<li>
-								<span className="why-n">03</span>
-								<div>
-									<h3>Manhattan, and only Manhattan.</h3>
-									<p>Co-op boards, COIs, service-elevator hours, fifth-floor walk-ups, doormen who want a name. We work nowhere else, so we already know your building&apos;s rules.</p>
-								</div>
-							</li>
-							<li>
-								<span className="why-n">04</span>
-								<div>
-									<h3>Bonded, insured, guaranteed.</h3>
-									<p>Full liability coverage on every visit, and if anything isn&apos;t right within 48 hours we come back and fix it at no charge. No forms, no arguing.</p>
-								</div>
-							</li>
-						</ol>
+						<div className="founder-card">
+							<div className="founder-avatar">mm</div>
+							<div>
+								<div className="founder-name">Owner-operated, Manhattan-based</div>
+								<div className="founder-role">Not a marketplace. The owner personally reviews every job&apos;s photo summary before it&apos;s closed out.</div>
+							</div>
+						</div>
 					</div>
+					<ol className="why-list">
+						<li>
+							<span className="why-n">01</span>
+							<div>
+								<h3>Vetted, then trained.</h3>
+								<p>Every cleaner is background-checked through Certn, interviewed in person by the founder, and trained on the Mint Mark checklist before their first booking. On a recurring plan, the same person comes back every time.</p>
+							</div>
+						</li>
+						<li>
+							<span className="why-n">02</span>
+							<div>
+								<h3>Priced in 60 seconds, charged after.</h3>
+								<p>See your exact flat rate before you enter a single detail. Book online with instant confirmation, and your card is only charged once the clean is done and the photos are in.</p>
+							</div>
+						</li>
+						<li>
+							<span className="why-n">03</span>
+							<div>
+								<h3>Manhattan, and only Manhattan.</h3>
+								<p>Co-op boards, COIs, service-elevator hours, fifth-floor walk-ups, doormen who want a name. We work nowhere else, so we already know your building&apos;s rules. Certificates of insurance issued for buildings that require them.</p>
+							</div>
+						</li>
+						<li>
+							<span className="why-n">04</span>
+							<div>
+								<h3>Bonded, insured, guaranteed.</h3>
+								<p>Full liability coverage on every visit. Spot something we missed? Tell us within 48 hours and we send a cleaner back at no charge. No forms, no arguing, and it&apos;s in writing in our <Link href="/terms">terms</Link>.</p>
+							</div>
+						</li>
+					</ol>
 				</div>
 			</section>
 
@@ -465,13 +395,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 									? "Deep clean +$75 · Move-in/out +$100 · Recurring saves up to 20%"
 									: `$${hourlyRates.ratePerCleaner}/hr per cleaner · same supplies included`}
 							</div>
-							<button
-								className="btn-pcb"
-								onClick={() => {
-									applyPricingSelectionToBookingForm();
-									scrollToSection("booking");
-								}}
-							>
+							<button className="btn-pcb" onClick={bookAtRate}>
 								Book at this rate →
 							</button>
 						</div>
@@ -495,96 +419,8 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 				</div>
 			</section>
 
-			{/* CREDENTIALS / TRUST */}
-			<section className="section cred-bg" id="credentials">
-				<div className="sect-eye">Who you&apos;re letting in</div>
-				<h2>A team you can<br /><em>actually vet.</em></h2>
-				<p className="sect-sub">Trust isn&apos;t a tagline — it&apos;s paperwork, screening, and a founder who reviews every job.</p>
-				<div className="cred-grid">
-					<div className="cred-copy">
-						<p>Manhattan Mint is an owner-operated NYC company, not a lead-generation marketplace. Every cleaner on our team is interviewed in person, background-checked before their first booking, and trained on the Mint Mark checklist — the same one behind every clean in our <Link href="/case-studies">case studies</Link>.</p>
-						<p>We work exclusively in Manhattan buildings, which means COIs, service-elevator reservations, doorman check-ins, and <Link href="/blog/cleaning-services-for-co-ops">co-op house rules</Link> are part of our normal workflow — not a surprise.</p>
-						<div className="founder-card">
-							<div className="founder-avatar">mm</div>
-							<div>
-								<div className="founder-name">Owner-operated, Manhattan-based</div>
-								<div className="founder-role">The owner personally reviews every job&apos;s photo summary before it&apos;s closed out</div>
-							</div>
-						</div>
-					</div>
-					<div className="cred-list">
-						<div className="cred-item">
-							<div className="cred-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div>
-							<div>
-								<div className="cred-title">Background-checked, every hire</div>
-								<div className="cred-body">Third-party screening is completed before a cleaner ever enters a client&apos;s home.</div>
-							</div>
-						</div>
-						<div className="cred-item">
-							<div className="cred-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div>
-							<div>
-								<div className="cred-title">Bonded &amp; fully insured</div>
-								<div className="cred-body">Liability coverage on every visit, with certificates of insurance issued for buildings that require them.</div>
-							</div>
-						</div>
-						<div className="cred-item">
-							<div className="cred-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div>
-							<div>
-								<div className="cred-title">Photo-verified quality</div>
-								<div className="cred-body">A photo summary is sent after every clean, and the founder reviews the results before the job is closed out.</div>
-							</div>
-						</div>
-						<div className="cred-item">
-							<div className="cred-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg></div>
-							<div>
-								<div className="cred-title">100% re-clean guarantee</div>
-								<div className="cred-body">If anything isn&apos;t right, we come back and fix it at no charge — our standard policy, in writing in our <Link href="/terms">terms</Link>.</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</section>
-
-			{/* NEIGHBORHOODS */}
-			<section className="section hoods-bg sky-bg" id="areas">
-				<div className="sect-eye">Service areas</div>
-				<h2>All of Manhattan.<br /><em>Your neighborhood, covered.</em></h2>
-				<p className="sect-sub">We operate across all Manhattan neighborhoods, plus select parts of Brooklyn and Queens on request. Tap yours to see what we clean there.</p>
-				<div className="hoods-grid">
-					<Link href="/neighborhoods/tribeca" className="hood">Tribeca</Link><Link href="/neighborhoods/soho" className="hood">SoHo</Link><Link href="/neighborhoods/east-village" className="hood">East Village</Link><Link href="/neighborhoods/west-village" className="hood">West Village</Link>
-					<Link href="/neighborhoods" className="hood">Greenwich Village</Link><Link href="/neighborhoods/chelsea" className="hood">Chelsea</Link><Link href="/neighborhoods/flatiron" className="hood">Flatiron</Link>
-					<Link href="/neighborhoods" className="hood">Gramercy</Link><Link href="/neighborhoods/murray-hill" className="hood">Murray Hill</Link><Link href="/neighborhoods" className="hood">Midtown</Link>
-					<Link href="/neighborhoods" className="hood">Hell&apos;s Kitchen</Link><Link href="/neighborhoods/upper-east-side" className="hood">Upper East Side</Link><Link href="/neighborhoods/upper-west-side" className="hood">Upper West Side</Link>
-					<Link href="/neighborhoods/financial-district" className="hood">FiDi</Link>
-					<Link href="/neighborhoods" className="hood">Battery Park</Link><Link href="/neighborhoods" className="hood">Nolita</Link><Link href="/neighborhoods" className="hood">Lower East Side</Link>
-					<Link href="/neighborhoods" className="hood">Kips Bay</Link><Link href="/neighborhoods" className="hood">Sutton Place</Link>
-					<Link href="/neighborhoods" className="hood">Hudson Yards</Link>
-					<Link href="/neighborhoods" className="hood">Yorkville</Link>
-				</div>
-				<p className="hoods-more"><Link href="/neighborhoods">See the areas we cover in detail →</Link></p>
-			</section>
-
-			{/* GUARANTEE */}
-			<section className="section guarantee-bg" id="guarantee">
-				<div className="guarantee-inner">
-					<div className="g-seal" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6l7-3z" /><polyline points="9 12 11 14 15 10" /></svg></div>
-					<div className="sect-eye">The Manhattan Mint Guarantee</div>
-					<h2>Spot something we missed?<br /><em>We come back and fix it. Free.</em></h2>
-					<p className="guarantee-body">
-						Every clean is checked against the Mint Mark checklist (35 details on a standard clean, 46 on a deep clean, 59 on a move-out), and the founder reviews the photo summary before the job is closed out. If anything still isn&apos;t right, tell us within 48 hours and we&apos;ll send a cleaner back to re-do it at no charge. No forms, no arguing, no hoops.
-					</p>
-					<div className="guarantee-steps">
-						<div className="g-step"><span className="g-n">1</span><div><strong>Send a photo</strong><span>Text us within 48 hours of your clean.</span></div></div>
-						<div className="g-step"><span className="g-n">2</span><div><strong>We rebook it</strong><span>A re-clean, usually within 48 hours, at a time that suits you.</span></div></div>
-						<div className="g-step"><span className="g-n">3</span><div><strong>Zero charge</strong><span>The re-clean is on us. Every time.</span></div></div>
-					</div>
-					<p className="guarantee-fine">Our standard policy, in writing in our <Link href="/terms">terms</Link>.</p>
-					<button className="btn-primary" onClick={() => scrollToSection("booking")}>Book your first clean →</button>
-				</div>
-			</section>
-
 			{/* REVIEWS */}
-			<section className="section section-white" id="reviews">
+			<section className="section section-white reviews-section" id="reviews">
 				<div className="sect-eye">Reviews</div>
 				<h2>What Manhattan<br /><em>is saying.</em></h2>
 				<p className="sect-sub">
@@ -637,28 +473,30 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 						))}
 					</div>
 				</div>
+				<p className="rev-more">Prefer the long version? <Link href="/case-studies">Read how we handle pre-war walk-ups, strict co-op boards and tight layouts →</Link></p>
 			</section>
 
-			{/* CASE STUDIES */}
-			<section className="section" id="case-studies">
-				<div className="sect-eye">Case studies</div>
-				<h2>Real Manhattan apartments,<br /><em>real results.</em></h2>
-				<p className="sect-sub">Pre-war walk-ups, strict co-op boards, tight layouts — see how we handle the challenges unique to cleaning in Manhattan.</p>
-				<div className="cs-grid">
-					{caseStudies.map((study) => (
-						<Link key={study.slug} href={`/case-studies/${study.slug}`} className="cs-card">
-							<span className="cs-tag">{study.neighborhood} · {study.propertyType}</span>
-							<div className="cs-title">{study.title}</div>
-							<p className="cs-excerpt">{study.excerpt}</p>
-							<span className="cs-more">Read the case study →</span>
-						</Link>
-					))}
+			{/* NEIGHBORHOODS (compact band) */}
+			<section className="section hoods-bg sky-bg hoods-compact" id="areas">
+				<div className="hoods-head">
+					<div>
+						<div className="sect-eye">Service areas</div>
+						<h2 className="hoods-title">All of Manhattan.<br /><em>Your neighborhood, covered.</em></h2>
+					</div>
+					<p className="hoods-lead">Every Manhattan neighborhood, plus select parts of Brooklyn and Queens on request. Tap yours to see what we clean there, or <Link href="/neighborhoods">see every area →</Link></p>
 				</div>
-				<Link href="/case-studies" className="cs-all">View all case studies →</Link>
+				<div className="hoods-grid">
+					<Link href="/neighborhoods/tribeca" className="hood">Tribeca</Link><Link href="/neighborhoods/soho" className="hood">SoHo</Link><Link href="/neighborhoods/east-village" className="hood">East Village</Link><Link href="/neighborhoods/west-village" className="hood">West Village</Link>
+					<Link href="/neighborhoods" className="hood">Greenwich Village</Link><Link href="/neighborhoods/chelsea" className="hood">Chelsea</Link><Link href="/neighborhoods/flatiron" className="hood">Flatiron</Link>
+					<Link href="/neighborhoods" className="hood">Gramercy</Link><Link href="/neighborhoods/murray-hill" className="hood">Murray Hill</Link><Link href="/neighborhoods" className="hood">Midtown</Link>
+					<Link href="/neighborhoods" className="hood">Hell&apos;s Kitchen</Link><Link href="/neighborhoods/upper-east-side" className="hood">Upper East Side</Link><Link href="/neighborhoods/upper-west-side" className="hood">Upper West Side</Link>
+					<Link href="/neighborhoods/financial-district" className="hood">FiDi</Link>
+					<Link href="/neighborhoods" className="hood">Battery Park</Link><Link href="/neighborhoods" className="hood">Nolita</Link><Link href="/neighborhoods" className="hood">Lower East Side</Link>
+					<Link href="/neighborhoods" className="hood">Kips Bay</Link><Link href="/neighborhoods" className="hood">Sutton Place</Link>
+					<Link href="/neighborhoods" className="hood">Hudson Yards</Link>
+					<Link href="/neighborhoods" className="hood">Yorkville</Link>
+				</div>
 			</section>
-
-			{/* EMAIL CAPTURE */}
-			<EmailCaptureSection />
 
 			{/* FAQ */}
 			<section className="section faq-bg">
@@ -668,7 +506,7 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 				<div className="faq-grid">
 					<div className="faq-item"><div className="faq-q">Do I need to be home during the clean?</div><div className="faq-a">No — most clients provide a key, lockbox code, or doorman access. We handle everything professionally and send a photo summary when done.</div></div>
 					<div className="faq-item"><div className="faq-q">Do you bring your own supplies?</div><div className="faq-a">Yes, always. All cleaning products and equipment are included in your flat rate. We use eco-friendly, non-toxic products by default.</div></div>
-					<div className="faq-item"><div className="faq-q">What if I&apos;m not satisfied?</div><div className="faq-a">We&apos;ll come back and re-clean at no charge. 100% satisfaction is not a marketing line — it&apos;s our standard operating policy.</div></div>
+					<div className="faq-item"><div className="faq-q">What if I&apos;m not satisfied?</div><div className="faq-a">Tell us within 48 hours and we come back and re-clean at no charge. Every clean is checked against the Mint Mark checklist and the founder reviews the photos before the job is closed out.</div></div>
 					<div className="faq-item"><div className="faq-q">Can I request the same cleaner every time?</div><div className="faq-a">Yes. Once you&apos;ve had a great experience with a specific cleaner, you can request them for all future visits when you subscribe.</div></div>
 					<div className="faq-item"><div className="faq-q">Is your team insured?</div><div className="faq-a">Every cleaner is fully bonded and insured. We are also COI-ready for co-op and condo buildings that require it — see how that works in <Link href="/case-studies/co-op-coi-cleaning-upper-east-side">our Upper East Side co-op case study</Link>.</div></div>
 					<div className="faq-item"><div className="faq-q">How do I cancel or reschedule?</div><div className="faq-a">Text or email us any time. No cancellation fees, no contracts. We only ask for 24 hours notice when possible.</div></div>
@@ -704,14 +542,14 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 							</ul>
 						</div>
 					</div>
-					<button className="btn-primary" onClick={() => scrollToSection("booking")}>Sounds like me — book a clean →</button>
+					<button className="btn-primary" onClick={bookAtRate}>Sounds like me — book a clean →</button>
 				</div>
 			</section>
 
 			{/* CTA BAND */}
 			<div className="cta-band">
 				<h2>Ready for the cleanest<br />apartment in Manhattan?<br /><em>Starts at $175, all in.</em></h2>
-				<button className="btn-cta-w" onClick={() => scrollToSection("booking")}>Book your first clean →</button>
+				<button className="btn-cta-w" onClick={bookAtRate}>Book your first clean →</button>
 			</div>
 
 		</>

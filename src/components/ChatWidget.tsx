@@ -249,17 +249,20 @@ export default function ChatWidget() {
 
   return (
     <>
-      {/* Floating button — positioned above the "Book a clean" float-cta */}
+      {/* Floating button. On phones it sits above the home page's floating
+          "Book a clean" pill (which only appears once the hero scrolls away);
+          on desktop there is no pill, so it takes the corner. Smaller on phones
+          so it never crowds the pill or the quote page's price bar. */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
           aria-label="Open chat with Manhattan Mint"
           style={{
             position: 'fixed',
-            bottom: isMobile ? 80 : 96,
-            right: 24,
-            width: 56,
-            height: 56,
+            bottom: isMobile ? 84 : 24,
+            right: isMobile ? 16 : 24,
+            width: isMobile ? 48 : 56,
+            height: isMobile ? 48 : 56,
             borderRadius: '50%',
             background: '#1d9e75',
             color: '#fff',

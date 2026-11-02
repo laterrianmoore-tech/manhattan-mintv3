@@ -79,8 +79,8 @@ function Nav() {
 
   return (
     <header className="site-header">
-      <PromoBar />
-      <TrustTicker />
+      {/* One strip above the nav: the seasonal promo bar when one is running, the trust ticker otherwise. */}
+      <PromoBar fallback={<TrustTicker />} />
       <nav className="site-nav" aria-label="Main navigation">
         <div className="site-nav-inner">
           <Link href="/" className="brand" aria-label="Manhattan Mint home">
@@ -276,6 +276,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             --mint: #1d9e75;
             --mint-light: #e1f5ee;
             --mint-dark: #085041;
+            --deep: #0a2419; /* the one dark surface color: promo bar, footer, dark bands, price card, holiday popup */
             --dark: #0f0f0f;
             --charcoal: #1a1a1a;
             --gray: #888;
@@ -295,20 +296,24 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             z-index: 100;
           }
 
+          /* Always one line: the pieces that don't fit on a phone are marked .promo-bar-more. */
           .promo-bar {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.9rem;
-            flex-wrap: wrap;
-            padding: 0.6rem 1rem;
-            background: #0F0F0F;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+            overflow: hidden;
+            padding: 0.55rem 1rem;
+            background: var(--deep);
             color: #fff;
             text-decoration: none;
             font-size: 0.86rem;
             line-height: 1.3;
           }
           .promo-bar:hover .promo-bar-cta { text-decoration: underline; }
+          .promo-bar-cta-short { display: none; }
           .promo-bar-tag {
             font-size: 0.64rem;
             letter-spacing: 0.14em;
@@ -321,7 +326,11 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           .promo-bar-text { color: rgba(255,255,255,.85); }
           .promo-bar-text strong { color: #fff; font-weight: 600; }
           .promo-bar-cta { color: #7ed9b8; font-weight: 500; white-space: nowrap; }
-          @media (max-width: 640px) { .promo-bar-tag { display: none; } .promo-bar { font-size: 0.8rem; gap: 0.5rem; } }
+          @media (max-width: 640px) {
+            .promo-bar { font-size: 0.8rem; gap: 0.5rem; padding: 0.5rem 0.75rem; }
+            .promo-bar-tag, .promo-bar-more, .promo-bar-cta-long { display: none; }
+            .promo-bar-cta-short { display: inline; }
+          }
 
           .trust-ticker {
             background: var(--mint-dark);
@@ -441,7 +450,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           .site-footer {
             position: relative;
             isolation: isolate;
-            background: var(--dark) url("/home/skyline.jpg") center 30% / cover no-repeat;
+            background: var(--deep) url("/home/skyline.jpg") center 30% / cover no-repeat;
             background-attachment: fixed;
             color: #f2f2f2;
             margin-top: 4rem;
@@ -450,7 +459,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, rgba(10, 12, 11, 0.8) 0%, rgba(10, 12, 11, 0.72) 60%, rgba(10, 12, 11, 0.86) 100%);
+            background: linear-gradient(180deg, rgba(6, 23, 16, 0.82) 0%, rgba(6, 23, 16, 0.74) 60%, rgba(6, 23, 16, 0.88) 100%);
             z-index: -1;
             pointer-events: none;
           }

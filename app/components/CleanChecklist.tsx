@@ -16,6 +16,11 @@ const counts = (Object.keys(RANK) as Tier[]).reduce((acc, level) => {
 export default function CleanChecklist() {
 	const router = useRouter();
 	const [tier, setTier] = useState<Tier>("Standard");
+	// Collapsed by default: the full 59-line list made this the tallest block
+	// on the home page. Each room shows a handful of lines (included ones
+	// first) until "Show all" is tapped.
+	const [expanded, setExpanded] = useState(false);
+	const PREVIEW = 4;
 	const current = TIERS.find((t) => t.key === tier)!;
 
 	const book = () => {
@@ -55,7 +60,10 @@ export default function CleanChecklist() {
 					<div className="ck-room" key={r.room}>
 						<h3 className="ck-room-title">{r.room}</h3>
 						<ul className="ck-list">
-							{r.items.map((item) => {
+							{(expanded
+								? r.items
+								: [...r.items].sort((a, b) => Number(RANK[b.tier] <= RANK[tier]) - Number(RANK[a.tier] <= RANK[tier])).slice(0, PREVIEW)
+							).map((item) => {
 								const included = RANK[item.tier] <= RANK[tier];
 								return (
 									<li key={item.text} className={`ck-item${included ? "" : " ck-item-off"}`}>
@@ -73,6 +81,10 @@ export default function CleanChecklist() {
 					</div>
 				))}
 			</div>
+
+			<button type="button" className="ck-toggle" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded}>
+				{expanded ? "Show fewer ↑" : `Show all ${counts["Move Out"]} details ↓`}
+			</button>
 
 			<div className="ck-cta">
 				<button type="button" className="btn-pcb" onClick={book}>
