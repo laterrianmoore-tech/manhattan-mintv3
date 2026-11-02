@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import ScheduleEditor from "./ScheduleEditor";
 import PriceEditor from "./PriceEditor";
 import PayEditor from "./PayEditor";
+import { STATUS_ORDER, type CleanerDayStatus } from "@/lib/availability";
 
 type Cleaner = {
   id: string;
@@ -53,10 +54,13 @@ export default function DispatchRow({
   booking,
   cleaners,
   suggestedPay,
+  cleanerStatus,
 }: {
   booking: Booking;
   cleaners: Cleaner[];
   suggestedPay?: SuggestedPay | null;
+  /** Per cleaner, what her day looks like on this job's date (2026-11-02): free, already booked, or usually off. */
+  cleanerStatus?: Record<string, CleanerDayStatus & { quiet?: boolean }>;
 }) {
   const router = useRouter();
   const [selectedCleaner, setSelectedCleaner] = useState("");
@@ -90,6 +94,59 @@ export default function DispatchRow({
     ? booking.preferred_time_ranges.join(", ")
     : booking.preferred_time_ranges || "—";
   const aptSuffix = booking.customers.apt_no ? ` Apt ${booking.customers.apt_no}` : "";
+
+  // Cleaner picker: free cleaners first, then those already booked that day,
+  // then anyone usually off. Each option says why, so the owner never has to
+  // scroll the assigned list to find out.
+  const statusOf = (id: string) => cleanerStatus?.[id];
+  const orderedCleaners = [...cleaners].sort((a, b) => {
+    const sa = statusOf(a.id)?.kind ?? "free";
+    const sb = statusOf(b.id)?.kind ?? "free";
+    return STATUS_ORDER[sa] - STATUS_ORDER[sb] || a.first_name.localeCompare(b.first_name);
+  });
+  const optionLabel = (c: Cleaner) => {
+    const s = statusOf(c.id);
+    const name = `${c.first_name} ${c.last_name}`.trim();
+    if (!s) return name;
+    if (s.kind === "busy") return `${name} — booked: ${s.detail}`;
+    return `${name} — ${s.detail}`;
+  };
+  const isQuiet = (c: Cleaner) => !!statusOf(c.id)?.quiet;
+  const freeNames = orderedCleaners
+    .filter((c) => !isQuiet(c) && (statusOf(c.id)?.kind ?? "free") === "free")
+    .map((c) => c.first_name);
+  const dayShort = dateStr.split(",")[0];
+  // <optgroup>s so the list reads as an answer: who's free, who's booked,
+  // who's off, then the quiet accounts at the very bottom.
+  const groups = (exclude: string): { label: string; items: Cleaner[] }[] => {
+    const pool = orderedCleaners.filter((c) => c.id !== exclude);
+    if (!cleanerStatus) return [{ label: "", items: pool }];
+    const pick = (kind: CleanerDayStatus["kind"]) => pool.filter((c) => !isQuiet(c) && (statusOf(c.id)?.kind ?? "free") === kind);
+    return [
+      { label: `Free ${dayShort}`, items: pick("free") },
+      { label: `Already booked ${dayShort}`, items: pick("busy") },
+      { label: `Usually off ${dayShort}`, items: pick("off") },
+      { label: "No jobs in 90 days", items: pool.filter(isQuiet) },
+    ].filter((g) => g.items.length);
+  };
+  const renderGroups = (exclude: string) =>
+    groups(exclude).map((g) =>
+      g.label ? (
+        <optgroup key={g.label} label={g.label}>
+          {g.items.map((c) => (
+            <option key={c.id} value={c.id}>
+              {optionLabel(c)}
+            </option>
+          ))}
+        </optgroup>
+      ) : (
+        g.items.map((c) => (
+          <option key={c.id} value={c.id}>
+            {optionLabel(c)}
+          </option>
+        ))
+      ),
+    );
 
   async function handleDispatch() {
     if (!selectedCleaner) {
@@ -223,7 +280,7 @@ export default function DispatchRow({
   }
 
   return (
-    <div className="border border-gray-200 rounded-xl p-4 space-y-3 bg-white">
+    <div id={`job-${booking.id}`} className="border border-gray-200 rounded-xl p-4 space-y-3 bg-white scroll-mt-4">
       <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-sm">
         <span className="font-semibold text-gray-900">
           {booking.customers.first_name} {booking.customers.last_name}
@@ -268,6 +325,18 @@ export default function DispatchRow({
           </>
         )}
       </div>
+      {cleanerStatus && (
+        <p className="text-xs">
+          {freeNames.length ? (
+            <>
+              <span className="font-semibold" style={{ color: "#085041" }}>Free {dayShort}:</span>{" "}
+              <span className="text-gray-700">{freeNames.join(", ")}</span>
+            </>
+          ) : (
+            <span className="font-semibold text-amber-700">Nobody is free {dayShort} — everyone is booked or off.</span>
+          )}
+        </p>
+      )}
       {payWarnings.length > 0 && (
         <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
           {payWarnings.join(" ")}
@@ -318,13 +387,7 @@ export default function DispatchRow({
           className="flex-1 min-w-[160px] rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none"
         >
           <option value="">— Select cleaner —</option>
-          {cleaners
-            .filter((c) => c.id !== selectedSecond)
-            .map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.first_name} {c.last_name}
-              </option>
-            ))}
+          {renderGroups(selectedSecond)}
         </select>
         <select
           value={selectedSecond}
@@ -333,13 +396,7 @@ export default function DispatchRow({
           title="Optional — put a second cleaner on this job"
         >
           <option value="">+ 2nd cleaner (optional)</option>
-          {cleaners
-            .filter((c) => c.id !== selectedCleaner)
-            .map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.first_name} {c.last_name}
-              </option>
-            ))}
+          {renderGroups(selectedCleaner)}
         </select>
         <button
           onClick={handleDispatch}
