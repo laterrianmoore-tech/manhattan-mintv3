@@ -45,6 +45,15 @@ create table if not exists cleaners (
   pay_rate_pct        numeric(5,2) not null default 57,
   stripe_account_id   text unique,
   certn_report_id     text,
+  -- Onboarding packet (2026-11-03); see migrations/2026-11-03-onboarding-packet.sql
+  legal_name          text,                -- name as on government ID (the agreement party)
+  address             text,                -- "street, city, state zip" from /onboarding
+  onboarding_packet_sent_at timestamptz,   -- Stripe link + Certn + e-sign agreement went out
+  certn_invited_at    timestamptz,         -- Certn invite created through the API
+  ica_version         text,                -- agreement text version signed (contractor-agreement.ts)
+  ica_signed_at       timestamptz,         -- e-signature timestamp; null = unsigned
+  ica_signed_name     text,                -- the typed signature
+  ica_signed_ip       text,
   created_at          timestamptz not null default now(),
   updated_at          timestamptz not null default now()
 );

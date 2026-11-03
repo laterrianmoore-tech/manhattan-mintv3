@@ -133,6 +133,10 @@ Add Supabase, cleaner accounts, and full automation of the post-booking workflow
 
 ## Environment Variables (all required)
 | `POST /api/cleaners/availability/` | Admin (cookie): `{ cleanerId, days }` saves the days a cleaner usually works (`mon`..`sun`) to `cleaners.available_days`; empty = any day. Toggled from the week board on `/admin/dispatch` (2026-11-02): cleaners x next 7 days, each cell a job / free / off, open jobs on top, cleaner pickers say "free Wed" / "booked: Rebecca AM" / "off Wednesdays". Nothing texted. Needs `lib/supabase/migrations/2026-11-02-cleaner-available-days.sql` |
+| `POST /api/onboarding/submit/` | The `/onboarding` applicant form (2026-11-03). Saves the applicant to `cleaners` (`pending_onboarding`, `legal_name`, `address`) and sends the **onboarding packet** (`src/lib/onboarding-packet.ts`) by itself: creates her Stripe Connect Express account + the durable `/api/connect/onboard/` link, creates the Certn invite through the Certn API when `CERTN_API_KEY` is set (otherwise tells the owner to invite by hand), and sends the e-sign agreement link — one email + one text, `onboarding_packet_sent_at` stamped. Owner email lists what went out and what is still manual (COI, Certn without a key, flipping status to active) |
+| `POST /api/cleaners/onboarding-packet/` | Admin (cookie) or `x-cron-secret`: `{ cleanerId, dryRun? }` sends / resends the packet for a cleaner added by hand. Button on `/admin/onboarding`, which shows every non-inactive cleaner's four gates (packet, agreement, Stripe payouts enabled, Certn). CLI: `npx tsx scripts/send-onboarding-packet.mts <email> [--apply]` |
+| `GET /sign/?c=…&t=…` + `POST /api/sign/` | Independent Contractor Agreement e-sign (2026-11-03). The text of `02_Hiring/…_vF.docx` lives in `src/lib/contractor-agreement.ts` (`AGREEMENT_VERSION`; change both together). Typed-name signature stamps `ica_signed_at/_name/_ip/_version` once (conditional update), renders the signed PDF with `pdf-lib` and emails it to the contractor with the owner inbox on bcc — that email is the file of record. Link minted by `signUrl()` in `src/lib/manage-token.ts`. Needs `lib/supabase/migrations/2026-11-03-onboarding-packet.sql` |
+| `POST /api/cleaners/availability/` | Admin (cookie): `{ cleanerId, days }` saves the days a cleaner usually works (`mon`..`sun`) to `cleaners.available_days`; empty = any day. Toggled from the week board on `/admin/dispatch` (2026-11-02): cleaners x next 7 days, each cell a job / free / off, open jobs on top, cleaner pickers say "free Wed" / "booked: Rebecca AM" / "off Wednesdays". Nothing texted. Needs `lib/supabase/migrations/2026-11-02-cleaner-available-days.sql` |
 
 Set these in Netlify → Site settings → Environment variables for production. Locally they live in `.env.local` (gitignored).
 
@@ -157,3 +161,7 @@ REVIEW_NUDGE_ENABLED       # optional — day-3 Google review nudge in /api/remi
 ```
 
 Review tracking (2026-09-18) needs five columns on `bookings` — run `lib/supabase/migrations/2026-09-18-review-tracking.sql` once in the Supabase SQL editor. The code tolerates their absence (logs, falls back to the plain Google link) so deploy order doesn't matter.
+CERTN_API_KEY              # optional — onboarding packet creates the Certn background-check invite when set; without it the owner invites by hand
+CERTN_API_BASE             # optional — default https://api.certn.co (use https://demo-api.certn.co to test)
+CERTN_AUTH_SCHEME          # optional — "Bearer" (default) or "Api-Key", whichever the Certn account uses
+CERTN_REQUEST_FLAGS        # optional — comma-separated Certn request flags; default request_criminal_record_check

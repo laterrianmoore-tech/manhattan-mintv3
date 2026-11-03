@@ -207,6 +207,9 @@ export default async function DispatchPage({
           <span className="text-gray-400 font-normal"> — Dispatch</span>
         </h1>
         <div className="flex gap-4">
+          <a href="/admin/onboarding/" className="text-sm font-medium hover:underline" style={{ color: "#1d9e75" }}>
+            Onboarding
+          </a>
           <a href="/admin/partners/" className="text-sm font-medium hover:underline" style={{ color: "#1d9e75" }}>
             Partners
           </a>

@@ -78,11 +78,41 @@ export interface Database {
           pay_rate_pct: number;
           stripe_account_id: string | null;
           certn_report_id: string | null;
+          // Onboarding packet (2026-11-03) — migrations/2026-11-03-onboarding-packet.sql
+          legal_name: string | null;
+          address: string | null;
+          onboarding_packet_sent_at: string | null;
+          certn_invited_at: string | null;
+          ica_version: string | null;
+          ica_signed_at: string | null;
+          ica_signed_name: string | null;
+          ica_signed_ip: string | null;
           created_at: string;
           updated_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["cleaners"]["Row"], "id" | "created_at" | "updated_at"> & {
+        Insert: Omit<
+          Database["public"]["Tables"]["cleaners"]["Row"],
+          | "id"
+          | "created_at"
+          | "updated_at"
+          | "legal_name"
+          | "address"
+          | "onboarding_packet_sent_at"
+          | "certn_invited_at"
+          | "ica_version"
+          | "ica_signed_at"
+          | "ica_signed_name"
+          | "ica_signed_ip"
+        > & {
           id?: string;
+          legal_name?: string | null;
+          address?: string | null;
+          onboarding_packet_sent_at?: string | null;
+          certn_invited_at?: string | null;
+          ica_version?: string | null;
+          ica_signed_at?: string | null;
+          ica_signed_name?: string | null;
+          ica_signed_ip?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["cleaners"]["Insert"]>;
         Relationships: [];

@@ -46,6 +46,24 @@ export function connectOnboardUrl(accountId: string, siteUrl: string): string {
   return `${siteUrl.replace(/\/$/, "")}/api/connect/onboard/?${params.toString()}`;
 }
 
+// Contractor agreement e-sign links (2026-11-03): /sign/?c=<cleanerId>&t=…
+// is the link in the onboarding packet. Same HMAC pattern, keyed per cleaner.
+export function signToken(cleanerId: string): string {
+  return createHmac("sha256", secret()).update(`sign:${cleanerId.trim()}`).digest("hex").slice(0, 32);
+}
+
+export function verifySignToken(cleanerId: string, token: string): boolean {
+  if (!cleanerId || !token) return false;
+  const expected = signToken(cleanerId);
+  if (token.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(expected), Buffer.from(token));
+}
+
+export function signUrl(cleanerId: string, siteUrl: string): string {
+  const params = new URLSearchParams({ c: cleanerId, t: signToken(cleanerId) });
+  return `${siteUrl.replace(/\/$/, "")}/sign/?${params.toString()}`;
+}
+
 // Customer account links (2026-10-09): the same idea per customer instead of
 // per booking. No password, no login: the link in their texts is the key.
 export function accountToken(customerId: string): string {
