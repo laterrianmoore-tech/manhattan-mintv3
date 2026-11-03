@@ -1,9 +1,18 @@
 // app/api/onboarding/submit/route.ts
-// Receives /onboarding form submissions. Sends two emails (candidate + owner) and saves to Supabase.
+// Receives /onboarding form submissions: saves the applicant to `cleaners`
+// (status pending_onboarding) and sends the onboarding packet — Stripe
+// Connect link, Certn invite, e-sign contractor agreement — in one email and
+// one text (src/lib/onboarding-packet.ts). The owner gets the application
+// details plus what the packet did. Since 2026-11-03 nothing here waits on the
+// owner; before that the candidate got a "we'll be in touch" email and the
+// owner did the three steps by hand.
 
 import { NextRequest, NextResponse } from 'next/server';
 import sgMail from '@sendgrid/mail';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { sendOnboardingPacket, type PacketResult } from '@/lib/onboarding-packet';
+
+export const maxDuration = 30;
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
@@ -11,7 +20,8 @@ const FROM = {
   email: process.env.SENDGRID_FROM_EMAIL || 'hello@manhattanmintnyc.com',
   name: process.env.SENDGRID_FROM_NAME || 'Manhattan Mint',
 };
-const OWNER = process.env.OWNER_NOTIFY_EMAIL || 'lmoore@apcap.com';
+const OWNER = (process.env.OWNER_NOTIFY_EMAIL || process.env.SENDGRID_TO_EMAIL || 'hello@manhattanmintnyc.com')
+  .split(',').map((e) => e.trim()).filter(Boolean);
 
 type Application = {
   legalName: string;
@@ -34,6 +44,8 @@ type Application = {
   heardAboutUs?: string;
 };
 
+const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch] as string));
+
 export async function POST(req: NextRequest) {
   let body: Application;
   try {
@@ -45,96 +57,126 @@ export async function POST(req: NextRequest) {
   if (!body.legalName || !body.email || !body.phone) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.email)) {
+    return NextResponse.json({ error: "That email address doesn't look right" }, { status: 400 });
+  }
   if (!body.consentBackgroundCheck || !body.consentContractorAgreement || !body.consentInsuranceRequirements) {
     return NextResponse.json({ error: 'All consents are required' }, { status: 400 });
   }
 
-  // 1) Email to the candidate — confirmation + next steps
-  const candidateMsg = {
-    to: body.email,
+  const legalName = body.legalName.trim().replace(/\s+/g, ' ');
+  const nameParts = legalName.split(' ');
+  // The cleaner's row shows her preferred name on the portal and in texts;
+  // the legal name is what the agreement is made out to.
+  const firstName = (body.preferredName || nameParts[0]).trim();
+  const lastName = nameParts.slice(1).join(' ') || '';
+  const email = body.email.trim().toLowerCase();
+  const address = [body.address, [body.city, body.state].filter(Boolean).join(', '), body.zip]
+    .map((s) => String(s ?? '').trim()).filter(Boolean).join(', ');
+
+  // 1) Save the applicant. New columns (legal_name, address) exist once
+  //    migrations/2026-11-03-onboarding-packet.sql has run; before that, save
+  //    without them rather than lose the application.
+  let cleanerId: string | null = null;
+  let saveError: string | null = null;
+  const base = { first_name: firstName, last_name: lastName, email, phone: body.phone.trim(), status: 'pending_onboarding' as const, zones: body.serviceAreas || [] };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabaseAdmin as any;
+  let res = await db.from('cleaners').upsert({ ...base, legal_name: legalName, address }, { onConflict: 'email', ignoreDuplicates: false }).select('id').single();
+  if (res.error && /legal_name|address/i.test(res.error.message)) {
+    res = await db.from('cleaners').upsert(base, { onConflict: 'email', ignoreDuplicates: false }).select('id').single();
+  }
+  if (res.error) {
+    saveError = res.error.message;
+    console.error('Supabase cleaner upsert failed:', res.error);
+  } else {
+    cleanerId = res.data?.id ?? null;
+  }
+
+  // 2) The packet. Any failure here is reported to the owner, never to the
+  //    applicant — she still sees "application received".
+  let packet: PacketResult | null = null;
+  let packetError: string | null = null;
+  if (cleanerId) {
+    try {
+      packet = await sendOnboardingPacket({ cleanerId, notifyOwner: false });
+    } catch (e) {
+      packetError = e instanceof Error ? e.message : String(e);
+      console.error('[onboarding/submit] packet failed:', packetError);
+    }
+  } else {
+    packetError = `applicant was not saved (${saveError}) so no packet went out`;
+  }
+
+  // 3) Fallback confirmation to the candidate only if the packet didn't go.
+  const candidateFallback = packet?.emailSent ? null : {
+    to: email,
     from: FROM,
     subject: 'Manhattan Mint — Application Received',
     html: `
-      <p>Hi ${body.preferredName || body.legalName.split(' ')[0]},</p>
-      <p>Thanks for applying to clean with Manhattan Mint. Your application is in our queue and we&rsquo;ll review within 2 business days.</p>
-      <p><strong>Next steps:</strong></p>
-      <ol>
-        <li>You&rsquo;ll receive a separate email from <strong>Certn</strong> to begin your background check. It takes about 5 minutes.</li>
-        <li>We&rsquo;ll send the Manhattan Mint Independent Contractor Agreement for your review and e-signature.</li>
-        <li>Once those are complete, we&rsquo;ll send you a Stripe Connect link so you can be paid for jobs.</li>
-        <li>Before your first job, you&rsquo;ll need to provide a Certificate of Insurance with the requirements you consented to.</li>
-      </ol>
-      <p>Questions? Reply to this email or text us.</p>
-      <p>— The Manhattan Mint Team</p>
+      <p>Hi ${esc(firstName)},</p>
+      <p>Thanks for applying to clean with Manhattan Mint. Your application is in our queue and we&rsquo;ll follow up within 2 business days with your contractor agreement, Stripe payout setup and background-check link.</p>
+      <p>Questions? Reply to this email or text (914) 863-7902.</p>
+      <p>Manhattan Mint Luxury Cleaning</p>
     `,
   };
 
-  // 2) Email to the owner — review + take action
+  // 4) Owner: the application + what the packet did.
+  const packetStatus = packet
+    ? [
+        `<li>Packet email: ${packet.emailSent ? 'sent' : 'NOT sent'}; text: ${packet.smsSent ? 'sent' : `NOT sent${packet.smsError ? ` (${esc(packet.smsError)})` : ''}`}</li>`,
+        `<li>Stripe Connect: ${esc(packet.connectAccountId ?? '-')}${packet.connectCreated ? ' (new account)' : ''}</li>`,
+        `<li>Certn: ${esc(certnText(packet))}</li>`,
+        `<li>Agreement: e-sign link sent (<a href="${esc(packet.signUrl)}">open</a>) — you'll get the signed PDF by email.</li>`,
+      ].join('')
+    : `<li><strong>Packet did not go out:</strong> ${esc(packetError)}. Send it from <a href="https://manhattanmintnyc.com/admin/onboarding/">/admin/onboarding</a> once fixed.</li>`;
+
   const ownerMsg = {
     to: OWNER,
     from: FROM,
-    subject: `New cleaner application: ${body.legalName}`,
+    replyTo: { email, name: legalName },
+    subject: `New cleaner application: ${legalName}${packet?.emailSent ? ' — packet sent' : ' — PACKET NOT SENT'}`,
     html: `
       <h2>New Application</h2>
       <table style="border-collapse: collapse;">
-        <tr><td><strong>Name:</strong></td><td>${body.legalName} (${body.preferredName || '—'})</td></tr>
-        <tr><td><strong>Email:</strong></td><td>${body.email}</td></tr>
-        <tr><td><strong>Phone:</strong></td><td>${body.phone}</td></tr>
-        <tr><td><strong>Address:</strong></td><td>${body.address}, ${body.city}, ${body.state} ${body.zip}</td></tr>
-        <tr><td><strong>Experience:</strong></td><td>${body.yearsExperience} years</td></tr>
-        <tr><td><strong>Past employers:</strong></td><td>${body.pastEmployers || '—'}</td></tr>
+        <tr><td><strong>Name:</strong></td><td>${esc(legalName)} (${esc(body.preferredName || '—')})</td></tr>
+        <tr><td><strong>Email:</strong></td><td>${esc(email)}</td></tr>
+        <tr><td><strong>Phone:</strong></td><td>${esc(body.phone)}</td></tr>
+        <tr><td><strong>Address:</strong></td><td>${esc(address)}</td></tr>
+        <tr><td><strong>Experience:</strong></td><td>${esc(body.yearsExperience)} years</td></tr>
+        <tr><td><strong>Past employers:</strong></td><td>${esc(body.pastEmployers || '—')}</td></tr>
         <tr><td><strong>Transport:</strong></td><td>${body.hasOwnTransport ? 'Yes' : 'No'}</td></tr>
         <tr><td><strong>Has GL insurance:</strong></td><td>${body.hasOwnInsurance ? 'Yes' : 'No'}</td></tr>
-        <tr><td><strong>Service areas:</strong></td><td>${body.serviceAreas.join('; ')}</td></tr>
-        <tr><td><strong>Availability:</strong></td><td>${body.availability.join(', ')}</td></tr>
-        <tr><td><strong>Heard about us:</strong></td><td>${body.heardAboutUs || '—'}</td></tr>
+        <tr><td><strong>Service areas:</strong></td><td>${esc((body.serviceAreas || []).join('; '))}</td></tr>
+        <tr><td><strong>Availability:</strong></td><td>${esc((body.availability || []).join(', '))}</td></tr>
+        <tr><td><strong>Heard about us:</strong></td><td>${esc(body.heardAboutUs || '—')}</td></tr>
       </table>
-      <h3>Action items</h3>
+      <h3>Onboarding packet</h3>
+      <ul>${packetStatus}</ul>
+      <h3>Still on you</h3>
       <ol>
-        <li>Trigger Certn background check for ${body.email}</li>
-        <li>Send contractor agreement (DocuSeal / HelloSign)</li>
-        <li>Once cleared, send Stripe Connect onboarding link</li>
-        <li>Verify COI meets requirements before first job</li>
+        ${packet && packet.certn.status !== 'invited' && packet.certn.status !== 'already_invited' ? `<li>Send the Certn invite to ${esc(email)} from the Certn dashboard.</li>` : ''}
+        <li>Verify the COI (and CE-200) before her first job.</li>
+        <li>Set her to active in Supabase once the agreement is signed, Stripe is finished and Certn clears — <a href="https://manhattanmintnyc.com/admin/onboarding/">/admin/onboarding</a> shows all four gates.</li>
       </ol>
     `,
   };
 
   try {
-    await Promise.all([sgMail.send(candidateMsg), sgMail.send(ownerMsg)]);
+    await Promise.allSettled([candidateFallback ? sgMail.send(candidateFallback) : Promise.resolve(), sgMail.send(ownerMsg)]);
   } catch (e: any) {
     console.error('SendGrid error:', e?.response?.body || e);
-    return NextResponse.json({ error: 'Email send failed' }, { status: 500 });
   }
 
-  // Save cleaner applicant to Supabase
-  try {
-    const nameParts = body.legalName.trim().split(' ');
-    const firstName = nameParts[0];
-    const lastName = nameParts.slice(1).join(' ') || '';
+  return NextResponse.json({ ok: true, packetSent: !!packet?.emailSent });
+}
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabaseAdmin as any)
-      .from('cleaners')
-      .upsert(
-        {
-          first_name: firstName,
-          last_name: lastName,
-          email: body.email,
-          phone: body.phone,
-          status: 'pending_onboarding',
-          zones: body.serviceAreas || [],
-        },
-        { onConflict: 'email', ignoreDuplicates: false }
-      );
-
-    if (error) {
-      console.error('Supabase cleaner insert failed:', error);
-    } else {
-      console.log('Cleaner saved to Supabase:', body.email);
-    }
-  } catch (e) {
-    console.error('Supabase error (emails still sent):', e);
+function certnText(p: PacketResult): string {
+  switch (p.certn.status) {
+    case 'invited': return `invite sent (application ${p.certn.applicationId ?? '?'})`;
+    case 'already_invited': return `already invited (${p.certn.applicationId ?? '?'})`;
+    case 'not_configured': return 'NOT sent — no CERTN_API_KEY in Netlify. Invite her from the Certn dashboard.';
+    case 'failed': return `FAILED — ${p.certn.error}. Invite her from the Certn dashboard.`;
+    default: return p.certn.status;
   }
-
-  return NextResponse.json({ ok: true });
 }

@@ -85,9 +85,9 @@ export default function OnboardingPage() {
       <main className="mx-auto max-w-2xl px-6 py-16">
         <h1 className="text-3xl font-semibold mb-4">Application received</h1>
         <p className="text-lg leading-relaxed">
-          Thanks for applying to Manhattan Mint. We&rsquo;ve sent a confirmation to your email
-          with the next steps, including the contractor agreement and a link to begin your
-          background check. You&rsquo;ll hear from us within 2 business days.
+          Thanks for applying to Manhattan Mint. Check your email and texts: we&rsquo;ve just sent
+          your contractor agreement to sign, your Stripe payout setup link, and what to expect for
+          the background check. You&rsquo;ll hear from us within 2 business days.
         </p>
       </main>
     );
