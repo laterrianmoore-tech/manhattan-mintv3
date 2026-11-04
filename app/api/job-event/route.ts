@@ -299,6 +299,28 @@ export async function POST(req: Request) {
       recipientType: "customer",
       eventType: "on_the_way",
     });
+    // Extra recipients (2026-11-03): bookings.notify_phones lists people besides
+    // the customer who need to know the cleaner is coming — a sister meeting
+    // the cleaner at the door, a roommate. Guarded so an unmigrated database
+    // (no column yet) just sends the customer text. Skips the customer's own
+    // number so nobody gets it twice.
+    const digits = (p: unknown) => String(p ?? "").replace(/[^0-9]/g, "").replace(/^1(?=[0-9]{10}$)/, "");
+    const extras: string[] = Array.isArray(booking.notify_phones)
+      ? Array.from(new Set(booking.notify_phones.map(digits).filter((p: string) => p.length === 10 && p !== digits(customer.phone))))
+      : [];
+    if (extras.length) {
+      const where = [String(customer.address ?? "").trim(), customer.apt_no ? `Apt ${String(customer.apt_no).trim()}` : ""].filter(Boolean).join(", ");
+      for (const to of extras) {
+        await sendSms({
+          to,
+          body: `Manhattan Mint here — the cleaner for ${customer.first_name}'s clean is on the way${where ? ` to ${where}` : ""}.`,
+          cleanerId: cleaner?.id ?? null,
+          bookingId,
+          recipientType: "customer",
+          eventType: "on_the_way",
+        });
+      }
+    }
     await supabaseAdmin.from("bookings").update({ on_the_way_sms_sent_at: now }).eq("id", bookingId);
   } else if (event === "arrived") {
     await supabaseAdmin
