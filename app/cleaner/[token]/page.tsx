@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase";
+import { onTheWayOpensAt, windowOpensHour } from "@/lib/tap-guards";
 import JobActions from "./JobActions";
 
 export const dynamic = "force-dynamic";
@@ -77,7 +78,15 @@ export default async function CleanerPortal({ params }: Props) {
 
   // A job the cleaner has started stays under Today until it's marked complete,
   // whatever the date says.
-  const todayJobs = bookings.filter((b) => isOpen(b) && (b.service_date === today || isStarted(b)));
+  // Today's jobs run in window order. Only the first one carries buttons:
+  // a job she has started (in flight) first, otherwise the earliest window.
+  // The rest show as "next up" with no buttons until it's marked complete
+  // (2026-11-06: a cleaner was tapping "On the way" on every job of the day
+  // at 8am, texting afternoon customers hours early). Same rule in the API.
+  const todayJobs = bookings
+    .filter((b) => isOpen(b) && (b.service_date === today || isStarted(b)))
+    .sort((a, b) => a.service_date.localeCompare(b.service_date) || (windowOpensHour(a) ?? 24) - (windowOpensHour(b) ?? 24));
+  const activeJob = todayJobs.find((b) => isStarted(b)) ?? todayJobs[0] ?? null;
   const upcomingJobs = bookings.filter((b) => isOpen(b) && b.service_date > today && !isStarted(b));
   const completedJobs = [...bookings]
     .filter((b) => b.completed_at)
@@ -103,7 +112,13 @@ export default async function CleanerPortal({ params }: Props) {
           </h2>
           <div className="space-y-4">
             {todayJobs.map((b) => (
-              <JobCard key={b.id} booking={b} token={token} isFuture={false} />
+              <JobCard
+                key={b.id}
+                booking={b}
+                token={token}
+                isFuture={false}
+                blockedBy={activeJob && activeJob.id !== b.id ? (activeJob.customers as any)?.first_name ?? "the current job" : null}
+              />
             ))}
           </div>
         </section>
@@ -160,10 +175,13 @@ function JobCard({
   booking,
   token,
   isFuture,
+  blockedBy = null,
 }: {
   booking: any;
   token: string;
   isFuture: boolean;
+  /** First name on the job that must be marked complete before this one gets buttons. */
+  blockedBy?: string | null;
 }) {
   const customer = booking.customers as any;
   const timeRange = Array.isArray(booking.preferred_time_ranges)
@@ -223,10 +241,17 @@ function JobCard({
         </div>
       )}
 
+      {blockedBy ? (
+        <div className="mt-4 rounded-xl bg-gray-50 border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500">
+          <span className="font-semibold text-gray-700">Next up.</span> Buttons unlock when you mark {blockedBy}&apos;s job complete.
+        </div>
+      ) : (
       <JobActions
         token={token}
         bookingId={booking.id}
+        customerFirstName={customer?.first_name ?? "the customer"}
         onTheWayAt={booking.on_the_way_at}
+        onTheWayOpensAt={onTheWayOpensAt(booking)?.toISOString() ?? null}
         arrivedAt={booking.arrived_at}
         completedAt={booking.completed_at}
         isFuture={isFuture}
@@ -234,6 +259,7 @@ function JobCard({
         lockoutResolvedAt={booking.lockout_resolved_at ?? null}
         lockoutEnabled={"locked_out_at" in booking}
       />
+      )}
     </div>
   );
 }
