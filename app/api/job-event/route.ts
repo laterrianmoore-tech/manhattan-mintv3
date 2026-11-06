@@ -10,6 +10,7 @@ import { referralCodeFor, referralLink, publicSiteUrl, REFERRAL_FRIEND_DISCOUNT,
 import { accountUrl } from "@/lib/manage-token";
 import { fmtTax, isTaxableBooking, quoteTax, recordTaxTransaction, taxMetadata } from "@/lib/stripe-tax";
 import { createBookingInvoice, hasCardOnFile, invoiceSmsBody, isInvoicePayCustomer, type BookingInvoiceResult, type InvoiceCustomer } from "@/lib/stripe-invoice";
+import { completeOpensAt, MIN_MINUTES_ON_SITE, nyClock, onTheWayOpensAt } from "@/lib/tap-guards";
 
 const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 const ORDINALS = ["1st", "2nd", "3rd", "4th"];
@@ -250,6 +251,42 @@ export async function POST(req: Request) {
   }
   if (event === "completed" && isFuture) {
     return refuse(`This job is on ${booking.service_date} — it can't be completed yet.`);
+  }
+
+  // ── Timing guards (2026-11-06), cleaner taps only ──────────────────
+  // Erika's history: "On the way" tapped on every job of the day at 8am
+  // (afternoon customers texted hours early) and "Mark complete" tapped the
+  // moment she arrived (completion text + charge while walking in). The
+  // portal greys the buttons; the API refuses anyway. The owner's admin
+  // taps from /admin/dispatch skip these so a stuck job can still be moved.
+  if (token) {
+    if (event === "on_the_way") {
+      const opens = onTheWayOpensAt(booking);
+      if (opens && Date.now() < opens.getTime()) {
+        return refuse(`Too early — "On the way" unlocks at ${nyClock(opens)} for this job. Tap it when you actually leave.`);
+      }
+      // One job in flight at a time: a started job that isn't complete yet
+      // has to be closed out before the next customer is told she's coming.
+      const { data: inFlight } = await supabaseAdmin
+        .from("bookings")
+        .select("id, customers(first_name)")
+        .or(`assigned_cleaner_id.eq.${cleaner!.id},second_cleaner_id.eq.${cleaner!.id}`)
+        .neq("id", bookingId)
+        .not("on_the_way_at", "is", null)
+        .is("completed_at", null)
+        .not("status", "in", "(completed,cancelled,lockout)")
+        .limit(1);
+      const blocking = inFlight?.[0] as { customers?: { first_name?: string } | null } | undefined;
+      if (blocking) {
+        return refuse(`Finish ${blocking.customers?.first_name ?? "your current job"} first — tap Mark complete there before starting the next one.`);
+      }
+    }
+    if (event === "completed") {
+      const opens = completeOpensAt(booking.arrived_at);
+      if (opens && Date.now() < opens.getTime()) {
+        return refuse(`Too soon — you arrived at ${nyClock(new Date(booking.arrived_at))}. Mark complete unlocks at ${nyClock(opens)} (${MIN_MINUTES_ON_SITE} minutes on site). Tap it when the clean is finished.`);
+      }
+    }
   }
 
   if (event === "on_the_way") {
