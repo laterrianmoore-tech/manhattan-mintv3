@@ -122,6 +122,10 @@ export default function TermsPage() {
             <li>You were present during the cleaning and approved the work on-site.</li>
             <li>You under-adjusted the original estimate we made through our website or over the phone.</li>
           </ul>
+          <p>
+            A complimentary or make-good clean is a rebooking of the visit it replaces: the same home, the same rooms and the same
+            service. Additional rooms, deep cleaning and add-ons are available at our regular rates.
+          </p>
 
           <h2>Safety</h2>
           <p>
