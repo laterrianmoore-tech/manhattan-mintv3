@@ -42,23 +42,21 @@ export default async function DispatchPage({
   const boardDays = Array.from({ length: 7 }, (_, i) => addDays(boardStart, i));
   const boardEnd = boardDays[boardDays.length - 1];
 
-  // Cleaners: available_days is the usual-days column (2026-11-02). Ask for it
-  // first; a database that hasn't run the migration answers with an error, so
-  // fall back to the old column list and tell the board it isn't there.
-  const cleanerCols = "id, first_name, last_name, status, portal_token, phone";
-  let cleanersRes = await supabaseAdmin
-    .from("cleaners")
-    .select(cleanerCols + ", available_days")
-    .in("status", ["active", "onboarding"])
-    .order("first_name");
+  // Cleaners: available_days is the usual-days column (2026-11-02) and
+  // available_hours the usual-hours note (2026-11-09). Ask for both first; a
+  // database that hasn't run a migration answers with an error, so fall back
+  // step by step and tell the board what isn't there.
+  const cleanerCols = "id, first_name, last_name, status, portal_token, phone, created_at";
+  const cleanerQuery = (cols: string) =>
+    supabaseAdmin.from("cleaners").select(cols).in("status", ["active", "onboarding"]).order("first_name");
+  let cleanersRes = await cleanerQuery(cleanerCols + ", available_days, available_hours");
   let availabilityEnabled = true;
   if (cleanersRes.error) {
+    cleanersRes = (await cleanerQuery(cleanerCols + ", available_days")) as typeof cleanersRes;
+  }
+  if (cleanersRes.error) {
     availabilityEnabled = false;
-    cleanersRes = (await supabaseAdmin
-      .from("cleaners")
-      .select(cleanerCols)
-      .in("status", ["active", "onboarding"])
-      .order("first_name")) as typeof cleanersRes;
+    cleanersRes = (await cleanerQuery(cleanerCols)) as typeof cleanersRes;
   }
   const cleaners = (cleanersRes.data ?? []) as any[];
 
@@ -108,13 +106,19 @@ export default async function DispatchPage({
     if (r.assigned_cleaner_id) recentIds.add(r.assigned_cleaner_id);
     if (r.second_cleaner_id) recentIds.add(r.second_cleaner_id);
   }
+  // A cleaner added in the last 30 days has no history yet by definition, so
+  // she is never filed under "no jobs in 90 days" (2026-11-09, Alyssa).
+  const newSince = addDays(today, -30);
   const boardCleaners: BoardCleaner[] = cleaners.map((c) => {
     const days = Array.isArray(c.available_days) && c.available_days.length ? c.available_days : null;
+    const hours = typeof c.available_hours === "string" && c.available_hours.trim() ? c.available_hours.trim() : null;
+    const isNew = typeof c.created_at === "string" && c.created_at.slice(0, 10) >= newSince;
     return {
       id: c.id,
       first_name: c.first_name,
       available_days: days,
-      quiet: !recentIds.has(c.id) && !days,
+      available_hours: hours,
+      quiet: !recentIds.has(c.id) && !days && !hours && !isNew,
     };
   });
   const toBoardJob = (b: any): BoardJob => ({

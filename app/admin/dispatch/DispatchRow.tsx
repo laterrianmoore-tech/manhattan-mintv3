@@ -12,6 +12,8 @@ type Cleaner = {
   first_name: string;
   last_name: string;
   status: string;
+  /** Hours she usually works, e.g. "9am–1pm" (2026-11-09); undefined before the migration. */
+  available_hours?: string | null;
 };
 
 type Booking = {
@@ -107,7 +109,8 @@ export default function DispatchRow({
   });
   const optionLabel = (c: Cleaner) => {
     const s = statusOf(c.id);
-    const name = `${c.first_name} ${c.last_name}`.trim();
+    const hours = typeof c.available_hours === "string" && c.available_hours.trim() ? ` (${c.available_hours.trim()})` : "";
+    const name = `${c.first_name} ${c.last_name}`.trim() + hours;
     if (!s) return name;
     if (s.kind === "busy") return `${name} — booked: ${s.detail}`;
     return `${name} — ${s.detail}`;

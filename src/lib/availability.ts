@@ -49,6 +49,9 @@ export type BoardCleaner = {
   id: string;
   first_name: string;
   available_days?: string[] | null;
+  /** Hours she usually works, free text such as "9am–1pm" (2026-11-09). Shown
+   *  under her name; nothing schedules off it. */
+  available_hours?: string | null;
   /** No job in the last 90 days and no usual days set — placeholders, trial
    *  accounts, people who drifted off. Kept out of the way, never removed. */
   quiet?: boolean;

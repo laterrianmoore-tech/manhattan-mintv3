@@ -224,6 +224,11 @@ function CleanerRow({
     <tr>
       <td className="sticky left-0 z-10 bg-white px-3 py-2 border-b border-gray-200 align-top shadow-[2px_0_0_0_#e5e7eb]">
         <div className="font-semibold text-gray-900 text-sm">{cleaner.first_name}</div>
+        {cleaner.available_hours && (
+          <div className="text-[10px] font-medium" style={{ color: MINT_DARK }} title="Hours she usually works">
+            {cleaner.available_hours}
+          </div>
+        )}
         <div className="text-[10px] text-gray-400">
           {freeCount === 0 ? "no free days" : `${freeCount} free day${freeCount === 1 ? "" : "s"}`}
           {saving && <span className="ml-1" style={{ color: MINT }}>saving…</span>}
