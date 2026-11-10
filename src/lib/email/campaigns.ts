@@ -332,6 +332,42 @@ export const PROSPECT_TRACK: CampaignEmail[] = [
       ${promoCta(siteUrl)}
       ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
   },
+  // ── Third set (added 2026-11-10). Sits before p20 on purpose: p20 says the weekly emails stop, so it stays last. ──
+  {
+    key: "p21-guests-coming",
+    subject: "if people are staying over",
+    preheader: "The guest room, the bathroom they will use, and the fridge.",
+    body: (siteUrl) => `
+      ${hero("Before the holidays", "If someone is staying with you, three places matter.")}
+      ${para("Guests do not see your apartment the way you do. They see the room they sleep in, the bathroom they use, and the inside of your fridge when they go looking for milk.")}
+      ${para("Those are the three places we would put the time: the guest room dusted and the bed made up, the bathroom cleaned down to the grout, and the fridge emptied and wiped. Inside the fridge is an add-on you can tick at checkout. The rest of the apartment gets the regular clean.")}
+      ${para(`${promoSentence()}Book it for two or three days before they arrive, not the morning of.`)}
+      ${promoCta(siteUrl)}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  {
+    key: "p22-hells-kitchen-midtown",
+    subject: "hell's kitchen and midtown, written up",
+    preheader: "What the dirt is actually like on your block.",
+    body: (siteUrl) => `
+      ${hero("New on the site", "Hell's Kitchen and Midtown, in detail.")}
+      ${para("We clean all over Manhattan, and every neighborhood is dirty in its own way. We have just written up two more. In Hell's Kitchen, apartments above the Ninth Avenue restaurants get a grease film on the window sills. In Midtown, construction dust comes in through closed windows and settles on anything dark.")}
+      ${para("Each page says what kinds of buildings we clean there, how we get in, and what a clean costs for a typical apartment. If you live in either one, it should read like someone has been in your building.")}
+      ${ctaBlock(`${siteUrl}/neighborhoods/`, "Find your neighborhood", "Twelve written up so far, all of Manhattan covered")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  {
+    key: "p23-weekly-midtown",
+    subject: "booked sunday night, cleaned wednesday",
+    preheader: "What a weekly clean looks like when nobody has to manage it.",
+    body: (siteUrl) => `
+      ${hero("A real client", "Booked on a Sunday night. Cleaned that Wednesday.")}
+      ${para("A client in Midtown booked a weekly clean through the site late on a Sunday night. The first visit was that Wednesday morning. Their first six visits were all with the same cleaner.")}
+      ${para("They have never rebooked. When the cleaner marks a visit done, the next week's visit goes on the calendar. They get a text when she is on the way, when she arrives and when she is finished, and that is the whole arrangement.")}
+      ${para("Weekly is 20% off every clean, which is $140 for a one-bedroom. Bi-weekly is 15% off. Most people start with one clean and decide after.")}
+      ${ctaBlock(`${siteUrl}/case-studies/weekly-same-cleaner-one-bedroom-midtown/`, "Read the short case study", "About two minutes")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
   {
     key: "p20-going-quiet",
     subject: "last regular email from us",
@@ -632,6 +668,42 @@ export const CUSTOMER_TRACK: CampaignEmail[] = [
       ${para("Between holiday hosting and end-of-year move-outs, the last three weeks of the year fill faster than anything else on the calendar.")}
       ${para("Recurring clients keep their day and their cleaner no matter what. If you have been booking one clean at a time and want a December slot, the simplest way to hold it is to go biweekly or monthly now. Biweekly saves 15%, monthly 10%, and you can pause after the holidays if you want.")}
       ${ctaBlock(`${siteUrl}/quote/`, "Set up a recurring plan", "Pick the frequency at checkout, cancel any time by replying")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  // ── Third set (added 2026-11-10). ──
+  {
+    key: "c21-how-often",
+    subject: "weekly, bi-weekly or monthly?",
+    preheader: "Five yes-or-no questions settle it.",
+    body: (siteUrl) => `
+      ${hero("Quick guide", "How often should your place be cleaned?")}
+      ${para("Count the yeses. More than one person lives there. There is a pet. Someone works from home. You cook most nights. Your windows face an avenue.")}
+      ${para("Zero or one, monthly will hold. Two or three, every other week. Four or five, weekly. That is the whole method, and it is right more often than not.")}
+      ${para("Plans take 10% off monthly, 15% off bi-weekly and 20% off weekly, with the same cleaner every visit. Reply with the one you want and we will set it up from your last clean. No form.")}
+      ${ctaBlock(`${siteUrl}/blog/how-often-to-clean-manhattan-apartment/`, "Read the full guide", "Who each plan suits, and what it costs")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  {
+    key: "c22-away-for-the-holidays",
+    subject: "going away over the holidays?",
+    preheader: "The best day to clean is the day you are not there.",
+    body: (siteUrl) => `
+      ${hero("If you are travelling", "Come home to a clean apartment.")}
+      ${para("If you are away for a few days in late November or December, that is the easiest clean of the year. Nobody is working around you, and you walk back into a made bed and an empty sink instead of the apartment you left in a hurry.")}
+      ${para("Reply with the dates you are gone and how we get in: doorman, lockbox, a neighbor. We will pick a day in the middle and text you when it is done.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "Or pick the date yourself", "Your details are already on file")}
+      ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
+  },
+  {
+    key: "c23-first-clean-of-the-year",
+    subject: "the first clean of the year",
+    preheader: "The week after the holidays is the one that counts.",
+    body: (siteUrl) => `
+      ${hero("Looking ahead", "Book the clean for after the tree comes down.")}
+      ${para("An apartment takes more in the last two weeks of December than in the two months before: guests, cooking, wrapping paper, pine needles in places pine needles should not reach.")}
+      ${para("The first week of January is when a deep clean does the most good. The deep clean add-on is $75 on top of your regular rate and covers baseboards, door frames, light fixtures and the tops of everything.")}
+      ${para("Reply with a January date and we will hold it with your usual cleaner.")}
+      ${ctaBlock(`${siteUrl}/quote/`, "Or book it yourself", "Deep clean adds $75 to any size")}
       ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
   },
 ];
