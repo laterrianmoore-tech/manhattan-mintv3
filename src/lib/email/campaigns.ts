@@ -7,6 +7,20 @@ import {
   pullQuote,
   ctaBlock,
 } from "./campaign-template";
+import { activePromo } from "../promo";
+
+// The seasonal code that works on the day the email goes out (src/lib/promo.ts),
+// so an email never advertises a code that has ended.
+function promoSentence(lead = ""): string {
+  const p = activePromo();
+  return p ? `${lead}${p.code} takes $${p.amount} off a first clean through ${p.endLabel}. ` : "";
+}
+function promoCta(siteUrl: string): string {
+  const p = activePromo();
+  return p
+    ? ctaBlock(`${siteUrl}/quote/?code=${p.code}`, `Book with ${p.code}`, `$${p.amount} off a first clean through ${p.endLabel}`)
+    : ctaBlock(`${siteUrl}/quote/`, "See the price for your place", "Studio and 1BR from $175, all in");
+}
 
 // ============================================================
 // Weekly campaign library
@@ -241,8 +255,8 @@ export const PROSPECT_TRACK: CampaignEmail[] = [
       ${hero("Quick one", "Put your hand near the radiator this week.")}
       ${para("If it comes back dusty, that dust goes airborne the day the heat comes on, which in most Manhattan buildings is October 1. It settles on everything you own for the next six months.")}
       ${para("This week we did a tidy up on a 3-bedroom on East 56th after the client had 35 people over. One cleaner, a couple of hours, because we had already been in that apartment twice and knew where everything goes. That is the whole point of a regular clean: the second and third visits are faster and better than the first.")}
-      ${para("If you want a clean before the heat comes on, FALL50 takes $50 off through October 31. Or reply with your apartment size and we will tell you the price. No form.")}
-      ${ctaBlock(`${siteUrl}/quote/?code=FALL50`, "Book with FALL50", "$50 off a first clean through Oct 31")}
+      ${para(`${promoSentence()}Reply with your apartment size and we will tell you the price. No form.`)}
+      ${promoCta(siteUrl)}
       ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
   },
   {
@@ -314,8 +328,8 @@ export const PROSPECT_TRACK: CampaignEmail[] = [
       ${hero("A better deal than ours", "Ask a friend for their code.")}
       ${para("Every Manhattan Mint client has a personal friend code. If someone you know already uses us, their code takes $50 off your first clean, and they get $50 off their next one once yours is done.")}
       ${para("It is a better deal than anything we can send you directly, so if you have a neighbor or a friend with a clean apartment and a Manhattan Mint text on their phone, ask them.")}
-      ${para("If you do not, FALL50 is $50 off through October 31 and needs no one.")}
-      ${ctaBlock(`${siteUrl}/quote/?code=FALL50`, "Book with FALL50", "Through October 31")}
+      ${para(`If you do not, ${promoSentence("our own offer needs no one: ") || "the price list is on the site and booking takes a minute."}`)}
+      ${promoCta(siteUrl)}
       ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
   },
   {
@@ -473,7 +487,7 @@ export const CUSTOMER_TRACK: CampaignEmail[] = [
       ${featureRow("They know the quirks.", "The cabinet that sticks, the radiator that weeps a little, the rug that must never be beaten. It goes in the notes and stays there.")}
       ${featureRow("They know your standard.", "Some people want the books straightened. Others want them left exactly where they fell. Nobody should have to ask twice.")}
       ${featureRow("The clean gets deeper, not just faster.", "Minutes not spent orienting are minutes spent on the grout instead. Same rate, more actual cleaning.")}
-      ${para("We assign the same cleaner to recurring bookings whenever the schedule allows, which is most of the time. It's the practical reason recurring customers report better cleans over time — that, and the rate: weekly saves 30%, bi-weekly 25%, monthly 15%.")}
+      ${para("We assign the same cleaner to recurring bookings whenever the schedule allows, which is most of the time. It's the practical reason recurring customers report better cleans over time — that, and the rate: weekly saves 20%, bi-weekly 15%, monthly 10%.")}
       ${pullQuote("By the third visit she knew the apartment better than I did.")}
       ${ctaBlock(`${siteUrl}/quote/`, "Set up a recurring plan", "Pick a frequency at checkout — the discount applies automatically")}`,
   },
@@ -525,7 +539,7 @@ export const CUSTOMER_TRACK: CampaignEmail[] = [
       ${offerBlock("MINT25", "For your people", "$25 off a first clean · manhattanmintnyc.com")}
       ${featureRow("New parents.", "The clean nobody in that apartment has the energy for. Book it for a weekday morning while everyone naps.")}
       ${featureRow("Anyone mid-move.", "Our move-in/move-out clean is built for empty apartments and is the reason deposits come back intact.")}
-      ${featureRow("The chronically overbooked.", "A recurring plan is the version of this gift that keeps working — and runs 15 to 30% cheaper per clean.")}
+      ${featureRow("The chronically overbooked.", "A recurring plan is the version of this gift that keeps working — and runs 10 to 20% cheaper per clean.")}
       ${ctaBlock(`${siteUrl}/quote/`, "Or book your own next clean", "Same-week availability, as always")}`,
   },
   // ── Second set (added 2026-09-24). Plainer voice, real details, no invented numbers. ──
@@ -616,7 +630,7 @@ export const CUSTOMER_TRACK: CampaignEmail[] = [
     body: (siteUrl) => `
       ${hero("Heads up", "December is the one month we turn people away.")}
       ${para("Between holiday hosting and end-of-year move-outs, the last three weeks of the year fill faster than anything else on the calendar.")}
-      ${para("Recurring clients keep their day and their cleaner no matter what. If you have been booking one clean at a time and want a December slot, the simplest way to hold it is to go biweekly or monthly now. Biweekly saves 25%, monthly 15%, and you can pause after the holidays if you want.")}
+      ${para("Recurring clients keep their day and their cleaner no matter what. If you have been booking one clean at a time and want a December slot, the simplest way to hold it is to go biweekly or monthly now. Biweekly saves 15%, monthly 10%, and you can pause after the holidays if you want.")}
       ${ctaBlock(`${siteUrl}/quote/`, "Set up a recurring plan", "Pick the frequency at checkout, cancel any time by replying")}
       ${para("Reply to this email and a person answers, usually the same day. — Manhattan Mint NYC")}`,
   },
