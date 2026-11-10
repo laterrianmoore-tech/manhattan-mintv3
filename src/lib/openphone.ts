@@ -63,6 +63,26 @@ export function toE164(phone: string): string {
   return String(phone || "").startsWith("+") ? String(phone) : `+${digits}`;
 }
 
+// True when our line has already sent this number a text containing `needle`.
+// Reads the OpenPhone thread itself, so it works even when dispatch_log is
+// unreadable. Any lookup failure returns false (send rather than stay silent).
+export async function alreadyTexted(to: string, needle: string): Promise<boolean> {
+  try {
+    const headers = { Authorization: OPENPHONE_API_KEY };
+    const nums = await (await fetch("https://api.openphone.com/v1/phone-numbers", { headers })).json();
+    const line = (nums?.data ?? []).find((n: any) => n.number === OPENPHONE_FROM_NUMBER);
+    if (!line) return false;
+    const q = new URLSearchParams({ phoneNumberId: line.id, maxResults: "50" });
+    q.append("participants[]", toE164(to));
+    const res = await fetch(`https://api.openphone.com/v1/messages?${q}`, { headers });
+    if (!res.ok) return false;
+    const j = await res.json();
+    return (j?.data ?? []).some((m: any) => m.direction === "outgoing" && String(m.text || "").includes(needle));
+  } catch {
+    return false;
+  }
+}
+
 export async function sendSms(args: SendArgs) {
   args = { ...args, to: toE164(args.to) };
   let openphoneMessageId: string | null = null;

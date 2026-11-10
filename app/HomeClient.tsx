@@ -457,8 +457,8 @@ export default function HomeClient({ googleRating }: { googleRating: GoogleRatin
 				<div className="hoods-grid">
 					<Link href="/neighborhoods/tribeca" className="hood">Tribeca</Link><Link href="/neighborhoods/soho" className="hood">SoHo</Link><Link href="/neighborhoods/east-village" className="hood">East Village</Link><Link href="/neighborhoods/west-village" className="hood">West Village</Link>
 					<Link href="/neighborhoods" className="hood">Greenwich Village</Link><Link href="/neighborhoods/chelsea" className="hood">Chelsea</Link><Link href="/neighborhoods/flatiron" className="hood">Flatiron</Link>
-					<Link href="/neighborhoods" className="hood">Gramercy</Link><Link href="/neighborhoods/murray-hill" className="hood">Murray Hill</Link><Link href="/neighborhoods" className="hood">Midtown</Link>
-					<Link href="/neighborhoods" className="hood">Hell&apos;s Kitchen</Link><Link href="/neighborhoods/upper-east-side" className="hood">Upper East Side</Link><Link href="/neighborhoods/upper-west-side" className="hood">Upper West Side</Link>
+					<Link href="/neighborhoods" className="hood">Gramercy</Link><Link href="/neighborhoods/murray-hill" className="hood">Murray Hill</Link><Link href="/neighborhoods/midtown" className="hood">Midtown</Link>
+					<Link href="/neighborhoods/hells-kitchen" className="hood">Hell&apos;s Kitchen</Link><Link href="/neighborhoods/upper-east-side" className="hood">Upper East Side</Link><Link href="/neighborhoods/upper-west-side" className="hood">Upper West Side</Link>
 					<Link href="/neighborhoods/financial-district" className="hood">FiDi</Link>
 					<Link href="/neighborhoods" className="hood">Battery Park</Link><Link href="/neighborhoods" className="hood">Nolita</Link><Link href="/neighborhoods" className="hood">Lower East Side</Link>
 					<Link href="/neighborhoods" className="hood">Kips Bay</Link><Link href="/neighborhoods" className="hood">Sutton Place</Link>

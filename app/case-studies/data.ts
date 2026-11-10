@@ -13,12 +13,55 @@ export type CaseStudy = {
 	challenge: string[];
 	approach: { title: string; body: string }[];
 	results: string[];
-	quote: string;
-	quoteAuthor: string;
+	// Only a real client quote goes here. Leave both out when there is none.
+	quote?: string;
+	quoteAuthor?: string;
 	relatedGuide: { slug: string; label: string }; // matching blog guide, linked from the article
 };
 
 export const caseStudies: CaseStudy[] = [
+	{
+		// Real client (2026-10-07 onward), anonymised. Every number below comes from the booking record.
+		slug: "weekly-same-cleaner-one-bedroom-midtown",
+		metaTitle: "Weekly Cleaning in Midtown: Case Study",
+		title: "One cleaner, every week: a one-bedroom in Midtown",
+		metaDescription:
+			"A Midtown one-bedroom on Manhattan Mint's weekly plan: booked online on a Sunday night, cleaned that Wednesday, and the same cleaner at every visit since. How a weekly clean runs without the client managing it.",
+		neighborhood: "Midtown",
+		propertyType: "One-bedroom, one bath",
+		service: "Standard clean, weekly",
+		publishedAt: "2026-11-10",
+		excerpt:
+			"Booked online late on a Sunday night, cleaned that Wednesday morning, and the same cleaner at every visit since. This is what a weekly plan looks like when nobody has to manage it.",
+		image: { src: "/case-studies/weekly-same-cleaner-one-bedroom-midtown.jpg", alt: "Looking up a Midtown street between apartment and office towers", credit: "Pexels" },
+		challenge: [
+			"A weekly clean sounds like the easy job. The apartment never gets very dirty, the visits are short, and nothing needs rescuing. The hard part is everything around the cleaning: a different person at the door each week, a visit that has to be rebooked every time, a text thread to confirm the day. Most people who give up on a cleaning service give up on that, not on the cleaning.",
+			"This client has a one-bedroom in Midtown and wanted it done every week. The booking came through the website late on a Sunday night with nothing in the notes but the plan they had picked. The brief, in effect, was: make this happen every week, and don't make me think about it.",
+		],
+		approach: [
+			{
+				title: "One cleaner from the first visit",
+				body: "We assigned one cleaner to the first visit and kept her on every visit after it. By the second week she knew the apartment, where things live and how the client likes it left. That is the real reason a recurring clean gets better over time instead of staying the same.",
+			},
+			{
+				title: "The next visit books itself",
+				body: "When the cleaner marks a visit complete, the following week's visit goes on the calendar at that moment. The client has never rebooked. The card on file is charged after each clean, so there is no invoice to open either.",
+			},
+			{
+				title: "Three texts, no phone calls",
+				body: "The client gets a text when the cleaner is on the way, when she arrives and when she's done. For someone at the office all day, that is the whole experience of the service: three texts and a clean apartment. How to pick between weekly and every other week is in our guide to [how often to clean a Manhattan apartment](/blog/how-often-to-clean-manhattan-apartment).",
+			},
+		],
+		results: [
+			"Six visits since the first week of October, with the same cleaner at every one.",
+			"Booked online on a Sunday night; the first clean was that Wednesday morning.",
+			"Each visit takes about three hours, and every next visit was on the calendar before the cleaner left the building.",
+		],
+		relatedGuide: {
+			slug: "how-often-to-clean-manhattan-apartment",
+			label: "Guide: Weekly, bi-weekly or monthly?",
+		},
+	},
 	{
 		slug: "pre-war-walk-up-deep-clean-upper-west-side",
 		metaTitle: "Pre-War Walk-Up Deep Clean: UWS Case Study",

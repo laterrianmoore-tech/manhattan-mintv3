@@ -3,7 +3,7 @@ import { accountUrl, manageUrl } from "@/lib/manage-token";
 import { keepOfferFor } from "@/lib/keep-offer";
 import sgMail from "@sendgrid/mail";
 import { supabaseAdmin } from "@/lib/supabase";
-import { sendSms } from "@/lib/openphone";
+import { sendSms, alreadyTexted } from "@/lib/openphone";
 import { renderCleanReminderEmail } from "@/lib/email/clean-reminder";
 import { trackedReviewUrl } from "@/lib/review-tracking";
 import { hasActiveSubscription, HOLD_REFRESH_AFTER_DAYS, inspectHold, placeHold, releaseHold } from "@/lib/stripe-hold";
@@ -326,6 +326,9 @@ export async function GET(req: Request) {
         .ilike("message_body", "%every other week at 15% off%")
         .limit(1);
       if (already?.length) { skip("already sent"); continue; }
+      // The log was unreadable/unwritable for weeks, so two cron firings a minute
+      // apart both sent. The text thread itself is the record that can't be missing.
+      if (await alreadyTexted(customer.phone, "every other week at 15% off")) { skip("already sent (found in the text thread)"); continue; }
 
       const link = `${accountUrl(b.customer_id, publicSiteUrl)}&keep=1`;
       const who = offer.cleanerName ?? "your cleaner";

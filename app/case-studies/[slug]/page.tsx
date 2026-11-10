@@ -132,10 +132,12 @@ export default async function CaseStudyPage({ params }: Props) {
 					))}
 				</ul>
 
-				<blockquote className="cs-quote">
-					<p>&quot;{study.quote}&quot;</p>
-					<cite>— {study.quoteAuthor}</cite>
-				</blockquote>
+				{study.quote && (
+					<blockquote className="cs-quote">
+						<p>&quot;{study.quote}&quot;</p>
+						{study.quoteAuthor && <cite>— {study.quoteAuthor}</cite>}
+					</blockquote>
+				)}
 
 				<aside className="cs-author">
 					<h2 className="cs-author-head">About Manhattan Mint</h2>

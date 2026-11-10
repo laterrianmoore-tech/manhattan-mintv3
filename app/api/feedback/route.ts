@@ -39,6 +39,7 @@ export async function POST(req: Request) {
       : "";
   const combinedComment = [heardTag, comment?.trim() || ""].filter(Boolean).join("\n") || null;
 
+  let saved = true;
   const { error } = await supabaseAdmin.from("feedback").insert({
     booking_id: bookingId,
     cleaner_id: booking.assigned_cleaner_id ?? null,
@@ -54,8 +55,10 @@ export async function POST(req: Request) {
         { status: 409 }
       );
     }
+    // The table refused the row (it did for weeks: missing grants). The customer
+    // still told us something, so the owner hears about it regardless.
     console.error("[feedback] insert error:", error);
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    saved = false;
   }
 
   // Text the owner every feedback submission the moment it lands (non-fatal).
@@ -66,11 +69,15 @@ export async function POST(req: Request) {
   if (ownerPhones.length) {
     const c = (booking as any).customers;
     const name = [c?.first_name, c?.last_name].filter(Boolean).join(" ") || "customer";
+    // 3 stars or fewer, or "not sure I'd book again", is a customer to call today.
+    const unhappy = rating <= 3 || wouldBookAgain === false;
     const parts = [
-      `⭐ FEEDBACK: ${rating}/5 from ${name} (clean ${(booking as any).service_date})`,
+      `${unhappy ? "🚨 UNHAPPY CUSTOMER" : "⭐ FEEDBACK"}: ${rating}/5 from ${name} (clean ${(booking as any).service_date})`,
       wouldBookAgain === true ? "Would book again: YES" : wouldBookAgain === false ? "Would book again: not sure" : "",
       heardTag ? heardTag.replace(/^\[|\]$/g, "") : "",
       comment?.trim() ? `"${comment.trim().slice(0, 220)}"` : "",
+      unhappy ? "Text or call them today." : "",
+      saved ? "" : "(Not saved to the database: paste the pending SQL file in Supabase.)",
     ].filter(Boolean);
     for (const phone of ownerPhones) {
       try {

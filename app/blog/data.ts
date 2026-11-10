@@ -26,6 +26,93 @@ export type BlogPost = {
 
 export const blogPosts: BlogPost[] = [
 	{
+		slug: "how-often-to-clean-manhattan-apartment",
+		metaTitle: "How Often Should You Clean a Manhattan Apartment?",
+		title: "Weekly, bi-weekly or monthly: how often should a Manhattan apartment be cleaned?",
+		metaDescription:
+			"How often to have a Manhattan apartment professionally cleaned: who weekly is for, why bi-weekly suits most one-bedrooms, when monthly is enough, and what each plan costs per visit.",
+		tag: "Planning your clean",
+		publishedAt: "2026-11-10",
+		excerpt:
+			"The honest answer depends on four things: how many people live there, whether there's a pet, how much you cook, and whether your windows face an avenue. Here's how to pick.",
+		image: { src: "/blog/how-often-to-clean-manhattan-apartment.jpg", alt: "Bright, freshly cleaned living room with wood floors and a balcony door" },
+		intro: [
+			"Almost everyone who books a first clean with us asks the same question afterwards: how often should I do this? The answer isn't a sales pitch for the most frequent plan. A studio with one tidy person in it doesn't need a weekly visit, and a two-bedroom with a dog and two people working from home won't hold for a month.",
+			"What follows is how we'd decide if it were our own apartment. It leans on what we see across Manhattan every week, and on the way city dirt builds up on a schedule, which we cover in our [season-by-season guide](/blog/how-nyc-weather-affects-apartment-cleanliness).",
+		],
+		sections: [
+			{
+				heading: "The four things that set the pace",
+				paragraphs: [
+					"Square footage matters less than people think. A large apartment with one person in it stays clean longer than a small one with three. These are the things that move the answer:",
+				],
+				list: [
+					"People. Each adult adds a bathroom's worth of use, a share of the kitchen and a layer of dust. Two people in a one-bedroom is the single most common reason bi-weekly stops being enough.",
+					"Pets. A dog or cat means hair on upholstery and under furniture within days. Pet owners are usually happiest one step more frequent than they'd otherwise pick.",
+					"Cooking. If the stove is used daily, grease builds on the backsplash, range hood and cabinet fronts faster than any other surface in the apartment.",
+					"Street exposure. Windows facing an avenue, a construction site or a restaurant exhaust bring in soot that a side-street apartment never sees. Sills that turn grey in a week are the tell.",
+				],
+			},
+			{
+				heading: "Weekly: for homes that are lived in hard",
+				paragraphs: [
+					"Weekly is the right plan when the apartment is busy: a family, roommates, a pet, or one or two people who work from home and notice the place all day. It is also the plan for people with long hours who want to stop thinking about it entirely. The apartment never drifts, so each visit is lighter and more of the time goes to detail work.",
+					"The other reason to pick weekly is consistency. The same cleaner on the same day each week learns the apartment quickly. Our [Midtown case study](/case-studies/weekly-same-cleaner-one-bedroom-midtown) follows a one-bedroom that has had the same cleaner at every weekly visit since the first one.",
+				],
+			},
+			{
+				heading: "Bi-weekly: the right answer for most one-bedrooms",
+				paragraphs: [
+					"Every other week is what most of our recurring clients settle on, and for a one-bedroom or a studio with one or two people it is usually correct. Two weeks is about how long a bathroom and a kitchen stay presentable with ordinary use. You'll wipe a counter and run a vacuum once in between, and the deep work is done for you.",
+					"If you're choosing between weekly and bi-weekly and can't decide, start bi-weekly. If you find yourself cleaning the bathroom yourself in the off week, move up.",
+				],
+			},
+			{
+				heading: "Monthly: for the tidy, the travelling and the pied-à-terre",
+				paragraphs: [
+					"Monthly works when the apartment is lightly used: someone who travels most weeks, a second home, or a person who genuinely keeps up with the day-to-day and wants the things they never get to. That means baseboards, inside the microwave, behind the toilet, the tops of door frames.",
+					"A monthly visit is closer to a small deep clean than to maintenance, because four weeks of dust is real dust. Expect it to run longer than a weekly visit to the same apartment.",
+				],
+			},
+			{
+				heading: "When to add a deep clean",
+				paragraphs: [
+					"Recurring visits keep an apartment clean. They don't reset one. We suggest a deep clean at the start of any plan, so the regular visits are maintaining a known baseline, and then again once or twice a year. The natural moments are the two weeks before the heat comes on in October and the spring pollen clear-out, both covered in our [fall reset checklist](/blog/fall-cleaning-checklist-manhattan-apartment).",
+					"The other time is before guests. If family is staying over the holidays, book the deep clean for the week before, not the day before, so the regular visit right ahead of their arrival is a touch-up.",
+				],
+			},
+			{
+				heading: "What each plan costs",
+				paragraphs: [
+					"Our rates are flat by apartment size, not hourly, and recurring plans are discounted from the standard rate. For a one-bedroom, one-bath apartment:",
+				],
+				list: [
+					"One-time standard clean: $175.",
+					"Monthly: 10% off, $158 per visit.",
+					"Bi-weekly: 15% off, $149 per visit.",
+					"Weekly: 20% off, $140 per visit.",
+				],
+			},
+			{
+				heading: "A quick way to decide",
+				paragraphs: [
+					"Answer these honestly and count the yeses: more than one person lives here; there's a pet; someone works from home most days; we cook most nights; our windows face an avenue.",
+				],
+				list: [
+					"Zero or one: monthly will hold, bi-weekly if you'd rather not lift a finger.",
+					"Two or three: bi-weekly.",
+					"Four or five: weekly.",
+				],
+			},
+		],
+		cta: {
+			heading: "Not sure which plan fits?|Start with one clean.",
+			body: "Book a first visit, see how long the apartment holds, then tell us weekly, bi-weekly or monthly and we will set it up. Same cleaner every visit, flat rates from $175. See how a weekly plan runs in our",
+			caseStudySlug: "weekly-same-cleaner-one-bedroom-midtown",
+			caseStudyLabel: "Midtown weekly-clean case study",
+		},
+	},
+	{
 		slug: "fall-cleaning-checklist-manhattan-apartment",
 		metaTitle: "Fall Cleaning Checklist for a Manhattan Apartment",
 		title: "The fall reset: what to clean in a Manhattan apartment before the heat comes on",

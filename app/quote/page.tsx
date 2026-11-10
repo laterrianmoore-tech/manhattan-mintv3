@@ -670,7 +670,7 @@ function QuoteForm({ stripeReady, stripe, elements }: QuoteFormProps) {
                 <input type="date" min={minServiceDate} required value={form.serviceDate} onChange={(e) => setField("serviceDate", e.target.value)} style={fieldStyle} />
               </label>
               <p style={{ marginTop: "-.35rem", marginBottom: ".75rem", fontSize: ".76rem", color: "#666" }}>
-                Next-day is the earliest online. Need it today? Text <a href="sms:+19148637902" style={{ color: "var(--mint-dark)", fontWeight: 500 }}>(914) 863-7902</a> and we'll try to fit you in.
+                Next-day is the earliest you can book online. Need it today? Please call or text <a href="tel:+19148637902" style={{ color: "var(--mint-dark)", fontWeight: 500 }}>(914) 863-7902</a> and we'll check same-day availability.
               </p>
 
               <div style={{ marginBottom: ".75rem" }}>

@@ -8,7 +8,7 @@ import "./neighborhoods.css";
 export const metadata: Metadata = {
 	title: "Neighborhoods We Clean — Manhattan Apartment Cleaning by Area",
 	description:
-		"Manhattan Mint cleans across Manhattan: Upper East and West Side, Chelsea, West Village, Tribeca, SoHo, FiDi, Murray Hill, East Village, Flatiron. What we clean in each, and how we get in.",
+		"Manhattan Mint cleans across Manhattan: Upper East and West Side, Chelsea, West Village, Tribeca, SoHo, FiDi, Murray Hill, East Village, Flatiron, Midtown, Hell's Kitchen. What we clean in each, and how we get in.",
 	alternates: { canonical: "/neighborhoods" },
 };
 
