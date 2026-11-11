@@ -19,6 +19,8 @@ interface Props {
   lockedOutAt?: string | null;
   lockoutResolvedAt?: string | null;
   lockoutEnabled?: boolean;
+  /** Multi-day job (2026-11-11): set = "Mark complete" is locked; the text says when it continues. */
+  finishLockNote?: string | null;
 }
 
 export default function JobActions({
@@ -33,7 +35,9 @@ export default function JobActions({
   lockedOutAt,
   lockoutResolvedAt,
   lockoutEnabled = false,
+  finishLockNote = null,
 }: Props) {
+  const finishIsLocked = !!finishLockNote;
   const [onWay, setOnWay] = useState(!!onTheWayAt);
   const [arrived, setArrived] = useState(!!arrivedAt);
   // Kept so the "Mark complete" timer runs from the real tap, including one made on this screen.
@@ -115,14 +119,19 @@ export default function JobActions({
         primaryColor="#1d9e75"
       />
       <ActionButton
-        label={completeTooEarly && completeOpens ? `Mark complete — unlocks ${nyClock(completeOpens)}` : "Mark complete"}
+        label={finishIsLocked && !completed ? "Mark complete — locked" : completeTooEarly && completeOpens ? `Mark complete — unlocks ${nyClock(completeOpens)}` : "Mark complete"}
         done={completed}
         loading={loading === "completed"}
-        disabled={completed || loading !== null || !arrived || completeTooEarly}
+        disabled={completed || loading !== null || !arrived || completeTooEarly || finishIsLocked}
         onClick={() => tap("completed")}
         primaryColor="#085041"
       />
-      {completeTooEarly && (
+      {finishIsLocked && !completed && (
+        <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+          This job {finishLockNote}. Don&apos;t mark it complete; Manhattan Mint will close it out when the whole job is done.
+        </p>
+      )}
+      {completeTooEarly && !finishIsLocked && (
         <p className="text-xs text-gray-400 pt-1">
           Mark complete unlocks {MIN_MINUTES_ON_SITE} minutes after you arrive. Tap it when the clean is finished.
         </p>

@@ -10,7 +10,7 @@ import { referralCodeFor, referralLink, publicSiteUrl, REFERRAL_FRIEND_DISCOUNT,
 import { accountUrl } from "@/lib/manage-token";
 import { fmtTax, isTaxableBooking, quoteTax, recordTaxTransaction, taxMetadata } from "@/lib/stripe-tax";
 import { createBookingInvoice, hasCardOnFile, invoiceSmsBody, isInvoicePayCustomer, type BookingInvoiceResult, type InvoiceCustomer } from "@/lib/stripe-invoice";
-import { completeOpensAt, MIN_MINUTES_ON_SITE, nyClock, onTheWayOpensAt } from "@/lib/tap-guards";
+import { completeOpensAt, finishLocked, finishLockNote, MIN_MINUTES_ON_SITE, nyClock, onTheWayOpensAt } from "@/lib/tap-guards";
 
 const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 const ORDINALS = ["1st", "2nd", "3rd", "4th"];
@@ -269,17 +269,25 @@ export async function POST(req: Request) {
       // has to be closed out before the next customer is told she's coming.
       const { data: inFlight } = await supabaseAdmin
         .from("bookings")
-        .select("id, customers(first_name)")
+        .select("id, cleaning_notes, arrived_at, customers(first_name)")
         .or(`assigned_cleaner_id.eq.${cleaner!.id},second_cleaner_id.eq.${cleaner!.id}`)
         .neq("id", bookingId)
         .not("on_the_way_at", "is", null)
         .is("completed_at", null)
         .not("status", "in", "(completed,cancelled,lockout)")
-        .limit(1);
-      const blocking = inFlight?.[0] as { customers?: { first_name?: string } | null } | undefined;
+        .limit(10);
+      // A finish-locked job she has already arrived at is parked for another
+      // day, not in flight: it must not block the follow-on visit.
+      const blocking = (inFlight ?? []).find((j: any) => !(finishLocked(j) && j.arrived_at)) as
+        | { customers?: { first_name?: string } | null }
+        | undefined;
       if (blocking) {
         return refuse(`Finish ${blocking.customers?.first_name ?? "your current job"} first — tap Mark complete there before starting the next one.`);
       }
+    }
+    if (event === "completed" && finishLocked(booking)) {
+      // Multi-day job (2026-11-11): the owner closes it out, not the cleaner.
+      return refuse(`This job isn't finished yet — it ${finishLockNote(booking.cleaning_notes)}. Mark complete is locked; Manhattan Mint will close it out.`);
     }
     if (event === "completed") {
       const opens = completeOpensAt(booking.arrived_at);

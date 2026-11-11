@@ -78,6 +78,23 @@ export function completeOpensAt(arrivedAt: string | null | undefined): Date | nu
   return new Date(new Date(arrivedAt).getTime() + MIN_MINUTES_ON_SITE * 60_000);
 }
 
+/**
+ * Finish lock (2026-11-11): a job that runs over more than one day. The owner
+ * puts "[Finish locked: continues Thu Nov 12 at 8:30am]" in cleaning_notes and
+ * the cleaner can no longer tap "Mark complete" on it (no completion text, no
+ * charge) until the owner closes it from /admin/dispatch or removes the tag.
+ * A parked job (locked and already arrived) also stops counting as the job in
+ * flight, so the follow-on visit gets its own buttons.
+ */
+export function finishLockNote(cleaningNotes: string | null | undefined): string | null {
+  const m = /\[finish locked(?::\s*([^\]]*))?\]/i.exec(cleaningNotes ?? "");
+  if (!m) return null;
+  return (m[1] ?? "").trim() || "continues on another day";
+}
+export function finishLocked(b: { cleaning_notes?: string | null }): boolean {
+  return finishLockNote(b.cleaning_notes) != null;
+}
+
 /** "8:30 AM" in New York time, for button labels and refusals. */
 export function nyClock(d: Date): string {
   return d.toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" });

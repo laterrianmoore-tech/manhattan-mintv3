@@ -1,5 +1,5 @@
 import { supabaseAdmin } from "@/lib/supabase";
-import { onTheWayOpensAt, windowOpensHour } from "@/lib/tap-guards";
+import { finishLocked, finishLockNote, onTheWayOpensAt, windowOpensHour } from "@/lib/tap-guards";
 import JobActions from "./JobActions";
 
 export const dynamic = "force-dynamic";
@@ -84,7 +84,11 @@ export default async function CleanerPortal({ params }: Props) {
   const todayJobs = bookings
     .filter((b) => isOpen(b) && (b.service_date === today || isStarted(b)))
     .sort((a, b) => a.service_date.localeCompare(b.service_date) || (windowOpensHour(a) ?? 24) - (windowOpensHour(b) ?? 24));
-  const activeJob = todayJobs.find((b) => isStarted(b)) ?? todayJobs[0] ?? null;
+  // A finish-locked job she has arrived at is parked for another day
+  // (2026-11-11): it keeps its card but never holds the buttons hostage.
+  const isParked = (b: (typeof bookings)[number]) => finishLocked(b) && !!b.arrived_at;
+  const liveJobs = todayJobs.filter((b) => !isParked(b));
+  const activeJob = liveJobs.find((b) => isStarted(b)) ?? liveJobs[0] ?? null;
   const upcomingJobs = bookings.filter((b) => isOpen(b) && b.service_date > today && !isStarted(b));
   const completedJobs = [...bookings]
     .filter((b) => b.completed_at)
@@ -115,7 +119,7 @@ export default async function CleanerPortal({ params }: Props) {
                 booking={b}
                 token={token}
                 isFuture={false}
-                blockedBy={activeJob && activeJob.id !== b.id ? (activeJob.customers as any)?.first_name ?? "the current job" : null}
+                blockedBy={activeJob && activeJob.id !== b.id && !isParked(b) ? (activeJob.customers as any)?.first_name ?? "the current job" : null}
               />
             ))}
           </div>
@@ -253,6 +257,7 @@ function JobCard({
         arrivedAt={booking.arrived_at}
         completedAt={booking.completed_at}
         isFuture={isFuture}
+        finishLockNote={finishLockNote(booking.cleaning_notes)}
       />
       )}
     </div>
