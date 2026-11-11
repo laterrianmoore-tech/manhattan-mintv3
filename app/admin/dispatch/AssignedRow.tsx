@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import ScheduleEditor from "./ScheduleEditor";
 import PriceEditor from "./PriceEditor";
 import PayEditor from "./PayEditor";
+import NotesLink from "./NotesLink";
 
 type Cleaner = {
   id: string;
@@ -16,6 +17,7 @@ type Booking = {
   id: string;
   service_date: string;
   service_summary: string;
+  cleaning_notes?: string | null;
   status: string;
   assigned_cleaner_id: string;
   second_cleaner_id: string | null;
@@ -282,6 +284,7 @@ export default function AssignedRow({
             <span className="font-semibold text-gray-700">${booking.pricing_total}</span>
             <HoldBadge booking={booking} />
           </div>
+          <NotesLink notes={booking.cleaning_notes} />
         </div>
         <div className="flex items-center gap-2 shrink-0 ml-4">
           {cleanerName && (

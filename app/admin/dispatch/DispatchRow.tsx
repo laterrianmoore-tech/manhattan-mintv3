@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import ScheduleEditor from "./ScheduleEditor";
 import PriceEditor from "./PriceEditor";
 import PayEditor from "./PayEditor";
+import NotesLink from "./NotesLink";
 import { STATUS_ORDER, type CleanerDayStatus } from "@/lib/availability";
 
 type Cleaner = {
@@ -20,6 +21,7 @@ type Booking = {
   id: string;
   service_date: string;
   service_summary: string;
+  cleaning_notes?: string | null;
   bedrooms: number;
   preferred_time_ranges: string[] | null;
   pricing_total: number;
@@ -329,6 +331,7 @@ export default function DispatchRow({
           </>
         )}
       </div>
+      <NotesLink notes={booking.cleaning_notes} />
       {cleanerStatus && (
         <p className="text-xs">
           {freeNames.length ? (
