@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { supabaseAdmin } from "@/lib/supabase";
 import { sendSms } from "@/lib/openphone";
 import { classifyJob, computeCleanerPay, payNote, type PayResult } from "@/lib/cleaner-pay";
+import { arrivalTagFor } from "@/lib/arrival-window";
 
 // Assigns a cleaner to a booking and texts them the job.
 //
@@ -19,11 +20,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
 
-  const { bookingId, cleanerId, slot: rawSlot } = await req.json();
+  const { bookingId, cleanerId, slot: rawSlot, action, pay: payOverride } = await req.json();
   const slot: Slot = rawSlot === "second" ? "second" : "primary";
   const column = slot === "second" ? "second_cleaner_id" : "assigned_cleaner_id";
 
-  if (!bookingId || (!cleanerId && slot === "primary")) {
+  if (!bookingId || (!cleanerId && slot === "primary" && !action)) {
     return NextResponse.json({ ok: false, error: "Missing fields" }, { status: 400 });
   }
 
@@ -70,6 +71,10 @@ export async function POST(req: Request) {
     : booking.preferred_time_ranges || "";
   const aptSuffix = customer?.apt_no ? ` Apt ${customer.apt_no}` : "";
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://manhattanmintnyc.com";
+  // Exact arrival time when the booking has one (cleaners asked "what time?"
+  // when the text only said "Evening").
+  const arrival = arrivalTagFor(booking, "dispatch text");
+  const whenLine = `\n${serviceDate} ${timeRange}${arrival ? ` — arrive ${arrival}` : ""} · ${customer?.address}${aptSuffix}`;
 
   const previousCleanerId: string | null = booking[column] ?? null;
 
@@ -92,23 +97,105 @@ export async function POST(req: Request) {
     return result.ok;
   }
 
-  // ── Remove the second cleaner ──────────────────────────────────────────
-  if (slot === "second" && !cleanerId) {
-    if (!previousCleanerId) {
-      return NextResponse.json({ ok: true, removed: false });
+  // ── Swap who leads a 2-person job (2026-11-20) ─────────────────────────
+  // Both cleaners stay on the job, so nobody is texted: the slots and their
+  // pay just trade places.
+  if (action === "swap_lead") {
+    if (!booking.assigned_cleaner_id || !booking.second_cleaner_id) {
+      return NextResponse.json({ ok: false, error: "This job has only one cleaner." }, { status: 400 });
     }
+    const { error: swapErr } = await supabaseAdmin
+      .from("bookings")
+      .update({
+        assigned_cleaner_id: booking.second_cleaner_id,
+        second_cleaner_id: booking.assigned_cleaner_id,
+        cleaner_pay: booking.second_cleaner_pay ?? null,
+        second_cleaner_pay: booking.cleaner_pay ?? null,
+      })
+      .eq("id", bookingId);
+    if (swapErr) return NextResponse.json({ ok: false, error: swapErr.message }, { status: 500 });
+    return NextResponse.json({ ok: true, swapped: true });
+  }
+
+  // ── Take one cleaner off a 2-person job (2026-11-20) ───────────────────
+  // slot "second" + no cleanerId: the 2nd cleaner comes off. action
+  // "remove_primary": the lead comes off and the 2nd moves up. Either way the
+  // one who stays gets a single clear text that it is now a solo job, with the
+  // solo pay. Before this, taking the lead off meant reassigning through a
+  // placeholder, and the staying cleaner was texted "you're off" and then a
+  // fresh "new job" naming the wrong teammate (Sun Nov 22, Alyssa).
+  if ((slot === "second" && !cleanerId) || action === "remove_primary") {
+    const removingLead = action === "remove_primary";
+    const offId: string | null = removingLead ? booking.assigned_cleaner_id : booking.second_cleaner_id;
+    const stayId: string | null = removingLead ? booking.second_cleaner_id : booking.assigned_cleaner_id;
+    if (!offId) return NextResponse.json({ ok: true, removed: false });
+    if (!stayId) {
+      return NextResponse.json(
+        { ok: false, error: "Only one cleaner on this job. Use Change cleaner instead." },
+        { status: 400 }
+      );
+    }
+
+    // Solo pay for the cleaner who stays: the owner's number if given,
+    // otherwise the pay table for one cleaner.
+    const typedPay = payOverride != null && payOverride !== "" ? Number(payOverride) : null;
+    if (typedPay != null && (!Number.isFinite(typedPay) || typedPay < 0)) {
+      return NextResponse.json({ ok: false, error: "Pay must be a number." }, { status: 400 });
+    }
+    let soloPay: number | null = typedPay;
+    if (soloPay == null) {
+      const { count: priorJobs } = await supabaseAdmin
+        .from("bookings")
+        .select("id", { count: "exact", head: true })
+        .eq("customer_id", booking.customer_id)
+        .eq("status", "completed")
+        .neq("id", bookingId)
+        .or(`assigned_cleaner_id.eq.${stayId},second_cleaner_id.eq.${stayId}`);
+      soloPay = computeCleanerPay({ ...booking, isRegularCleaner: (priorJobs ?? 0) > 0, twoCleaners: false }).amount;
+    }
+
     const { error: clearErr } = await supabaseAdmin
       .from("bookings")
-      .update({ second_cleaner_id: null })
+      .update({
+        assigned_cleaner_id: stayId,
+        second_cleaner_id: null,
+        second_cleaner_pay: null,
+        cleaner_pay: soloPay,
+        cleaner_pay_source: "manual",
+        cleaner_pay_note: typedPay != null ? "Solo after a cleaner came off (owner set)" : "Solo after a cleaner came off (pay table)",
+      })
       .eq("id", bookingId);
     if (clearErr) {
-      console.error("[dispatch] clear second cleaner failed:", clearErr);
+      console.error("[dispatch] take cleaner off failed:", clearErr);
       return NextResponse.json({ ok: false, error: clearErr.message }, { status: 500 });
     }
-    const previousCleanerNotified = booking.dispatch_sms_sent_at
-      ? await notifyOff(previousCleanerId)
-      : false;
-    return NextResponse.json({ ok: true, removed: true, previousCleanerNotified });
+
+    let previousCleanerNotified = false;
+    let stayingNotified = false;
+    if (booking.dispatch_sms_sent_at) {
+      previousCleanerNotified = await notifyOff(offId);
+      const { data: offCleaner } = await supabaseAdmin.from("cleaners").select("first_name").eq("id", offId).single();
+      const { data: stay } = await supabaseAdmin
+        .from("cleaners")
+        .select("id, phone, portal_token")
+        .eq("id", stayId)
+        .single();
+      if (stay?.phone) {
+        const hidePay = booking.cleaner_pay_hidden === true && !removingLead;
+        const result = await sendSms({
+          to: stay.phone,
+          body: `JOB UPDATE — ${offCleaner?.first_name ?? "Your teammate"} is off ${customer?.first_name}'s ${serviceDate} job. It's now a solo job, just you.${whenLine}${
+            soloPay != null && !hidePay ? `\nPay: $${soloPay}` : ""
+          }${stay.portal_token ? `\nView: ${siteUrl}/cleaner/${stay.portal_token}` : ""}`,
+          cleanerId: stay.id,
+          bookingId,
+          recipientType: "cleaner",
+          eventType: "other",
+        });
+        stayingNotified = result.ok;
+      }
+    }
+    return NextResponse.json({ ok: true, removed: true, previousCleanerNotified, stayingNotified, pay: soloPay });
   }
 
   // ── Assign / replace a cleaner in this slot ────────────────────────────
@@ -209,7 +296,7 @@ export async function POST(req: Request) {
   }
   const payTextLine = payAmount != null && !payHidden ? `\nPay: $${payAmount}` : "";
 
-  const body = `New job — ${serviceDate} ${timeRange}
+  const body = `New job — ${serviceDate} ${timeRange}${arrival ? ` — arrive ${arrival}` : ""}
 ${customer?.first_name} · ${customer?.address}${aptSuffix}
 ${booking.bedrooms}BR · ${booking.service_summary}${teammateLine}${payTextLine}
 View: ${siteUrl}/cleaner/${cleaner.portal_token}`;
@@ -235,17 +322,26 @@ View: ${siteUrl}/cleaner/${cleaner.portal_token}`;
   // When a second cleaner joins a job the primary was already texted about,
   // let the primary know they now have a teammate.
   let teammateNotified = false;
-  if (slot === "second" && booking.dispatch_sms_sent_at && booking.assigned_cleaner_id) {
-    const { data: primary } = await supabaseAdmin
+  // Since 2026-11-20 this covers either slot: the cleaner who stays on a
+  // 2-person job hears who their teammate now is, and whom they replace.
+  if (otherSlotId && booking.dispatch_sms_sent_at && previousCleanerId !== cleanerId) {
+    const { data: teammate } = await supabaseAdmin
       .from("cleaners")
       .select("id, first_name, phone")
-      .eq("id", booking.assigned_cleaner_id)
+      .eq("id", otherSlotId)
       .single();
-    if (primary?.phone) {
+    let replacedName: string | null = null;
+    if (previousCleanerId) {
+      const { data: prev } = await supabaseAdmin.from("cleaners").select("first_name").eq("id", previousCleanerId).single();
+      replacedName = prev?.first_name ?? null;
+    }
+    if (teammate?.phone) {
       const result = await sendSms({
-        to: primary.phone,
-        body: `TEAM UPDATE — ${cleaner.first_name} is joining you on ${customer?.first_name}'s ${serviceDate} job at ${customer?.address}${aptSuffix}.`,
-        cleanerId: primary.id,
+        to: teammate.phone,
+        body: replacedName
+          ? `TEAM UPDATE — ${cleaner.first_name} replaces ${replacedName} on ${customer?.first_name}'s ${serviceDate} job at ${customer?.address}${aptSuffix}. Still a 2-person job.`
+          : `TEAM UPDATE — ${cleaner.first_name} is joining you on ${customer?.first_name}'s ${serviceDate} job at ${customer?.address}${aptSuffix}.`,
+        cleanerId: teammate.id,
         bookingId,
         recipientType: "cleaner",
         eventType: "other",

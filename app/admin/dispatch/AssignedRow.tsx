@@ -221,29 +221,58 @@ export default function AssignedRow({
     }
   }
 
-  async function handleRemoveSecond() {
-    if (
-      !window.confirm(
-        `Take ${secondCleanerName ?? "the 2nd cleaner"} off ${customer?.first_name}'s ${dateStr} job?${
-          booking.dispatch_sms_sent_at ? " They'll be texted that they're off it." : ""
-        } ${cleanerName ?? "The first cleaner"} keeps the job.`
-      )
-    )
-      return;
+  // Take one cleaner off a 2-person job in one step (2026-11-20). The other
+  // cleaner becomes the only cleaner (moving up to lead if needed) and gets
+  // one "now a solo job" text with the solo pay.
+  async function handleTakeOff(which: Slot) {
+    const offName = (which === "primary" ? cleanerName : secondCleanerName) ?? "that cleaner";
+    const stayName = (which === "primary" ? secondCleanerName : cleanerName) ?? "the other cleaner";
+    const pay = window.prompt(
+      `Take ${offName} off ${customer?.first_name}'s ${dateStr} job? ${stayName} does it solo.\n\n` +
+        `${stayName}'s pay for the full job (leave blank to use the pay table):`,
+      ""
+    );
+    if (pay === null) return; // cancelled
     setBusy(true);
     setError("");
     const res = await fetch("/api/dispatch/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ bookingId: booking.id, cleanerId: null, slot: "second" }),
+      body: JSON.stringify(
+        which === "primary"
+          ? { bookingId: booking.id, action: "remove_primary", pay: pay.trim() }
+          : { bookingId: booking.id, cleanerId: null, slot: "second", pay: pay.trim() }
+      ),
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
+      const payStr = data.pay != null ? ` at $${data.pay}` : "";
       setNotice(
-        data.previousCleanerNotified
-          ? `${secondCleanerName ?? "2nd cleaner"} removed — texted.`
-          : `${secondCleanerName ?? "2nd cleaner"} removed.`
+        booking.dispatch_sms_sent_at
+          ? `${offName} off; ${stayName} solo${payStr}.${data.previousCleanerNotified ? ` ${offName} texted.` : ` ${offName} NOT texted.`}${
+              data.stayingNotified ? ` ${stayName} texted.` : ` ${stayName} NOT texted, text them yourself.`
+            }`
+          : `${offName} off; ${stayName} solo${payStr}.`
       );
+      router.refresh();
+    } else {
+      setError(data.error ?? "Something went wrong. Try again.");
+      setBusy(false);
+    }
+  }
+
+  // Trade lead and 2nd on a 2-person job. Nobody is texted.
+  async function handleSwapLead() {
+    setBusy(true);
+    setError("");
+    const res = await fetch("/api/dispatch/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookingId: booking.id, action: "swap_lead" }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      setNotice(`${secondCleanerName ?? "2nd cleaner"} now leads. No texts sent.`);
       router.refresh();
     } else {
       setError(data.error ?? "Something went wrong. Try again.");
@@ -478,13 +507,32 @@ export default function AssignedRow({
             {booking.second_cleaner_id ? "Change 2nd cleaner" : "+ 2nd cleaner"}
           </button>
           {booking.second_cleaner_id && (
-            <button
-              onClick={handleRemoveSecond}
-              disabled={busy}
-              className="px-3 py-1 rounded-lg border border-gray-300 bg-white text-xs text-gray-500 hover:border-gray-400"
-            >
-              Remove 2nd
-            </button>
+            <>
+              <button
+                onClick={() => handleTakeOff("primary")}
+                disabled={busy}
+                className="px-3 py-1 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:border-gray-400"
+                title={`${cleanerName ?? "Lead"} comes off; ${secondCleanerName ?? "the 2nd cleaner"} does it solo`}
+              >
+                Take {cleanerName ?? "lead"} off
+              </button>
+              <button
+                onClick={() => handleTakeOff("second")}
+                disabled={busy}
+                className="px-3 py-1 rounded-lg border border-gray-300 bg-white text-xs text-gray-700 hover:border-gray-400"
+                title={`${secondCleanerName ?? "2nd cleaner"} comes off; ${cleanerName ?? "the lead"} does it solo`}
+              >
+                Take {secondCleanerName ?? "2nd"} off
+              </button>
+              <button
+                onClick={handleSwapLead}
+                disabled={busy}
+                className="px-3 py-1 rounded-lg border border-gray-300 bg-white text-xs text-gray-500 hover:border-gray-400"
+                title="Swap lead and 2nd. Both stay on the job; no texts."
+              >
+                Make {secondCleanerName ?? "2nd"} lead
+              </button>
+            </>
           )}
           <button
             onClick={() => setRepricing(true)}
