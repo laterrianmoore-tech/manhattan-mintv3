@@ -9,6 +9,7 @@ import { isReferralCode, referralCodeFor, referralLink, publicSiteUrl, REFERRAL_
 import { accountUrl, cardUrl } from "@/lib/manage-token";
 import { isTaxableBooking, quoteTax, taxMetadata } from "@/lib/stripe-tax";
 import { SEASONAL_PROMOS, promoByCode, promoStatus } from "@/lib/promo";
+import { isBlockedCustomer } from "@/lib/blocked-customers";
 import { attributeBooking, attributeCustomer, getBrokerPartner, looksLikeBrokerCode } from "@/lib/brokers";
 
 export const maxDuration = 30;
@@ -115,6 +116,15 @@ export async function POST(req: Request) {
 
     if (!body.firstName || !body.lastName || !body.email || !body.phone || !body.address || !body.serviceDate) {
       return NextResponse.json({ error: "Missing required booking fields" }, { status: 400 });
+    }
+
+    // Owner block list (src/lib/blocked-customers.ts): refuse quietly, notify no one.
+    if (isBlockedCustomer(body)) {
+      console.log("[submit] blocked customer refused");
+      return NextResponse.json(
+        { error: "We're unable to complete this booking online. Please contact us at hello@manhattanmintnyc.com." },
+        { status: 403 }
+      );
     }
 
     if (body.serviceDate < minAllowedServiceDate()) {
