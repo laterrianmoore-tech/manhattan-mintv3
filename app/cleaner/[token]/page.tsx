@@ -76,9 +76,8 @@ export default async function CleanerPortal({ params }: Props) {
 
   // A job the cleaner has started stays under Today until it's marked complete,
   // whatever the date says.
-  // Today's jobs run in window order. Only the first one carries buttons:
-  // a job she has started (in flight) first, otherwise the earliest window.
-  // The rest show as "next up" with no buttons until it's marked complete
+  // Today's jobs run in window order. Once she starts one (in flight), the
+  // rest show as "next up" with no buttons until it's marked complete
   // (2026-11-06: a cleaner was tapping "On the way" on every job of the day
   // at 8am, texting afternoon customers hours early). Same rule in the API.
   const todayJobs = bookings
@@ -88,7 +87,13 @@ export default async function CleanerPortal({ params }: Props) {
   // (2026-11-11): it keeps its card but never holds the buttons hostage.
   const isParked = (b: (typeof bookings)[number]) => finishLocked(b) && !!b.arrived_at;
   const liveJobs = todayJobs.filter((b) => !isParked(b));
-  const activeJob = liveJobs.find((b) => isStarted(b)) ?? liveJobs[0] ?? null;
+  // Only a job she has actually started locks the others (2026-11-25). Before
+  // that, every job today keeps its own buttons so she can start whichever she
+  // is really going to first: Erika's Wed Nov 25 had Abdullah ("Morning", sorts
+  // as 8am) above Alexandra (arrive 10am), she went to Alexandra first and found
+  // her buttons locked behind Abdullah. Early taps are still held back by the
+  // On-the-way lead time and the API's one-job-in-flight rule.
+  const activeJob = liveJobs.find((b) => isStarted(b)) ?? null;
   const upcomingJobs = bookings.filter((b) => isOpen(b) && b.service_date > today && !isStarted(b));
   const completedJobs = [...bookings]
     .filter((b) => b.completed_at)
